@@ -1,0 +1,17 @@
+@mixin desktop {
+  @media (min-width: calc(641px)) {
+    @content;
+  }
+}
+
+@mixin mobile() {
+  @media (max-width: 640px) {
+    @content;
+  }
+}
+
+@mixin withTransition($property: "all", $duration: 0.2s, $function: ease-in-out) {
+  transition-property: #{$property};
+  transition-duration: $duration;
+  transition-timing-function: $function;
+}

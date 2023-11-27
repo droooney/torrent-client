@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2017",
+    "strict": true,
+    "outDir": "./dist",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "common/*": ["./common/*"],
+      "telegram-bot/*": ["./telegram-bot/*"],
+      "web-client/*": ["./web-client/*"],
+      "web-server/*": ["./web-server/*"],
+    }
+  },
+  "include": ["./common/**/*", "./telegram-bot/**/*", "./web-client/**/*", "./web-server/**/*", "webpack.config.ts"],
+  "exclude": ["**/node_modules/*", "**/build/*", "**/.cache/*", "**/dist/*"]
+}

@@ -1,0 +1,11 @@
+.idea
+node_modules
+
+.cache
+build
+
+/*.env
+!/.example.env
+!/.secret.example.env
+
+telegram-bot/db/db.json
