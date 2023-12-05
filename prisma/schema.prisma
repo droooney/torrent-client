@@ -26,6 +26,7 @@ model Torrent {
 
   infoHash            String              @map("info_hash") @unique
   name                String
+  size                BigInt
   state               TorrentState
   progress            Float
   magnetUri           String?             @map("magnet_uri")
@@ -35,6 +36,24 @@ model Torrent {
   createdAt           DateTime            @map("created_at") @default(now())
 
   torrentClientState1 TorrentClientState? @relation("criticalTorrent")
+  files               TorrentFile[]       @relation("torrent")
+}
+
+enum TorrentFileState {
+  Progress
+  Finished
+}
+
+model TorrentFile {
+  @@map("torrent_file")
+
+  path      String           @unique
+  torrentId String           @map("torrent_id")
+  state     TorrentFileState
+  size      BigInt
+  progress  Float
+
+  torrent   Torrent @relation("torrent", fields: [torrentId], references: [infoHash], onDelete: Cascade)
 }
 
 model TorrentClientState {
