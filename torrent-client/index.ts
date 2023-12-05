@@ -7,6 +7,7 @@ import { DOWNLOADS_DIRECTORY } from 'constants/paths';
 
 import prisma from 'db/prisma';
 
+import { getTelegramStatus } from 'torrent-client/utilities/telegram';
 import CustomError from 'utilities/CustomError';
 import { minmax } from 'utilities/number';
 
@@ -93,12 +94,30 @@ class TorrentClient {
     return torrent;
   }
 
+  async deleteTorrent(infoHash: string): Promise<void> {
+    const client = await this.clientPromise;
+
+    client.torrents.find((clientTorrent) => infoHash === clientTorrent.infoHash)?.destroy();
+
+    await prisma.torrent.delete({
+      where: {
+        infoHash,
+      },
+    });
+
+    await this.switchTorrentsIfNeeded();
+  }
+
   async getState(): Promise<TorrentClientState> {
     return prisma.torrentClientState.upsert({
       where: MAIN_STATE_WHERE,
       create: MAIN_STATE_CREATE,
       update: {},
     });
+  }
+
+  async getTelegramStatus(): Promise<string> {
+    return getTelegramStatus();
   }
 
   async init(): Promise<void> {
@@ -231,6 +250,8 @@ class TorrentClient {
     await this.updateState({
       criticalTorrentId: infoHash,
     });
+
+    await this.switchTorrentsIfNeeded();
   }
 
   async setDownloadSpeedLimit(limit: number | null): Promise<void> {

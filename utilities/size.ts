@@ -32,6 +32,10 @@ export function formatSize(bytes: number, fractionDigits = 1): string {
   return `${actualIndex === 0 ? size : size.toFixed(fractionDigits)}\u00a0${suffix}`;
 }
 
+export function formatSpeed(speed: number, fractionDigits = 1): string {
+  return `${formatSize(speed, fractionDigits)}/с`;
+}
+
 export function parseSize(size: string): number | null {
   size = size.trim();
 

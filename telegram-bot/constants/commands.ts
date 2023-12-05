@@ -3,6 +3,7 @@ import { BotCommand } from 'node-telegram-bot-api';
 export enum CommandType {
   START = '/start',
   ADD_TORRENT = '/addtorrent',
+  STATUS = '/status',
   PAUSE = '/pause',
   UNPAUSE = '/unpause',
   SET_DOWNLOAD_LIMIT = '/setdownloadlimit',
@@ -19,6 +20,10 @@ const commands: CustomBotCommand[] = [
     description: 'Добавить торрент',
   },
   {
+    command: CommandType.STATUS,
+    description: 'Получить текущий статус',
+  },
+  {
     command: CommandType.PAUSE,
     description: 'Поставить на паузу',
   },
@@ -32,7 +37,7 @@ const commands: CustomBotCommand[] = [
   },
   {
     command: CommandType.SET_UPLOAD_LIMIT,
-    description: 'Ограничить скорость выгрузки',
+    description: 'Ограничить скорость отдачи',
   },
 ];
 

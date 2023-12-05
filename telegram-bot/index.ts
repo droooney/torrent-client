@@ -7,7 +7,7 @@ import * as util from 'node:util';
 import torrentClient from '@/torrent-client';
 import { Prisma, Torrent } from '@prisma/client';
 import { blue, green } from 'colors/safe';
-import { User } from 'node-telegram-bot-api';
+import { SendMessageOptions, User } from 'node-telegram-bot-api';
 
 import commands, { CommandType } from 'telegram-bot/constants/commands';
 
@@ -15,7 +15,7 @@ import prisma from 'db/prisma';
 
 import { tryLoadDocument } from 'telegram-bot/utilities/documents';
 import CustomError from 'utilities/CustomError';
-import { formatSize, parseSize } from 'utilities/size';
+import { formatSpeed, parseSize } from 'utilities/size';
 
 import bot from 'telegram-bot/bot';
 
@@ -48,8 +48,8 @@ bot.on('message', async (message) => {
   });
   let newUserData = userData;
 
-  const sendText = async (text: string): Promise<void> => {
-    await bot.sendMessage(userId, text);
+  const sendText = async (text: string, options?: SendMessageOptions): Promise<void> => {
+    await bot.sendMessage(userId, text, options);
   };
 
   const updateUser = async (
@@ -75,6 +75,24 @@ bot.on('message', async (message) => {
     });
 
     await sendText('Привет! Я - ТоррентБот. Добавляйте торренты, чтобы поставить их на скачивание');
+  } else if (text === CommandType.STATUS) {
+    await updateUser({
+      state: 'Waiting',
+    });
+
+    let status: string | null = null;
+
+    try {
+      status = await torrentClient.getTelegramStatus();
+    } catch (err) {
+      console.log(err);
+
+      await sendText(err instanceof CustomError ? err.message : 'Произошла ошибка');
+    }
+
+    if (status) {
+      await sendText(status);
+    }
   } else if (text === CommandType.PAUSE) {
     await updateUser({
       state: 'Waiting',
@@ -107,7 +125,7 @@ bot.on('message', async (message) => {
     await sendText(
       `Отправьте строку вида "10мб", чтобы ограничить скорость загрузки${
         downloadSpeedLimit
-          ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSize(downloadSpeedLimit, 0)}/с)`
+          ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSpeed(downloadSpeedLimit)})`
           : ''
       }`,
     );
@@ -120,9 +138,7 @@ bot.on('message', async (message) => {
 
     await sendText(
       `Отправьте строку вида "10мб", чтобы ограничить скорость выгрузки${
-        uploadSpeedLimit
-          ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSize(uploadSpeedLimit, 0)}/с)`
-          : ''
+        uploadSpeedLimit ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSpeed(uploadSpeedLimit)})` : ''
       }`,
     );
   } else if (userData.state === 'Waiting') {
@@ -179,7 +195,7 @@ bot.on('message', async (message) => {
       await sendText(
         downloadLimit === '-'
           ? 'Ограничение загрузки снято'
-          : `Выставлено ограниче загрузки ${formatSize(downloadLimit, 0)}/с`,
+          : `Выставлено ограничение загрузки ${formatSpeed(downloadLimit)}`,
       );
     }
   } else if (userData.state === 'SetUploadLimit') {
@@ -195,9 +211,7 @@ bot.on('message', async (message) => {
       await torrentClient.setUploadSpeedLimit(uploadLimit === '-' ? null : uploadLimit);
 
       await sendText(
-        uploadLimit === '-'
-          ? 'Ограничение выгрузки снято'
-          : `Выставлено ограниче выгрузки ${formatSize(uploadLimit, 0)}/с`,
+        uploadLimit === '-' ? 'Ограничение отдачи снято' : `Выставлено ограничение отдачи ${formatSpeed(uploadLimit)}`,
       );
     }
   }
