@@ -5,6 +5,8 @@ export enum CommandType {
   ADD_TORRENT = '/addtorrent',
   PAUSE = '/pause',
   UNPAUSE = '/unpause',
+  SET_DOWNLOAD_LIMIT = '/setdownloadlimit',
+  SET_UPLOAD_LIMIT = '/setuploadlimit',
 }
 
 interface CustomBotCommand extends BotCommand {
@@ -23,6 +25,14 @@ const commands: CustomBotCommand[] = [
   {
     command: CommandType.UNPAUSE,
     description: 'Убрать с паузы',
+  },
+  {
+    command: CommandType.SET_DOWNLOAD_LIMIT,
+    description: 'Ограничить скорость загрузки',
+  },
+  {
+    command: CommandType.SET_UPLOAD_LIMIT,
+    description: 'Ограничить скорость выгрузки',
   },
 ];
 

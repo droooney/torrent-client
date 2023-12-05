@@ -5,6 +5,8 @@ import { Torrent } from '@prisma/client';
 import fs from 'fs-extra';
 import { Document } from 'node-telegram-bot-api';
 
+import { DOWNLOADS_DIRECTORY, TORRENTS_DIRECTORY } from 'constants/paths';
+
 import prisma from 'db/prisma';
 
 import CustomError from 'utilities/CustomError';
@@ -19,7 +21,7 @@ export async function tryLoadDocument(document?: Document): Promise<Torrent | nu
   let defaultFilePath: string;
 
   try {
-    defaultFilePath = await bot.downloadFile(document.file_id, path.resolve('./torrent-client/downloads'));
+    defaultFilePath = await bot.downloadFile(document.file_id, DOWNLOADS_DIRECTORY);
   } catch (err) {
     throw new CustomError('Ошибка загрузки файла', { cause: err });
   }
@@ -41,7 +43,7 @@ export async function tryLoadDocument(document?: Document): Promise<Torrent | nu
     return torrent;
   }
 
-  const newFilePath = path.resolve('./torrent-client/torrents', `${torrent.infoHash}-${document.file_name}`);
+  const newFilePath = path.resolve(TORRENTS_DIRECTORY, `${torrent.infoHash}-${document.file_name}`);
   let copied = false;
 
   try {
@@ -56,6 +58,8 @@ export async function tryLoadDocument(document?: Document): Promise<Torrent | nu
     return torrent;
   }
 
+  let updated = false;
+
   try {
     await prisma.torrent.update({
       where: {
@@ -66,9 +70,21 @@ export async function tryLoadDocument(document?: Document): Promise<Torrent | nu
       },
     });
 
-    await fs.remove(defaultFilePath);
+    updated = true;
   } catch {
-    await fs.remove(newFilePath);
+    try {
+      await fs.remove(newFilePath);
+    } catch (err) {
+      console.log('Remove error', err);
+    }
+  }
+
+  if (updated) {
+    try {
+      await fs.remove(defaultFilePath);
+    } catch (err) {
+      console.log('Remove error', err);
+    }
   }
 
   return torrent;

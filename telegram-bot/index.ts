@@ -15,6 +15,7 @@ import prisma from 'db/prisma';
 
 import { tryLoadDocument } from 'telegram-bot/utilities/documents';
 import CustomError from 'utilities/CustomError';
+import { formatSize, parseSize } from 'utilities/size';
 
 import bot from 'telegram-bot/bot';
 
@@ -75,10 +76,18 @@ bot.on('message', async (message) => {
 
     await sendText('Привет! Я - ТоррентБот. Добавляйте торренты, чтобы поставить их на скачивание');
   } else if (text === CommandType.PAUSE) {
+    await updateUser({
+      state: 'Waiting',
+    });
+
     await torrentClient.pause();
 
     await sendText('Клиент поставлен на паузу');
   } else if (text === CommandType.UNPAUSE) {
+    await updateUser({
+      state: 'Waiting',
+    });
+
     await torrentClient.unpause();
 
     await sendText('Клиент снят с паузы');
@@ -88,11 +97,35 @@ bot.on('message', async (message) => {
     });
 
     await sendText('Отправьте торрент или magnet-ссылку');
-  } else if (userData.state === 'Waiting') {
+  } else if (text === CommandType.SET_DOWNLOAD_LIMIT) {
     await updateUser({
-      state: 'Waiting',
+      state: 'SetDownloadLimit',
     });
 
+    const { downloadSpeedLimit } = await torrentClient.getState();
+
+    await sendText(
+      `Отправьте строку вида "10мб", чтобы ограничить скорость загрузки${
+        downloadSpeedLimit
+          ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSize(downloadSpeedLimit, 0)}/с)`
+          : ''
+      }`,
+    );
+  } else if (text === CommandType.SET_UPLOAD_LIMIT) {
+    await updateUser({
+      state: 'SetUploadLimit',
+    });
+
+    const { uploadSpeedLimit } = await torrentClient.getState();
+
+    await sendText(
+      `Отправьте строку вида "10мб", чтобы ограничить скорость выгрузки${
+        uploadSpeedLimit
+          ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSize(uploadSpeedLimit, 0)}/с)`
+          : ''
+      }`,
+    );
+  } else if (userData.state === 'Waiting') {
     let torrent: Torrent | null = null;
 
     try {
@@ -131,6 +164,42 @@ bot.on('message', async (message) => {
     if (torrent) {
       await sendText('Торрент добавлен!');
     }
+  } else if (userData.state === 'SetDownloadLimit') {
+    const downloadLimit = text === '-' ? '-' : parseSize(text ?? '');
+
+    if (downloadLimit === null) {
+      await sendText('Ошибка формата данных');
+    } else {
+      await updateUser({
+        state: 'Waiting',
+      });
+
+      await torrentClient.setDownloadSpeedLimit(downloadLimit === '-' ? null : downloadLimit);
+
+      await sendText(
+        downloadLimit === '-'
+          ? 'Ограничение загрузки снято'
+          : `Выставлено ограниче загрузки ${formatSize(downloadLimit, 0)}/с`,
+      );
+    }
+  } else if (userData.state === 'SetUploadLimit') {
+    const uploadLimit = text === '-' ? '-' : parseSize(text ?? '');
+
+    if (uploadLimit === null) {
+      await sendText('Ошибка формата данных');
+    } else {
+      await updateUser({
+        state: 'Waiting',
+      });
+
+      await torrentClient.setUploadSpeedLimit(uploadLimit === '-' ? null : uploadLimit);
+
+      await sendText(
+        uploadLimit === '-'
+          ? 'Ограничение выгрузки снято'
+          : `Выставлено ограниче выгрузки ${formatSize(uploadLimit, 0)}/с`,
+      );
+    }
   }
 
   // after state change
@@ -147,4 +216,8 @@ console.log(blue('Bot started'));
   await bot.startPolling();
 
   console.log(green('Bot listening...'));
-})();
+})().catch((err) => {
+  console.log(err);
+
+  process.exit(1);
+});

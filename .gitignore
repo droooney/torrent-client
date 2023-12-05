@@ -3,7 +3,11 @@ node_modules
 
 .cache
 build
+assets-storage/downloads/*
+assets-storage/torrents/*
 
 *.env
 !.example.env
 !.secret.example.env
+
+!.gitkeep

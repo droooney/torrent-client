@@ -30,6 +30,8 @@ if (process.env.NODE_ENV !== 'production') {
 
 app.use(render);
 
+console.log(blue('Web server started'));
+
 (async () => {
   await new Promise<void>((resolve) => {
     server.listen(PORT, resolve);
@@ -41,5 +43,3 @@ app.use(render);
 
   process.exit(1);
 });
-
-console.log(blue('Web server started'));

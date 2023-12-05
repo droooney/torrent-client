@@ -13,7 +13,9 @@ datasource db {
 enum TorrentState {
   @@map("torrent_state")
 
-  Pending
+  Queued
+  Verifying
+  Error
   Downloading
   Paused
   Finished
@@ -28,6 +30,7 @@ model Torrent {
   progress            Float
   magnetUri           String?             @map("magnet_uri")
   torrentPath         String?             @map("torrent_path")
+  errorMessage        String?             @map("error_message")
 
   createdAt           DateTime            @map("created_at") @default(now())
 
@@ -52,6 +55,8 @@ enum TelegramUserState {
   First
   Waiting
   AddTorrent
+  SetDownloadLimit
+  SetUploadLimit
 }
 
 model TelegramUserData {
