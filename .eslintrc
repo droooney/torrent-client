@@ -27,8 +27,9 @@
         "groups": [
           "/^node:/",
           "module",
-          "/constants/",
-          "/api/",
+          "/constants\//",
+          "/api\//",
+          "/db\//",
           "/(/|^)types?(/|$)/",
           "/utilities\\//",
           "/hooks\\//",

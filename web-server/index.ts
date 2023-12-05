@@ -1,4 +1,4 @@
-import 'common/utilities/importEnv';
+import 'utilities/importEnv';
 
 import { blue, green } from 'colors/safe';
 import connect from 'koa-connect';

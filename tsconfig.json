@@ -14,11 +14,21 @@
     "paths": {
       "@/*": ["./*"],
       "common/*": ["./common/*"],
+      "db/*": ["./prisma/*"],
       "telegram-bot/*": ["./telegram-bot/*"],
+      "torrent-client/*": ["./torrent-client/*"],
+      "utilities/*": ["./utilities/*"],
       "web-client/*": ["./web-client/*"],
-      "web-server/*": ["./web-server/*"],
+      "web-server/*": ["./web-server/*"]
     }
   },
-  "include": ["./common/**/*", "./telegram-bot/**/*", "./web-client/**/*", "./web-server/**/*", "webpack.config.ts"],
-  "exclude": ["**/node_modules/*", "**/build/*", "**/.cache/*", "**/dist/*"]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["**/node_modules/*", "**/build/*", "**/.cache/*", "**/dist/*"],
+  "ts-node": {
+    "esm": true,
+    "compilerOptions": {
+      "module": "node16",
+      "moduleResolution": "nodenext"
+    }
+  }
 }

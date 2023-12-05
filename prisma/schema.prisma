@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TorrentState {
+  @@map("torrent_state")
+
+  Pending
+  Downloading
+  Paused
+  Finished
+}
+
+model Torrent {
+  @@map("torrent")
+
+  infoHash            String              @map("info_hash") @unique
+  name                String
+  state               TorrentState
+  progress            Float
+  magnetUri           String?             @map("magnet_uri")
+  torrentPath         String?             @map("torrent_path")
+
+  createdAt           DateTime            @map("created_at") @default(now())
+
+  torrentClientState1 TorrentClientState? @relation("criticalTorrent")
+}
+
+model TorrentClientState {
+  @@map("torrent_client_state")
+
+  id                 String   @unique
+  paused             Boolean
+  criticalTorrentId  String?  @map("critical_torrent_id") @unique
+  downloadSpeedLimit Float?   @map("download_speed_limit")
+  uploadSpeedLimit   Float?   @map("upload_speed_limit")
+
+  criticalTorrent    Torrent? @relation("criticalTorrent", fields: [criticalTorrentId], references: [infoHash], onDelete: SetNull)
+}
+
+enum TelegramUserState {
+  @@map("telegram_user_state")
+
+  First
+  Waiting
+  AddTorrent
+}
+
+model TelegramUserData {
+  @@map("telegram_user_data")
+
+  userId          Int               @map("user_id") @unique()
+  state           TelegramUserState
+}

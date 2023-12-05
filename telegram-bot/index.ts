@@ -1,15 +1,22 @@
 /* eslint-disable camelcase */
 
-import 'common/utilities/importEnv';
+import 'utilities/importEnv';
 
 import * as util from 'node:util';
 
+import torrentClient from '@/torrent-client';
+import { Prisma, Torrent } from '@prisma/client';
 import { blue, green } from 'colors/safe';
+import { User } from 'node-telegram-bot-api';
 
-import TelegramBot, { User } from 'node-telegram-bot-api';
+import commands, { CommandType } from 'telegram-bot/constants/commands';
 
-import db from 'telegram-bot/db';
-import { UserState } from 'telegram-bot/db/database';
+import prisma from 'db/prisma';
+
+import { tryLoadDocument } from 'telegram-bot/utilities/documents';
+import CustomError from 'utilities/CustomError';
+
+import bot from 'telegram-bot/bot';
 
 util.inspect.defaultOptions.depth = null;
 
@@ -19,57 +26,115 @@ const isUserAllowed = (user: User): boolean => {
   return USERNAME_WHITELIST.includes(user.username);
 };
 
-if (!process.env.TELEGRAM_BOT_TOKEN) {
-  console.error('No telegram bot token');
-
-  process.exit(1);
-}
-
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
-  polling: {
-    autoStart: false,
-  },
-});
-
 bot.on('message', async (message) => {
-  const { from: user } = message;
+  const { from: user, text, document } = message;
 
   if (!user || !isUserAllowed(user)) {
     return;
   }
 
   const userId = user.id;
-  const userData = db.getUserData(userId);
-  let userState = userData.state;
+
+  const userData = await prisma.telegramUserData.upsert({
+    where: {
+      userId,
+    },
+    update: {},
+    create: {
+      userId,
+      state: 'First',
+    },
+  });
+  let newUserData = userData;
 
   const sendText = async (text: string): Promise<void> => {
     await bot.sendMessage(userId, text);
   };
 
-  const changeUserState = (state: UserState): void => {
-    db.setUserData(userId, { state });
+  const updateUser = async (
+    data: Prisma.XOR<Prisma.TelegramUserDataUpdateInput, Prisma.TelegramUserDataUncheckedUpdateInput>,
+  ): Promise<void> => {
+    newUserData = await prisma.telegramUserData.update({
+      where: {
+        userId,
+      },
+      data,
+    });
   };
 
   console.log({
     message,
-    userState,
+    userData,
   });
 
-  const prevState = userState;
-
   // before state change
-  if (userState.type === 'first') {
-    await sendText('Привет! Я - ТоррентБот. Добавляйте торренты, чтобы поставить их на скачивание');
-
-    changeUserState({
-      type: 'waiting',
+  if (text === CommandType.START || userData.state === 'First') {
+    await updateUser({
+      state: 'Waiting',
     });
+
+    await sendText('Привет! Я - ТоррентБот. Добавляйте торренты, чтобы поставить их на скачивание');
+  } else if (text === CommandType.PAUSE) {
+    await torrentClient.pause();
+
+    await sendText('Клиент поставлен на паузу');
+  } else if (text === CommandType.UNPAUSE) {
+    await torrentClient.unpause();
+
+    await sendText('Клиент снят с паузы');
+  } else if (text === CommandType.ADD_TORRENT) {
+    await updateUser({
+      state: 'AddTorrent',
+    });
+
+    await sendText('Отправьте торрент или magnet-ссылку');
+  } else if (userData.state === 'Waiting') {
+    await updateUser({
+      state: 'Waiting',
+    });
+
+    let torrent: Torrent | null = null;
+
+    try {
+      torrent = await tryLoadDocument(document);
+    } catch (err) {
+      console.log(err);
+
+      await sendText(err instanceof CustomError ? err.message : 'Ошибка добавления торрента');
+    }
+
+    if (torrent) {
+      await sendText('Торрент добавлен!');
+    }
+  } else if (userData.state === 'AddTorrent') {
+    await updateUser({
+      state: 'Waiting',
+    });
+
+    let torrent: Torrent | null = null;
+
+    try {
+      if (document) {
+        torrent = await tryLoadDocument(document);
+      } else if (text) {
+        torrent = await torrentClient.addTorrent({
+          type: 'magnet',
+          magnet: text,
+        });
+      }
+    } catch (err) {
+      console.log(err);
+
+      await sendText(err instanceof CustomError ? err.message : 'Ошибка добавления торрента');
+    }
+
+    if (torrent) {
+      await sendText('Торрент добавлен!');
+    }
   }
 
-  userState = db.getUserData(userId).state;
-
   // after state change
-  if (userState !== prevState) {
+  if (newUserData.state !== newUserData.state) {
     // empty
   }
 });
@@ -77,6 +142,8 @@ bot.on('message', async (message) => {
 console.log(blue('Bot started'));
 
 (async () => {
+  await bot.setMyCommands(commands);
+
   await bot.startPolling();
 
   console.log(green('Bot listening...'));
