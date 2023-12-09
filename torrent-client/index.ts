@@ -3,14 +3,14 @@ import path from 'node:path';
 import { Torrent, TorrentClientState, TorrentState } from '@prisma/client';
 import fs from 'fs-extra';
 import { ParseTorrent } from 'parse-torrent';
-import { Torrent as ClientTorrent, TorrentFile as ClientTorrentFile, Instance } from 'webtorrent';
+import { Torrent as ClientTorrent, Instance } from 'webtorrent';
 
 import { DOWNLOADS_DIRECTORY } from 'constants/paths';
 
 import prisma from 'db/prisma';
 
 import CustomError from 'utilities/CustomError';
-import { minmax } from 'utilities/number';
+import { getProgress } from 'utilities/size';
 
 interface AddFileTorrent {
   type: 'file';
@@ -37,17 +37,13 @@ const ACTIVE_TORRENT_STATES: TorrentState[] = ['Verifying', 'Downloading'];
 const UPDATE_DB_TORRENT_INTERVAL = 5000;
 
 class TorrentClient {
-  private static getProgress(torrentOrFile: ClientTorrent | ClientTorrentFile): number {
-    return minmax(torrentOrFile.downloaded / torrentOrFile.length, 0, torrentOrFile.length);
-  }
-
   private resolveClient?: (client: Instance) => unknown;
   private resolveParseTorrent?: (parseTorrent: ParseTorrent) => unknown;
 
-  clientPromise = new Promise<Instance>((resolve) => {
+  private clientPromise = new Promise<Instance>((resolve) => {
     this.resolveClient = resolve;
   });
-  parseTorrentPromise = new Promise<ParseTorrent>((resolve) => {
+  private parseTorrentPromise = new Promise<ParseTorrent>((resolve) => {
     this.resolveParseTorrent = resolve;
   });
 
@@ -96,9 +92,7 @@ class TorrentClient {
   }
 
   async deleteTorrent(infoHash: string): Promise<void> {
-    const client = await this.clientPromise;
-
-    client.torrents.find((clientTorrent) => infoHash === clientTorrent.infoHash)?.destroy();
+    await this.destroyClientTorrent(infoHash);
 
     const torrent = await prisma.torrent.findUnique({
       where: {
@@ -118,6 +112,24 @@ class TorrentClient {
     });
 
     await this.switchTorrentsIfNeeded();
+  }
+
+  async destroyClientTorrent(infoHash: string): Promise<void> {
+    (await this.getClientTorrent(infoHash))?.destroy();
+  }
+
+  async getClientTorrent(infoHash: string): Promise<ClientTorrent | null> {
+    const client = await this.clientPromise;
+
+    return client.torrents.find((clientTorrent) => infoHash === clientTorrent.infoHash) ?? null;
+  }
+
+  async getDownloadSpeed(): Promise<number> {
+    return (await this.clientPromise).downloadSpeed;
+  }
+
+  async getUploadSpeed(): Promise<number> {
+    return (await this.clientPromise).uploadSpeed;
   }
 
   async getState(): Promise<TorrentClientState> {
@@ -160,34 +172,7 @@ class TorrentClient {
             return;
           }
 
-          const progress = TorrentClient.getProgress(clientTorrent);
-
-          await Promise.all([
-            !Number.isNaN(progress) &&
-              prisma.torrent.update({
-                where: {
-                  infoHash: clientTorrent.infoHash,
-                },
-                data: {
-                  progress,
-                },
-              }),
-            ...clientTorrent.files.map(async (file) => {
-              const progress = TorrentClient.getProgress(file);
-
-              if (!Number.isNaN(progress)) {
-                await prisma.torrentFile.update({
-                  where: {
-                    path: file.path,
-                  },
-                  data: {
-                    state: progress === 1 ? 'Finished' : undefined,
-                    progress,
-                  },
-                });
-              }
-            }),
-          ]);
+          await this.writeProgressToDatabase(clientTorrent);
         }),
       );
     }, UPDATE_DB_TORRENT_INTERVAL);
@@ -241,9 +226,13 @@ class TorrentClient {
       return;
     }
 
-    const client = await this.clientPromise;
+    const clientTorrent = await this.getClientTorrent(infoHash);
 
-    client.torrents.find((clientTorrent) => infoHash === clientTorrent.infoHash)?.destroy();
+    if (torrent.state === 'Downloading') {
+      await this.writeProgressToDatabase(clientTorrent);
+    }
+
+    await this.destroyClientTorrent(infoHash);
 
     await prisma.torrent.update({
       where: {
@@ -274,7 +263,7 @@ class TorrentClient {
       where: {
         infoHash,
         state: {
-          in: ['Downloading', 'Verifying', 'Queued'],
+          not: 'Finished',
         },
       },
     });
@@ -350,25 +339,13 @@ class TorrentClient {
       },
     });
 
-    const additionalOptions: { paused?: boolean } = {
-      paused: true,
-    };
-
     const clientTorrent = client.add(addTorrent, {
-      ...additionalOptions,
       path: DOWNLOADS_DIRECTORY,
       storeCacheSlots: 0,
     });
 
-    try {
-      await new Promise((resolve, reject) => {
-        clientTorrent.once('metadata', resolve);
-        clientTorrent.once('error', reject);
-      });
-
-      // TODO: throw if no memory
-
-      [torrent] = await Promise.all([
+    clientTorrent.once('ready', async () => {
+      await Promise.all([
         prisma.torrent.update({
           where: {
             infoHash: torrent.infoHash,
@@ -394,23 +371,9 @@ class TorrentClient {
           }),
         ),
       ]);
-    } catch (err) {
-      torrent = await prisma.torrent.update({
-        where: {
-          infoHash: torrent.infoHash,
-        },
-        data: {
-          state: 'Error',
-          errorMessage: err instanceof Error ? err.stack : String(err),
-        },
-      });
+    });
 
-      await this.switchTorrentsIfNeeded();
-
-      throw new CustomError('Ошибка добавления торрента', { cause: err });
-    }
-
-    clientTorrent.on('error', async (err) => {
+    clientTorrent.once('error', async (err) => {
       console.log('torrent error', err);
 
       await prisma.torrent.update({
@@ -430,6 +393,7 @@ class TorrentClient {
       await prisma.torrent.update({
         where: {
           infoHash: torrent.infoHash,
+          state: 'Verifying',
         },
         data: {
           state: 'Downloading',
@@ -437,12 +401,21 @@ class TorrentClient {
       });
     });
 
-    clientTorrent.on('done', async () => {
+    clientTorrent.once('done', async () => {
       const filePaths = clientTorrent.files.map(({ path }) => path);
 
       clientTorrent.destroy();
 
       await Promise.all([
+        (async () => {
+          const state = await this.getState();
+
+          if (state.criticalTorrentId === torrent.infoHash) {
+            await this.updateState({
+              criticalTorrentId: null,
+            });
+          }
+        })(),
         prisma.torrent.update({
           where: {
             infoHash: torrent.infoHash,
@@ -467,8 +440,6 @@ class TorrentClient {
 
       await this.switchTorrentsIfNeeded();
     });
-
-    clientTorrent.resume();
 
     return torrent;
   }
@@ -512,10 +483,14 @@ class TorrentClient {
       return null;
     }
 
-    const client = await this.clientPromise;
-
     await Promise.all(
       activeTorrents.map(async (activeTorrent) => {
+        if (activeTorrent.state === 'Downloading') {
+          await this.writeProgressToDatabase(await this.getClientTorrent(activeTorrent.infoHash));
+        }
+
+        await this.destroyClientTorrent(activeTorrent.infoHash);
+
         await prisma.torrent.update({
           where: {
             infoHash: activeTorrent.infoHash,
@@ -524,8 +499,6 @@ class TorrentClient {
             state: 'Queued',
           },
         });
-
-        client.torrents.find(({ infoHash }) => infoHash === activeTorrent.infoHash)?.destroy();
       }),
     );
 
@@ -590,6 +563,41 @@ class TorrentClient {
       },
       update: data,
     });
+  }
+
+  async writeProgressToDatabase(clientTorrent: ClientTorrent | null): Promise<void> {
+    if (!clientTorrent) {
+      return;
+    }
+
+    const progress = getProgress(clientTorrent);
+
+    await Promise.all([
+      !Number.isNaN(progress) &&
+        prisma.torrent.update({
+          where: {
+            infoHash: clientTorrent.infoHash,
+          },
+          data: {
+            progress,
+          },
+        }),
+      ...clientTorrent.files.map(async (file) => {
+        const progress = getProgress(file);
+
+        if (!Number.isNaN(progress)) {
+          await prisma.torrentFile.update({
+            where: {
+              path: file.path,
+            },
+            data: {
+              state: progress === 1 ? 'Finished' : undefined,
+              progress,
+            },
+          });
+        }
+      }),
+    ]);
   }
 }
 

@@ -39,14 +39,22 @@ export function uglifyCallbackData(data: BeautifiedCallbackData): UglifiedCallba
     };
   }
 
-  if (data.source === CallbackButtonSource.TORRENTS_LIST_PAGE) {
+  if (
+    data.source === CallbackButtonSource.TORRENTS_LIST_PAGE ||
+    data.source === CallbackButtonSource.TORRENTS_LIST_REFRESH
+  ) {
     return {
       $: data.source,
       p: data.page,
     };
   }
 
-  if (data.source === CallbackButtonSource.TORRENT_DELETE || data.source === CallbackButtonSource.TORRENT_REFRESH) {
+  if (
+    data.source === CallbackButtonSource.TORRENT_DELETE ||
+    data.source === CallbackButtonSource.TORRENT_DELETE_CONFIRM ||
+    data.source === CallbackButtonSource.TORRENT_REFRESH ||
+    data.source === CallbackButtonSource.NAVIGATE_TO_TORRENT
+  ) {
     return {
       $: data.source,
       t: data.torrentId,
@@ -69,9 +77,19 @@ export function uglifyCallbackData(data: BeautifiedCallbackData): UglifiedCallba
     };
   }
 
-  if (data.source === CallbackButtonSource.TORRENT_BACK_TO_LIST) {
+  if (
+    data.source === CallbackButtonSource.TORRENT_BACK_TO_LIST ||
+    data.source === CallbackButtonSource.STATUS_REFRESH
+  ) {
     return {
       $: data.source,
+    };
+  }
+
+  if (data.source === CallbackButtonSource.STATUS_PAUSE) {
+    return {
+      $: data.source,
+      p: data.pause ? 1 : 0,
     };
   }
 
@@ -86,14 +104,19 @@ export function beautifyCallbackData(data: UglifiedCallbackData): BeautifiedCall
     };
   }
 
-  if (data.$ === CallbackButtonSource.TORRENTS_LIST_PAGE) {
+  if (data.$ === CallbackButtonSource.TORRENTS_LIST_PAGE || data.$ === CallbackButtonSource.TORRENTS_LIST_REFRESH) {
     return {
       source: data.$,
       page: data.p,
     };
   }
 
-  if (data.$ === CallbackButtonSource.TORRENT_DELETE || data.$ === CallbackButtonSource.TORRENT_REFRESH) {
+  if (
+    data.$ === CallbackButtonSource.TORRENT_DELETE ||
+    data.$ === CallbackButtonSource.TORRENT_DELETE_CONFIRM ||
+    data.$ === CallbackButtonSource.TORRENT_REFRESH ||
+    data.$ === CallbackButtonSource.NAVIGATE_TO_TORRENT
+  ) {
     return {
       source: data.$,
       torrentId: data.t,
@@ -116,9 +139,16 @@ export function beautifyCallbackData(data: UglifiedCallbackData): BeautifiedCall
     };
   }
 
-  if (data.$ === CallbackButtonSource.TORRENT_BACK_TO_LIST) {
+  if (data.$ === CallbackButtonSource.TORRENT_BACK_TO_LIST || data.$ === CallbackButtonSource.STATUS_REFRESH) {
     return {
       source: data.$,
+    };
+  }
+
+  if (data.$ === CallbackButtonSource.STATUS_PAUSE) {
+    return {
+      source: data.$,
+      pause: Boolean(data.p),
     };
   }
 

@@ -72,123 +72,117 @@ bot.on('message', async (message) => {
     });
   };
 
+  const afterAddTorrent = async (torrent: Torrent | null) => {
+    if (!torrent) {
+      return;
+    }
+
+    await sendText(`Торрент${torrent.name ? ` "${torrent.name}"` : ''} добавлен!`, {
+      reply_markup: prepareInlineKeyboard([
+        [
+          {
+            type: 'callback',
+            text: '▶️ Подробнее',
+            callbackData: {
+              source: CallbackButtonSource.NAVIGATE_TO_TORRENT,
+              torrentId: torrent.infoHash,
+            },
+          },
+        ],
+      ]),
+    });
+  };
+
   console.log({
     message,
     userData,
   });
 
-  // before state change
-  if (text === CommandType.START || userData.state === 'First') {
-    await updateUser({
-      state: 'Waiting',
-    });
+  try {
+    // before state change
+    if (text === CommandType.START || userData.state === 'First') {
+      await updateUser({
+        state: 'Waiting',
+      });
 
-    await sendText('Привет! Я - ТоррентБот. Добавляйте торренты, чтобы поставить их на скачивание');
-  } else if (text === CommandType.STATUS) {
-    await updateUser({
-      state: 'Waiting',
-    });
+      await sendText('Привет! Я - ТоррентБот. Добавляйте торренты, чтобы поставить их на скачивание');
+    } else if (text === CommandType.STATUS) {
+      await updateUser({
+        state: 'Waiting',
+      });
 
-    let status: string | null = null;
+      const { status, keyboard } = await getTelegramStatus();
 
-    try {
-      status = await getTelegramStatus();
-    } catch (err) {
-      console.log(err);
+      await sendText(status, { reply_markup: keyboard });
+    } else if (text === CommandType.LIST) {
+      await updateUser({
+        state: 'Waiting',
+      });
 
-      await sendText(err instanceof CustomError ? err.message : 'Произошла ошибка');
-    }
-
-    if (status) {
-      await sendText(status);
-    }
-  } else if (text === CommandType.LIST) {
-    await updateUser({
-      state: 'Waiting',
-    });
-
-    try {
       const { info, keyboard } = await getTelegramTorrentsListInfo();
 
       await sendText(info, {
         reply_markup: keyboard,
       });
-    } catch (err) {
-      console.log(err);
+    } else if (text === CommandType.PAUSE) {
+      await updateUser({
+        state: 'Waiting',
+      });
 
-      await sendText(err instanceof CustomError ? err.message : 'Произошла ошибка');
-    }
-  } else if (text === CommandType.PAUSE) {
-    await updateUser({
-      state: 'Waiting',
-    });
+      await torrentClient.pause();
 
-    await torrentClient.pause();
+      await sendText('Клиент поставлен на паузу');
+    } else if (text === CommandType.UNPAUSE) {
+      await updateUser({
+        state: 'Waiting',
+      });
 
-    await sendText('Клиент поставлен на паузу');
-  } else if (text === CommandType.UNPAUSE) {
-    await updateUser({
-      state: 'Waiting',
-    });
+      await torrentClient.unpause();
 
-    await torrentClient.unpause();
+      await sendText('Клиент снят с паузы');
+    } else if (text === CommandType.ADD_TORRENT) {
+      await updateUser({
+        state: 'AddTorrent',
+      });
 
-    await sendText('Клиент снят с паузы');
-  } else if (text === CommandType.ADD_TORRENT) {
-    await updateUser({
-      state: 'AddTorrent',
-    });
+      await sendText('Отправьте торрент или magnet-ссылку');
+    } else if (text === CommandType.SET_DOWNLOAD_LIMIT) {
+      await updateUser({
+        state: 'SetDownloadLimit',
+      });
 
-    await sendText('Отправьте торрент или magnet-ссылку');
-  } else if (text === CommandType.SET_DOWNLOAD_LIMIT) {
-    await updateUser({
-      state: 'SetDownloadLimit',
-    });
+      const { downloadSpeedLimit } = await torrentClient.getState();
 
-    const { downloadSpeedLimit } = await torrentClient.getState();
+      await sendText(
+        `Отправьте строку вида "10мб", чтобы ограничить скорость загрузки${
+          downloadSpeedLimit
+            ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSpeed(downloadSpeedLimit)})`
+            : ''
+        }`,
+      );
+    } else if (text === CommandType.SET_UPLOAD_LIMIT) {
+      await updateUser({
+        state: 'SetUploadLimit',
+      });
 
-    await sendText(
-      `Отправьте строку вида "10мб", чтобы ограничить скорость загрузки${
-        downloadSpeedLimit
-          ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSpeed(downloadSpeedLimit)})`
-          : ''
-      }`,
-    );
-  } else if (text === CommandType.SET_UPLOAD_LIMIT) {
-    await updateUser({
-      state: 'SetUploadLimit',
-    });
+      const { uploadSpeedLimit } = await torrentClient.getState();
 
-    const { uploadSpeedLimit } = await torrentClient.getState();
+      await sendText(
+        `Отправьте строку вида "10мб", чтобы ограничить скорость выгрузки${
+          uploadSpeedLimit ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSpeed(uploadSpeedLimit)})` : ''
+        }`,
+      );
+    } else if (userData.state === 'Waiting') {
+      const torrent = await tryLoadDocument(document);
 
-    await sendText(
-      `Отправьте строку вида "10мб", чтобы ограничить скорость выгрузки${
-        uploadSpeedLimit ? `. Отправьте "-", чтобы снять текущее ограничение (${formatSpeed(uploadSpeedLimit)})` : ''
-      }`,
-    );
-  } else if (userData.state === 'Waiting') {
-    let torrent: Torrent | null = null;
+      await afterAddTorrent(torrent);
+    } else if (userData.state === 'AddTorrent') {
+      await updateUser({
+        state: 'Waiting',
+      });
 
-    try {
-      torrent = await tryLoadDocument(document);
-    } catch (err) {
-      console.log(err);
+      let torrent: Torrent | null = null;
 
-      await sendText(err instanceof CustomError ? err.message : 'Ошибка добавления торрента');
-    }
-
-    if (torrent) {
-      // TODO: add keyboard
-      await sendText(`Торрент${torrent.name ? ` "${torrent.name}"` : ''} добавлен!`);
-    }
-  } else if (userData.state === 'AddTorrent') {
-    await updateUser({
-      state: 'Waiting',
-    });
-
-    let torrent: Torrent | null = null;
-
-    try {
       if (document) {
         torrent = await tryLoadDocument(document);
       } else if (text) {
@@ -197,61 +191,56 @@ bot.on('message', async (message) => {
           magnet: text,
         });
       }
-    } catch (err) {
-      console.log(err);
 
-      await sendText(err instanceof CustomError ? err.message : 'Ошибка добавления торрента');
+      await afterAddTorrent(torrent);
+    } else if (userData.state === 'SetDownloadLimit') {
+      const downloadLimit = text === '-' ? '-' : parseSize(text ?? '');
+
+      if (downloadLimit === null) {
+        await sendText('Ошибка формата данных');
+      } else {
+        await updateUser({
+          state: 'Waiting',
+        });
+
+        await torrentClient.setDownloadSpeedLimit(downloadLimit === '-' ? null : downloadLimit);
+
+        await sendText(
+          downloadLimit === '-'
+            ? 'Ограничение загрузки снято'
+            : `Выставлено ограничение загрузки ${formatSpeed(downloadLimit)}`,
+        );
+      }
+    } else if (userData.state === 'SetUploadLimit') {
+      const uploadLimit = text === '-' ? '-' : parseSize(text ?? '');
+
+      if (uploadLimit === null) {
+        await sendText('Ошибка формата данных');
+      } else {
+        await updateUser({
+          state: 'Waiting',
+        });
+
+        await torrentClient.setUploadSpeedLimit(uploadLimit === '-' ? null : uploadLimit);
+
+        await sendText(
+          uploadLimit === '-'
+            ? 'Ограничение отдачи снято'
+            : `Выставлено ограничение отдачи ${formatSpeed(uploadLimit)}`,
+        );
+      }
     }
 
-    if (torrent) {
-      // TODO: add keyboard
-      await sendText(`Торрент${torrent.name ? ` "${torrent.name}"` : ''} добавлен!`);
+    // after state change
+    if (newUserData.state !== newUserData.state) {
+      // empty
     }
-  } else if (userData.state === 'SetDownloadLimit') {
-    const downloadLimit = text === '-' ? '-' : parseSize(text ?? '');
-
-    if (downloadLimit === null) {
-      await sendText('Ошибка формата данных');
-    } else {
-      await updateUser({
-        state: 'Waiting',
-      });
-
-      await torrentClient.setDownloadSpeedLimit(downloadLimit === '-' ? null : downloadLimit);
-
-      await sendText(
-        downloadLimit === '-'
-          ? 'Ограничение загрузки снято'
-          : `Выставлено ограничение загрузки ${formatSpeed(downloadLimit)}`,
-      );
-    }
-  } else if (userData.state === 'SetUploadLimit') {
-    const uploadLimit = text === '-' ? '-' : parseSize(text ?? '');
-
-    if (uploadLimit === null) {
-      await sendText('Ошибка формата данных');
-    } else {
-      await updateUser({
-        state: 'Waiting',
-      });
-
-      await torrentClient.setUploadSpeedLimit(uploadLimit === '-' ? null : uploadLimit);
-
-      await sendText(
-        uploadLimit === '-' ? 'Ограничение отдачи снято' : `Выставлено ограничение отдачи ${formatSpeed(uploadLimit)}`,
-      );
-    }
-  }
-
-  // after state change
-  if (newUserData.state !== newUserData.state) {
-    // empty
+  } catch (err) {
+    await sendText(err instanceof CustomError ? err.message : 'Произошла ошибка');
   }
 });
 
 bot.on('callback_query', async (query) => {
-  console.log(query);
-
   const { from: user, message, data } = query;
 
   if (!user || !isUserAllowed(user)) {
@@ -301,17 +290,23 @@ bot.on('callback_query', async (query) => {
 
     if (
       beautifiedCallbackData.source === CallbackButtonSource.TORRENTS_LIST_ITEM ||
-      beautifiedCallbackData.source === CallbackButtonSource.TORRENT_REFRESH
+      beautifiedCallbackData.source === CallbackButtonSource.TORRENT_REFRESH ||
+      beautifiedCallbackData.source === CallbackButtonSource.NAVIGATE_TO_TORRENT ||
+      beautifiedCallbackData.source === CallbackButtonSource.TORRENT_DELETE
     ) {
-      ({ info: newText, keyboard: newKeyboard } = await getTelegramTorrentInfo(beautifiedCallbackData.torrentId));
+      ({ info: newText, keyboard: newKeyboard } = await getTelegramTorrentInfo(
+        beautifiedCallbackData.torrentId,
+        beautifiedCallbackData.source === CallbackButtonSource.TORRENT_DELETE,
+      ));
     } else if (
       beautifiedCallbackData.source === CallbackButtonSource.TORRENTS_LIST_PAGE ||
+      beautifiedCallbackData.source === CallbackButtonSource.TORRENTS_LIST_REFRESH ||
       beautifiedCallbackData.source === CallbackButtonSource.TORRENT_BACK_TO_LIST
     ) {
       ({ info: newText, keyboard: newKeyboard } = await getTelegramTorrentsListInfo(
         'page' in beautifiedCallbackData ? beautifiedCallbackData.page : 0,
       ));
-    } else if (beautifiedCallbackData.source === CallbackButtonSource.TORRENT_DELETE) {
+    } else if (beautifiedCallbackData.source === CallbackButtonSource.TORRENT_DELETE_CONFIRM) {
       await torrentClient.deleteTorrent(beautifiedCallbackData.torrentId);
 
       newText = 'Торрент успеешно удален';
@@ -319,7 +314,7 @@ bot.on('callback_query', async (query) => {
         [
           {
             type: 'callback',
-            text: 'К списку',
+            text: '◀️ К списку',
             callbackData: {
               source: CallbackButtonSource.TORRENT_BACK_TO_LIST,
             },
@@ -338,6 +333,16 @@ bot.on('callback_query', async (query) => {
       await torrentClient.setCriticalTorrent(beautifiedCallbackData.torrentId, beautifiedCallbackData.critical);
 
       ({ info: newText, keyboard: newKeyboard } = await getTelegramTorrentInfo(beautifiedCallbackData.torrentId));
+    } else if (beautifiedCallbackData.source === CallbackButtonSource.STATUS_REFRESH) {
+      ({ status: newText, keyboard: newKeyboard } = await getTelegramStatus());
+    } else if (beautifiedCallbackData.source === CallbackButtonSource.STATUS_PAUSE) {
+      if (beautifiedCallbackData.pause) {
+        await torrentClient.pause();
+      } else {
+        await torrentClient.unpause();
+      }
+
+      ({ status: newText, keyboard: newKeyboard } = await getTelegramStatus());
     }
 
     if (newText !== message?.text || !isEqual(message.reply_markup, newKeyboard)) {
