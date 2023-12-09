@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { Torrent, TorrentClientState, TorrentState } from '@prisma/client';
 import fs from 'fs-extra';
 import { ParseTorrent } from 'parse-torrent';
@@ -7,7 +9,6 @@ import { DOWNLOADS_DIRECTORY } from 'constants/paths';
 
 import prisma from 'db/prisma';
 
-import { getTelegramStatus } from 'torrent-client/utilities/telegram';
 import CustomError from 'utilities/CustomError';
 import { minmax } from 'utilities/number';
 
@@ -80,7 +81,7 @@ class TorrentClient {
     torrent = await prisma.torrent.create({
       data: {
         infoHash: parsed.infoHash,
-        name: String(parsed.name ?? 'Неизвестно'),
+        name: typeof parsed.name === 'string' ? parsed.name : null,
         state: 'Queued',
         size: 'length' in parsed ? parsed.length ?? 0 : 0,
         progress: 0,
@@ -89,15 +90,26 @@ class TorrentClient {
       },
     });
 
-    await this.switchTorrentsIfNeeded();
+    const newActiveTorrent = await this.switchTorrentsIfNeeded();
 
-    return torrent;
+    return newActiveTorrent?.infoHash === torrent.infoHash ? newActiveTorrent : torrent;
   }
 
   async deleteTorrent(infoHash: string): Promise<void> {
     const client = await this.clientPromise;
 
     client.torrents.find((clientTorrent) => infoHash === clientTorrent.infoHash)?.destroy();
+
+    const torrent = await prisma.torrent.findUnique({
+      where: {
+        infoHash,
+      },
+    });
+
+    await Promise.all([
+      torrent?.name && fs.remove(path.resolve(DOWNLOADS_DIRECTORY, torrent.name)),
+      torrent?.torrentPath && fs.remove(torrent.torrentPath),
+    ]);
 
     await prisma.torrent.delete({
       where: {
@@ -114,10 +126,6 @@ class TorrentClient {
       create: MAIN_STATE_CREATE,
       update: {},
     });
-  }
-
-  async getTelegramStatus(): Promise<string> {
-    return getTelegramStatus();
   }
 
   async init(): Promise<void> {
@@ -219,17 +227,32 @@ class TorrentClient {
     await Promise.all([this.throttleDownload(0), this.throttleUpload(0)]);
   }
 
-  async pauseTorrent(torrent: ClientTorrent): Promise<void> {
+  async pauseTorrent(infoHash: string): Promise<void> {
+    const torrent = await prisma.torrent.findUnique({
+      where: {
+        infoHash,
+        state: {
+          in: ['Downloading', 'Verifying', 'Queued'],
+        },
+      },
+    });
+
+    if (!torrent) {
+      return;
+    }
+
+    const client = await this.clientPromise;
+
+    client.torrents.find((clientTorrent) => infoHash === clientTorrent.infoHash)?.destroy();
+
     await prisma.torrent.update({
       where: {
-        infoHash: torrent.infoHash,
+        infoHash,
       },
       data: {
         state: 'Paused',
       },
     });
-
-    torrent.destroy();
 
     await this.switchTorrentsIfNeeded();
   }
@@ -246,10 +269,33 @@ class TorrentClient {
     });
   }
 
-  async setCriticalTorrent(infoHash: string | null): Promise<void> {
-    await this.updateState({
-      criticalTorrentId: infoHash,
+  async setCriticalTorrent(infoHash: string, critical: boolean): Promise<void> {
+    const torrent = await prisma.torrent.findUnique({
+      where: {
+        infoHash,
+        state: {
+          in: ['Downloading', 'Verifying', 'Queued'],
+        },
+      },
     });
+
+    if (!torrent) {
+      return;
+    }
+
+    if (critical) {
+      await this.updateState({
+        criticalTorrentId: infoHash,
+      });
+    } else {
+      const { criticalTorrentId } = await this.getState();
+
+      if (criticalTorrentId === infoHash) {
+        await this.updateState({
+          criticalTorrentId: null,
+        });
+      }
+    }
 
     await this.switchTorrentsIfNeeded();
   }
@@ -286,7 +332,7 @@ class TorrentClient {
     );
   }
 
-  private async startTorrent(torrent: Torrent): Promise<void> {
+  private async startTorrent(torrent: Torrent): Promise<Torrent> {
     const client = await this.clientPromise;
 
     const addTorrent = torrent.magnetUri ?? torrent.torrentPath;
@@ -295,7 +341,7 @@ class TorrentClient {
       throw new CustomError('Ошибка добавления торрента');
     }
 
-    await prisma.torrent.update({
+    torrent = await prisma.torrent.update({
       where: {
         infoHash: torrent.infoHash,
       },
@@ -322,7 +368,7 @@ class TorrentClient {
 
       // TODO: throw if no memory
 
-      await Promise.all([
+      [torrent] = await Promise.all([
         prisma.torrent.update({
           where: {
             infoHash: torrent.infoHash,
@@ -349,7 +395,7 @@ class TorrentClient {
         ),
       ]);
     } catch (err) {
-      await prisma.torrent.update({
+      torrent = await prisma.torrent.update({
         where: {
           infoHash: torrent.infoHash,
         },
@@ -423,9 +469,11 @@ class TorrentClient {
     });
 
     clientTorrent.resume();
+
+    return torrent;
   }
 
-  private async switchTorrentsIfNeeded(): Promise<void> {
+  private async switchTorrentsIfNeeded(): Promise<Torrent | null> {
     const state = await this.getState();
 
     const [activeTorrents, criticalTorrent] = await Promise.all([
@@ -447,10 +495,8 @@ class TorrentClient {
 
     let newActiveTorrent: Torrent | null = null;
 
-    if (criticalTorrent) {
-      if (!ACTIVE_TORRENT_STATES.includes(criticalTorrent.state)) {
-        newActiveTorrent = criticalTorrent;
-      }
+    if (criticalTorrent?.state === 'Queued') {
+      newActiveTorrent = criticalTorrent;
     } else if (!activeTorrents.length) {
       newActiveTorrent = await prisma.torrent.findFirst({
         where: {
@@ -463,7 +509,7 @@ class TorrentClient {
     }
 
     if (!newActiveTorrent) {
-      return;
+      return null;
     }
 
     const client = await this.clientPromise;
@@ -483,7 +529,9 @@ class TorrentClient {
       }),
     );
 
-    await this.startTorrent(newActiveTorrent);
+    newActiveTorrent = await this.startTorrent(newActiveTorrent);
+
+    return newActiveTorrent;
   }
 
   private async throttleDownload(limit: number | null): Promise<void> {
@@ -514,6 +562,23 @@ class TorrentClient {
     await Promise.all([this.throttleDownload(downloadSpeedLimit), this.throttleUpload(uploadSpeedLimit)]);
 
     return true;
+  }
+
+  async unpauseTorrent(infoHash?: string): Promise<void> {
+    await prisma.torrent.update({
+      where: {
+        infoHash,
+        state: {
+          in: ['Paused', 'Error'],
+        },
+      },
+      data: {
+        state: 'Queued',
+        errorMessage: null,
+      },
+    });
+
+    await this.switchTorrentsIfNeeded();
   }
 
   async updateState(data: Partial<TorrentClientState>): Promise<void> {

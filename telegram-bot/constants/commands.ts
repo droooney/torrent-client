@@ -4,6 +4,7 @@ export enum CommandType {
   START = '/start',
   ADD_TORRENT = '/addtorrent',
   STATUS = '/status',
+  LIST = '/list',
   PAUSE = '/pause',
   UNPAUSE = '/unpause',
   SET_DOWNLOAD_LIMIT = '/setdownloadlimit',
@@ -22,6 +23,10 @@ const commands: CustomBotCommand[] = [
   {
     command: CommandType.STATUS,
     description: 'Получить текущий статус',
+  },
+  {
+    command: CommandType.LIST,
+    description: 'Получить список всех торрентов',
   },
   {
     command: CommandType.PAUSE,

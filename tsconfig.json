@@ -17,6 +17,7 @@
       "db/*": ["./prisma/*"],
       "telegram-bot/*": ["./telegram-bot/*"],
       "torrent-client/*": ["./torrent-client/*"],
+      "types/*": ["./types/*"],
       "utilities/*": ["./utilities/*"],
       "web-client/*": ["./web-client/*"],
       "web-server/*": ["./web-server/*"]

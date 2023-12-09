@@ -23,11 +23,12 @@ const SUFFIXES: { en: string; ru: string }[] = [
   },
 ];
 
-export function formatSize(bytes: number, fractionDigits = 1): string {
-  const index = bytes === 0 ? 0 : Math.floor(Math.log10(bytes) / 3);
+export function formatSize(bytes: number | bigint, fractionDigits = 1): string {
+  const bytesNumber = Number(bytes);
+  const index = bytesNumber === 0 ? 0 : Math.floor(Math.log10(bytesNumber) / 3);
   const actualIndex = index in SUFFIXES ? index : SUFFIXES.length - 1;
   const suffix = SUFFIXES[actualIndex].ru;
-  const size = bytes / 10 ** (actualIndex * 3);
+  const size = bytesNumber / 10 ** (actualIndex * 3);
 
   return `${actualIndex === 0 ? size : size.toFixed(fractionDigits)}\u00a0${suffix}`;
 }
