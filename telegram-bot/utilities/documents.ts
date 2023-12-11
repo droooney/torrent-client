@@ -18,36 +18,36 @@ export async function tryLoadDocument(document?: Document): Promise<Torrent | nu
     return null;
   }
 
-  let defaultFilePath: string;
+  let filePath: string;
 
   try {
-    defaultFilePath = await bot.downloadFile(document.file_id, DOWNLOADS_DIRECTORY);
+    filePath = await bot.downloadFile(document.file_id, DOWNLOADS_DIRECTORY);
   } catch (err) {
     throw new CustomError('Ошибка загрузки файла', { cause: err });
   }
 
+  return loadTorrentFromFile(filePath);
+}
+
+export async function loadTorrentFromFile(filePath: string): Promise<Torrent | null> {
   let torrent: Torrent;
 
   try {
     torrent = await torrentClient.addTorrent({
       type: 'file',
-      path: defaultFilePath,
+      path: filePath,
     });
   } catch (err) {
-    await fs.remove(defaultFilePath);
+    await fs.remove(filePath);
 
     throw err;
   }
 
-  if (!document.file_name) {
-    return torrent;
-  }
-
-  const newFilePath = path.resolve(TORRENTS_DIRECTORY, `${torrent.infoHash}-${document.file_name}`);
+  const newFilePath = path.resolve(TORRENTS_DIRECTORY, `${torrent.infoHash}.torrent`);
   let copied = false;
 
   try {
-    await fs.copy(defaultFilePath, newFilePath);
+    await fs.copy(filePath, newFilePath);
 
     copied = true;
   } catch (err) {
@@ -81,7 +81,7 @@ export async function tryLoadDocument(document?: Document): Promise<Torrent | nu
 
   if (updated) {
     try {
-      await fs.remove(defaultFilePath);
+      await fs.remove(filePath);
     } catch (err) {
       console.log('Remove error', err);
     }

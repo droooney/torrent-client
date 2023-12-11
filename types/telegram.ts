@@ -15,6 +15,7 @@ export enum CallbackButtonSource {
   STATUS_REFRESH = 9,
   STATUS_PAUSE = 10,
   NAVIGATE_TO_TORRENT = 11,
+  RUTRACKER_SEARCH_ADD_TORRENT = 12,
 }
 
 const binarySchema = z.union([z.literal(0), z.literal(1)]);
@@ -79,6 +80,11 @@ export const navigateToTorrentCallbackDataSchema = z.object({
   t: z.string(),
 });
 
+export const rutrackerSearchAddTorrentCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT),
+  t: z.string(),
+});
+
 export const callbackDataSchema = z.union([
   torrentsListItemCallbackDataSchema,
   torrentsListPageCallbackDataSchema,
@@ -92,6 +98,7 @@ export const callbackDataSchema = z.union([
   statusRefreshCallbackDataSchema,
   statusPauseCallbackDataSchema,
   navigateToTorrentCallbackDataSchema,
+  rutrackerSearchAddTorrentCallbackDataSchema,
 ]);
 
 export type UglifiedCallbackData = z.infer<typeof callbackDataSchema>;
@@ -156,6 +163,11 @@ export interface NavigateToTorrentCallbackData {
   torrentId: z.infer<typeof navigateToTorrentCallbackDataSchema>['t'];
 }
 
+export interface RutrackerSearchAddTorrentCallbackData {
+  source: z.infer<typeof rutrackerSearchAddTorrentCallbackDataSchema>['$'];
+  torrentId: z.infer<typeof rutrackerSearchAddTorrentCallbackDataSchema>['t'];
+}
+
 export type BeautifiedCallbackData =
   | TorrentsListItemCallbackData
   | TorrentsListPageCallbackData
@@ -168,7 +180,8 @@ export type BeautifiedCallbackData =
   | TorrentBackToListCallbackData
   | StatusRefreshCallbackData
   | StatusPauseCallbackData
-  | NavigateToTorrentCallbackData;
+  | NavigateToTorrentCallbackData
+  | RutrackerSearchAddTorrentCallbackData;
 
 export interface BaseInlineKeyboardButton {
   text: string;

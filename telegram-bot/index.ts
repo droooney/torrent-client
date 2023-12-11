@@ -7,6 +7,7 @@ import * as util from 'node:util';
 import torrentClient from '@/torrent-client';
 import { Prisma, Torrent } from '@prisma/client';
 import { blue, green } from 'colors/safe';
+import chunk from 'lodash/chunk';
 import isEqual from 'lodash/isEqual';
 import { EditMessageTextOptions, InlineKeyboardMarkup, SendMessageOptions, User } from 'node-telegram-bot-api';
 
@@ -16,6 +17,7 @@ import prisma from 'db/prisma';
 
 import { CallbackButtonSource, callbackDataSchema } from 'types/telegram';
 
+import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import { tryLoadDocument } from 'telegram-bot/utilities/documents';
 import {
   getTelegramStatus,
@@ -23,7 +25,8 @@ import {
   getTelegramTorrentsListInfo,
 } from 'torrent-client/utilities/telegram';
 import CustomError from 'utilities/CustomError';
-import { formatSpeed, parseSize } from 'utilities/size';
+import { formatIndex } from 'utilities/number';
+import { formatSize, formatSpeed, parseSize } from 'utilities/size';
 import { beautifyCallbackData, prepareInlineKeyboard } from 'utilities/telegram';
 
 import bot from 'telegram-bot/bot';
@@ -70,6 +73,38 @@ bot.on('message', async (message) => {
       },
       data,
     });
+  };
+
+  const searchRutracker = async (text: string) => {
+    const torrents = await rutrackerClient.search(text);
+    const topTorrents = torrents.slice(0, 10);
+
+    if (torrents.length) {
+      await sendText(
+        topTorrents
+          .map(
+            ({ title, seeds, size }, index) => `${formatIndex(index)} ${title} (${formatSize(size)}, ${seeds} сидов)`,
+          )
+          .join('\n\n'),
+        {
+          reply_markup: prepareInlineKeyboard(
+            chunk(
+              topTorrents.map(({ id }, index) => ({
+                type: 'callback',
+                text: formatIndex(index),
+                callbackData: {
+                  source: CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT,
+                  torrentId: id,
+                },
+              })),
+              3,
+            ),
+          ),
+        },
+      );
+    } else {
+      await sendText('Результатов не найдено');
+    }
   };
 
   const afterAddTorrent = async (torrent: Torrent | null) => {
@@ -140,6 +175,12 @@ bot.on('message', async (message) => {
       await torrentClient.unpause();
 
       await sendText('Клиент снят с паузы');
+    } else if (text === CommandType.SEARCH_RUTRACKER) {
+      await updateUser({
+        state: 'SearchRutracker',
+      });
+
+      await sendText('Введите строку поиска на rutracker');
     } else if (text === CommandType.ADD_TORRENT) {
       await updateUser({
         state: 'AddTorrent',
@@ -173,9 +214,19 @@ bot.on('message', async (message) => {
         }`,
       );
     } else if (userData.state === 'Waiting') {
-      const torrent = await tryLoadDocument(document);
+      if (document) {
+        const torrent = await tryLoadDocument(document);
 
-      await afterAddTorrent(torrent);
+        await afterAddTorrent(torrent);
+      } else if (text) {
+        await searchRutracker(text);
+      }
+    } else if (userData.state === 'SearchRutracker') {
+      await updateUser({
+        state: 'Waiting',
+      });
+
+      await searchRutracker(text ?? '');
     } else if (userData.state === 'AddTorrent') {
       await updateUser({
         state: 'Waiting',
@@ -343,6 +394,12 @@ bot.on('callback_query', async (query) => {
       }
 
       ({ status: newText, keyboard: newKeyboard } = await getTelegramStatus());
+    } else if (beautifiedCallbackData.source === CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT) {
+      const torrent = await rutrackerClient.addTorrent(beautifiedCallbackData.torrentId);
+
+      if (torrent) {
+        ({ info: newText, keyboard: newKeyboard } = await getTelegramTorrentInfo(torrent.infoHash));
+      }
     }
 
     if (newText !== message?.text || !isEqual(message.reply_markup, newKeyboard)) {

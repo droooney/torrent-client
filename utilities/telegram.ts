@@ -53,7 +53,8 @@ export function uglifyCallbackData(data: BeautifiedCallbackData): UglifiedCallba
     data.source === CallbackButtonSource.TORRENT_DELETE ||
     data.source === CallbackButtonSource.TORRENT_DELETE_CONFIRM ||
     data.source === CallbackButtonSource.TORRENT_REFRESH ||
-    data.source === CallbackButtonSource.NAVIGATE_TO_TORRENT
+    data.source === CallbackButtonSource.NAVIGATE_TO_TORRENT ||
+    data.source === CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT
   ) {
     return {
       $: data.source,
@@ -115,7 +116,8 @@ export function beautifyCallbackData(data: UglifiedCallbackData): BeautifiedCall
     data.$ === CallbackButtonSource.TORRENT_DELETE ||
     data.$ === CallbackButtonSource.TORRENT_DELETE_CONFIRM ||
     data.$ === CallbackButtonSource.TORRENT_REFRESH ||
-    data.$ === CallbackButtonSource.NAVIGATE_TO_TORRENT
+    data.$ === CallbackButtonSource.NAVIGATE_TO_TORRENT ||
+    data.$ === CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT
   ) {
     return {
       source: data.$,

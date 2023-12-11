@@ -73,6 +73,7 @@ enum TelegramUserState {
 
   First
   Waiting
+  SearchRutracker
   AddTorrent
   SetDownloadLimit
   SetUploadLimit

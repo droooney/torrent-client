@@ -209,9 +209,10 @@ export async function getTelegramTorrentInfo(
   const verifiedString =
     torrent.state === 'Verifying' && clientTorrent
       ? `
-Проверено: ${formatPercent(minmax(getProgress(clientTorrent) / torrent.progress, 0, 1))}`
+Проверено: ${formatPercent(minmax(getProgress(clientTorrent) / torrent.progress || 0, 0, 1))}`
       : '';
 
+  // TODO: show remaining time
   const info = `
 Название: ${torrent.name}
 Статус: ${STATE_TITLE[torrent.state]}

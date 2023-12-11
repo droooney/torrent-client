@@ -2,6 +2,7 @@ import { BotCommand } from 'node-telegram-bot-api';
 
 export enum CommandType {
   START = '/start',
+  SEARCH_RUTRACKER = '/searchrutracker',
   ADD_TORRENT = '/addtorrent',
   STATUS = '/status',
   LIST = '/list',
@@ -16,6 +17,10 @@ interface CustomBotCommand extends BotCommand {
 }
 
 const commands: CustomBotCommand[] = [
+  {
+    command: CommandType.SEARCH_RUTRACKER,
+    description: 'Искать на rutracker',
+  },
   {
     command: CommandType.ADD_TORRENT,
     description: 'Добавить торрент',
