@@ -2,7 +2,12 @@
 
 import { InlineKeyboardMarkup } from 'node-telegram-bot-api';
 
-import { BeautifiedCallbackData, CallbackButtonSource, InlineKeyboard, UglifiedCallbackData } from 'types/telegram';
+import {
+  BeautifiedCallbackData,
+  CallbackButtonSource,
+  InlineKeyboard,
+  UglifiedCallbackData,
+} from 'telegram-bot/types/keyboard';
 
 export function prepareInlineKeyboard(keyboard: InlineKeyboard): InlineKeyboardMarkup {
   return {

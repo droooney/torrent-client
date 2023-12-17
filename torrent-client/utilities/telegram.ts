@@ -10,13 +10,13 @@ import { Torrent as ClientTorrent } from 'webtorrent';
 
 import prisma from 'db/prisma';
 
-import { CallbackButtonSource } from 'types/telegram';
+import { CallbackButtonSource } from 'telegram-bot/types/keyboard';
 
+import { prepareInlineKeyboard } from 'telegram-bot/utilities/serialize';
 import CustomError from 'utilities/CustomError';
 import { isDefined } from 'utilities/is';
 import { formatPercent, formatProgress, minmax } from 'utilities/number';
 import { formatSize, formatSpeed, getProgress, getRealProgress } from 'utilities/size';
-import { prepareInlineKeyboard } from 'utilities/telegram';
 
 const STATUS_STATE_SORTING: { [State in TorrentState]: number } = {
   Downloading: 0,
@@ -43,7 +43,7 @@ export interface TelegramStatus {
   keyboard: InlineKeyboardMarkup;
 }
 
-// TODO: add keyboard (settings, pause, set limits)
+// TODO: add keyboard (settings, set limits)
 export async function getTelegramStatus(): Promise<TelegramStatus> {
   const [clientState, downloadSpeed, uploadSpeed, notFinishedTorrents] = await Promise.all([
     torrentClient.getState(),

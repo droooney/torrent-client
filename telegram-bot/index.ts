@@ -15,10 +15,11 @@ import commands, { CommandType } from 'telegram-bot/constants/commands';
 
 import prisma from 'db/prisma';
 
-import { CallbackButtonSource, callbackDataSchema } from 'types/telegram';
+import { CallbackButtonSource, callbackDataSchema } from 'telegram-bot/types/keyboard';
 
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import { tryLoadDocument } from 'telegram-bot/utilities/documents';
+import { beautifyCallbackData, prepareInlineKeyboard } from 'telegram-bot/utilities/serialize';
 import {
   getTelegramStatus,
   getTelegramTorrentInfo,
@@ -27,7 +28,6 @@ import {
 import CustomError from 'utilities/CustomError';
 import { formatIndex } from 'utilities/number';
 import { formatSize, formatSpeed, parseSize } from 'utilities/size';
-import { beautifyCallbackData, prepareInlineKeyboard } from 'utilities/telegram';
 
 import bot from 'telegram-bot/bot';
 
