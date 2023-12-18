@@ -1,5 +1,3 @@
-import 'utilities/importEnv';
-
 import { blue, green } from 'colors/safe';
 import connect from 'koa-connect';
 import webpack from 'webpack';

@@ -601,6 +601,4 @@ class TorrentClient {
   }
 }
 
-const client = new TorrentClient();
-
-export default client;
+export default TorrentClient;

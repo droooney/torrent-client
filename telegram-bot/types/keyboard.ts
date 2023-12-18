@@ -183,6 +183,11 @@ export type BeautifiedCallbackData =
   | NavigateToTorrentCallbackData
   | RutrackerSearchAddTorrentCallbackData;
 
+export type BeautifiedCallbackDataBySource<Source extends CallbackButtonSource> = Extract<
+  BeautifiedCallbackData,
+  { source: Source }
+>;
+
 export interface BaseInlineKeyboardButton {
   text: string;
 }

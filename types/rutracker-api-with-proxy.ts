@@ -6,6 +6,7 @@ declare module 'rutracker-api-with-proxy' {
   export class Torrent {
     id: string;
     title: string;
+    author: string;
     size: number;
     seeds: number;
   }

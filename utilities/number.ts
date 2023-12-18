@@ -6,9 +6,16 @@ export function formatPercent(value: number, fractionDigits = 1): string {
   return `${(value * 100).toFixed(fractionDigits)}%`;
 }
 
-export function formatProgress(value: number, emojiCount: number = 10): string {
-  const finishedEmoji = '🟩';
-  const notFinishedEmoji = '⬜️';
+export interface FormatProgressOptions {
+  emojiCount?: number;
+  shape?: 'square' | 'circle';
+}
+
+export function formatProgress(value: number, options: FormatProgressOptions = {}): string {
+  const { emojiCount = 10, shape = 'square' } = options;
+
+  const finishedEmoji = shape === 'square' ? '🟩' : '🟢';
+  const notFinishedEmoji = shape === 'square' ? '⬜️' : '⚪️';
   let progressString = '';
 
   for (let i = 0; i < emojiCount; i++) {

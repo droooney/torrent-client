@@ -1,4 +1,4 @@
-import TelegramBot from 'node-telegram-bot-api';
+import Bot from 'telegram-bot/utilities/Bot';
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
   console.error('No telegram bot token');
@@ -6,10 +6,9 @@ if (!process.env.TELEGRAM_BOT_TOKEN) {
   process.exit(1);
 }
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
-  polling: {
-    autoStart: false,
-  },
+const bot = new Bot({
+  token: process.env.TELEGRAM_BOT_TOKEN,
+  usernameWhitelist: process.env.USERNAME_WHITELIST?.split(',').filter(Boolean) ?? [],
 });
 
 export default bot;

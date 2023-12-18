@@ -1,35 +1,39 @@
 import path from 'node:path';
 
-import torrentClient from '@/torrent-client';
 import { Torrent } from '@prisma/client';
 import fs from 'fs-extra';
-import { Document } from 'node-telegram-bot-api';
+import torrentClient from 'torrent-client/client';
 
-import { DOWNLOADS_DIRECTORY, TORRENTS_DIRECTORY } from 'constants/paths';
+import { TORRENTS_DIRECTORY } from 'constants/paths';
 
 import prisma from 'db/prisma';
 
+import { TextHandlerContext } from 'telegram-bot/utilities/Bot';
 import CustomError from 'utilities/CustomError';
 
-import bot from 'telegram-bot/bot';
+export async function tryLoadDocument(ctx: TextHandlerContext): Promise<Torrent | null> {
+  const { document } = ctx.message;
 
-export async function tryLoadDocument(document?: Document): Promise<Torrent | null> {
   if (document?.mime_type !== 'application/x-bittorrent') {
     return null;
   }
 
-  let filePath: string;
+  let filePath: string | null;
 
   try {
-    filePath = await bot.downloadFile(document.file_id, DOWNLOADS_DIRECTORY);
+    filePath = await ctx.downloadDocument();
   } catch (err) {
     throw new CustomError('Ошибка загрузки файла', { cause: err });
+  }
+
+  if (!filePath) {
+    return null;
   }
 
   return loadTorrentFromFile(filePath);
 }
 
-export async function loadTorrentFromFile(filePath: string): Promise<Torrent | null> {
+export async function loadTorrentFromFile(filePath: string): Promise<Torrent> {
   let torrent: Torrent;
 
   try {

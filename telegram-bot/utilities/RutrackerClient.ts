@@ -1,5 +1,3 @@
-import 'utilities/importEnv';
-
 import path from 'node:path';
 
 import { Torrent } from '@prisma/client';
