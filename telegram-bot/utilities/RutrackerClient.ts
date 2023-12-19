@@ -15,18 +15,11 @@ class RutrackerClient {
   private api = new RutrackerApi(undefined, {
     httpsAgent: proxyHost ? new HttpsProxyAgent(proxyHost) : undefined,
   });
-  private loginPromise = (async () => {
-    if (!username || !password) {
-      throw new Error('No rutracker auth');
-    }
-
-    await this.api.login({
-      username,
-      password,
-    });
-  })();
+  private loginPromise: Promise<unknown> | undefined;
 
   async addTorrent(torrentId: string): Promise<Torrent | null> {
+    await this.login();
+
     const stream = await this.api.download(torrentId);
     const filePath = path.resolve(DOWNLOADS_DIRECTORY, `rutracker-${torrentId}.torrent`);
     const writeStream = fs.createWriteStream(filePath);
@@ -41,8 +34,27 @@ class RutrackerClient {
     return loadTorrentFromFile(filePath);
   }
 
+  private async login(): Promise<void> {
+    await (this.loginPromise ??= (async () => {
+      if (!username || !password) {
+        throw new Error('No rutracker auth');
+      }
+
+      try {
+        await this.api.login({
+          username,
+          password,
+        });
+      } catch (err) {
+        this.loginPromise = undefined;
+
+        throw err;
+      }
+    })());
+  }
+
   async search(query: string): Promise<RutrackerTorrent[]> {
-    await this.loginPromise;
+    await this.login();
 
     return this.api.search({
       query,

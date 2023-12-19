@@ -15,8 +15,8 @@ export interface ResponseOptions {
 }
 
 class Response {
-  private readonly text: string | Markdown;
-  private readonly keyboard?: InlineKeyboard;
+  readonly text: string | Markdown;
+  readonly keyboard?: InlineKeyboard;
 
   constructor(options: ResponseOptions) {
     this.text = options.text;

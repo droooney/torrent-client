@@ -13,6 +13,7 @@ import {
   callbackDataSchema,
 } from 'telegram-bot/types/keyboard';
 
+import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Response from 'telegram-bot/utilities/Response';
 import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
 import { beautifyCallbackData } from 'telegram-bot/utilities/serialize';
@@ -25,7 +26,7 @@ export interface BotOptions {
 export interface TextHandlerContext {
   message: Message;
   userData: TelegramUserData;
-  send(response: Response): Promise<Message>;
+  send(response: AnyResponse): Promise<typeof response extends Response ? Message : Message | null>;
   downloadDocument(): Promise<string | null>;
   updateUserState(
     data: Prisma.XOR<Prisma.TelegramUserDataUpdateInput, Prisma.TelegramUserDataUncheckedUpdateInput>,
@@ -48,7 +49,9 @@ export interface ResponseEditContext {
   api: TelegramBotApi;
 }
 
-export type TextHandler = (ctx: TextHandlerContext) => Promise<Response | null | undefined | void>;
+export type AnyResponse = Response | DeferredResponse;
+
+export type TextHandler = (ctx: TextHandlerContext) => Promise<AnyResponse | null | undefined | void>;
 
 export type CallbackQueryHandler<CallbackData extends BeautifiedCallbackData> = (
   ctx: CallbackQueryHandlerContext<CallbackData>,
@@ -101,7 +104,10 @@ class Bot {
     return this.usernameWhitelist.includes(user.username);
   }
 
-  async replyToMessage(message: Message, response: Response): Promise<Message> {
+  async replyToMessage(
+    message: Message,
+    response: AnyResponse,
+  ): Promise<typeof response extends Response ? Message : Message | null> {
     return response.send({
       message,
       api: this.api,
@@ -175,7 +181,11 @@ class Bot {
       } catch (err) {
         console.log(err instanceof Error ? err.stack : err);
 
-        await this.replyToMessage(message, getErrorResponse(err));
+        try {
+          await this.replyToMessage(message, getErrorResponse(err));
+        } catch (e) {
+          console.log(e instanceof Error ? e.stack : e);
+        }
       }
     });
 

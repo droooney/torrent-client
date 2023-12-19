@@ -12,6 +12,7 @@ import prisma from 'db/prisma';
 
 import { CallbackButtonSource } from 'telegram-bot/types/keyboard';
 
+import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Markdown from 'telegram-bot/utilities/Markdown';
 import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
@@ -68,40 +69,47 @@ export async function getAddTorrentResponse(torrent: Torrent | null): Promise<Re
   });
 }
 
-export async function getSearchRutrackerResponse(text: string): Promise<Response> {
-  const torrents = await rutrackerClient.search(text);
-  const topTorrents = torrents.slice(0, 10);
+export async function getSearchRutrackerResponse(text: string): Promise<DeferredResponse> {
+  return new DeferredResponse({
+    immediate: new Response({
+      text: Markdown.create`Запущен поиск на rutracker по строке "${text}"...`,
+    }),
+    deferred: (async () => {
+      const torrents = await rutrackerClient.search(text);
+      const topTorrents = torrents.slice(0, 10);
 
-  if (!torrents.length) {
-    return new Response({
-      text: 'Результатов не найдено',
-    });
-  }
+      if (!torrents.length) {
+        return new Response({
+          text: 'Результатов не найдено',
+        });
+      }
 
-  return new Response({
-    text: Markdown.join(
-      topTorrents.map(
-        ({ title, author, seeds, size }, index) => Markdown.create`${Markdown.bold('Название')}: ${formatIndex(
-          index,
-        )} ${title}
+      return new Response({
+        text: Markdown.join(
+          topTorrents.map(
+            ({ title, author, seeds, size }, index) => Markdown.create`${Markdown.bold('Название')}: ${formatIndex(
+              index,
+            )} ${title}
 ${Markdown.bold('Автор')}: ${author}
 ${Markdown.bold('Размер')}: ${formatSize(size)}
 ${Markdown.bold('Сидов')}: ${seeds}
 `,
-      ),
-      '\n\n',
-    ),
-    keyboard: chunk(
-      topTorrents.map(({ id }, index) => ({
-        type: 'callback',
-        text: formatIndex(index),
-        callbackData: {
-          source: CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT,
-          torrentId: id,
-        },
-      })),
-      3,
-    ),
+          ),
+          '\n\n',
+        ),
+        keyboard: chunk(
+          topTorrents.map(({ id }, index) => ({
+            type: 'callback',
+            text: formatIndex(index),
+            callbackData: {
+              source: CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT,
+              torrentId: id,
+            },
+          })),
+          3,
+        ),
+      });
+    })(),
   });
 }
 

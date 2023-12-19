@@ -1,10 +1,10 @@
 import { TelegramUserState } from '@prisma/client';
 import torrentClient from 'torrent-client/client';
 
+import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Response from 'telegram-bot/utilities/Response';
-import { tryLoadDocument } from 'telegram-bot/utilities/documents';
-import { getAddTorrentResponse } from 'telegram-bot/utilities/responseUtils';
-import { searchRutracker } from 'telegram-bot/utilities/rutracker';
+import { isTorrentDocument, tryLoadDocument } from 'telegram-bot/utilities/documents';
+import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/utilities/responseUtils';
 import CustomError from 'utilities/CustomError';
 import { formatSpeed, parseSize } from 'utilities/size';
 
@@ -21,16 +21,25 @@ bot.handleUserState(TelegramUserState.First, async (ctx) => {
 });
 
 bot.handleUserState(TelegramUserState.Waiting, async (ctx) => {
-  const { text } = ctx.message;
+  const { text, document } = ctx.message;
 
-  const torrent = await tryLoadDocument(ctx);
+  if (isTorrentDocument(document)) {
+    return new DeferredResponse({
+      immediate: new Response({
+        text: 'Торрент добавляется...',
+      }),
+      deferred: (async () => {
+        const torrent = await tryLoadDocument(ctx);
 
-  if (torrent) {
-    return getAddTorrentResponse(torrent);
+        if (torrent) {
+          return getAddTorrentResponse(torrent);
+        }
+      })(),
+    });
   }
 
   if (text) {
-    await searchRutracker(ctx);
+    return getSearchRutrackerResponse(text);
   }
 });
 
@@ -39,7 +48,7 @@ bot.handleUserState(TelegramUserState.SearchRutracker, async (ctx) => {
     state: TelegramUserState.Waiting,
   });
 
-  await searchRutracker(ctx);
+  return getSearchRutrackerResponse(ctx.message.text ?? '');
 });
 
 bot.handleUserState(TelegramUserState.AddTorrent, async (ctx) => {

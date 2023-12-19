@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { Torrent } from '@prisma/client';
 import fs from 'fs-extra';
+import { Document } from 'node-telegram-bot-api';
 import torrentClient from 'torrent-client/client';
 
 import { TORRENTS_DIRECTORY } from 'constants/paths';
@@ -11,10 +12,14 @@ import prisma from 'db/prisma';
 import { TextHandlerContext } from 'telegram-bot/utilities/Bot';
 import CustomError from 'utilities/CustomError';
 
+export function isTorrentDocument(document: Document | undefined): document is Document {
+  return document?.mime_type === 'application/x-bittorrent';
+}
+
 export async function tryLoadDocument(ctx: TextHandlerContext): Promise<Torrent | null> {
   const { document } = ctx.message;
 
-  if (document?.mime_type !== 'application/x-bittorrent') {
+  if (!isTorrentDocument(document)) {
     return null;
   }
 
