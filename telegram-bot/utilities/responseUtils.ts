@@ -47,25 +47,36 @@ export function getErrorResponse(err: unknown): Response {
   });
 }
 
-export async function getAddTorrentResponse(torrent: Torrent | null): Promise<Response | null> {
-  if (!torrent) {
-    return null;
-  }
+export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | null>): Promise<DeferredResponse> {
+  return new DeferredResponse({
+    immediate: new Response({
+      text: 'Торрент добавляется...',
+    }),
+    async getDeferred() {
+      const torrent = await getTorrent();
 
-  return new Response({
-    text: Markdown.create`Торрент${torrent.name ? Markdown.create` "${torrent.name}"` : ''} добавлен!`,
-    keyboard: [
-      [
-        {
-          type: 'callback',
-          text: '▶️ Подробнее',
-          callbackData: {
-            source: CallbackButtonSource.NAVIGATE_TO_TORRENT,
-            torrentId: torrent.infoHash,
-          },
-        },
-      ],
-    ],
+      if (!torrent) {
+        return new Response({
+          text: 'Данные торрента отсутствуют',
+        });
+      }
+
+      return new Response({
+        text: Markdown.create`Торрент${torrent.name ? Markdown.create` "${torrent.name}"` : ''} добавлен!`,
+        keyboard: [
+          [
+            {
+              type: 'callback',
+              text: '▶️ Подробнее',
+              callbackData: {
+                source: CallbackButtonSource.NAVIGATE_TO_TORRENT,
+                torrentId: torrent.infoHash,
+              },
+            },
+          ],
+        ],
+      });
+    },
   });
 }
 
@@ -74,7 +85,7 @@ export async function getSearchRutrackerResponse(text: string): Promise<Deferred
     immediate: new Response({
       text: Markdown.create`Запущен поиск на rutracker по строке "${text}"...`,
     }),
-    deferred: (async () => {
+    async getDeferred() {
       const torrents = await rutrackerClient.search(text);
       const topTorrents = torrents.slice(0, 10);
 
@@ -109,7 +120,7 @@ ${Markdown.bold('Сидов')}: ${seeds}
           3,
         ),
       });
-    })(),
+    },
   });
 }
 

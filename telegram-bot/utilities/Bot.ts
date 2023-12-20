@@ -36,7 +36,7 @@ export interface TextHandlerContext {
 export interface CallbackQueryHandlerContext<CallbackData extends BeautifiedCallbackData> {
   data: CallbackData;
   message: Message;
-  edit(response: Response): Promise<void>;
+  edit(response: AnyResponse): Promise<void>;
 }
 
 export interface ResponseSendContext {
@@ -55,7 +55,7 @@ export type TextHandler = (ctx: TextHandlerContext) => Promise<AnyResponse | nul
 
 export type CallbackQueryHandler<CallbackData extends BeautifiedCallbackData> = (
   ctx: CallbackQueryHandlerContext<CallbackData>,
-) => Promise<Response | null | undefined | void>;
+) => Promise<AnyResponse | null | undefined | void>;
 
 class Bot {
   private readonly api: TelegramBotApi;
@@ -85,7 +85,7 @@ class Bot {
     });
   }
 
-  async editMessage(message: Message, response: Response): Promise<void> {
+  async editMessage(message: Message, response: AnyResponse): Promise<void> {
     await response.edit({
       message,
       api: this.api,

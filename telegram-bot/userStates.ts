@@ -1,7 +1,6 @@
 import { TelegramUserState } from '@prisma/client';
 import torrentClient from 'torrent-client/client';
 
-import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Response from 'telegram-bot/utilities/Response';
 import { isTorrentDocument, tryLoadDocument } from 'telegram-bot/utilities/documents';
 import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/utilities/responseUtils';
@@ -24,18 +23,7 @@ bot.handleUserState(TelegramUserState.Waiting, async (ctx) => {
   const { text, document } = ctx.message;
 
   if (isTorrentDocument(document)) {
-    return new DeferredResponse({
-      immediate: new Response({
-        text: 'Торрент добавляется...',
-      }),
-      deferred: (async () => {
-        const torrent = await tryLoadDocument(ctx);
-
-        if (torrent) {
-          return getAddTorrentResponse(torrent);
-        }
-      })(),
-    });
+    return getAddTorrentResponse(() => tryLoadDocument(ctx));
   }
 
   if (text) {
@@ -58,16 +46,18 @@ bot.handleUserState(TelegramUserState.AddTorrent, async (ctx) => {
     state: TelegramUserState.Waiting,
   });
 
-  let torrent = await tryLoadDocument(ctx);
+  return getAddTorrentResponse(async () => {
+    let torrent = await tryLoadDocument(ctx);
 
-  if (!torrent && text) {
-    torrent = await torrentClient.addTorrent({
-      type: 'magnet',
-      magnet: text,
-    });
-  }
+    if (!torrent && text) {
+      torrent = await torrentClient.addTorrent({
+        type: 'magnet',
+        magnet: text,
+      });
+    }
 
-  return getAddTorrentResponse(torrent);
+    return torrent;
+  });
 });
 
 bot.handleUserState(TelegramUserState.SetDownloadLimit, async (ctx) => {

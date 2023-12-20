@@ -90,7 +90,5 @@ bot.handleCallbackQuery(CallbackButtonSource.STATUS_PAUSE, async (ctx) => {
 });
 
 bot.handleCallbackQuery(CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT, async (ctx) => {
-  const torrent = await rutrackerClient.addTorrent(ctx.data.torrentId);
-
-  return getAddTorrentResponse(torrent);
+  return getAddTorrentResponse(() => rutrackerClient.addTorrent(ctx.data.torrentId));
 });
