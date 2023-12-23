@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 import { ParseTorrent } from 'parse-torrent';
 import { Torrent as ClientTorrent, Instance } from 'webtorrent';
 
-import { DOWNLOADS_DIRECTORY } from 'constants/paths';
+import { TORRENTS_DIRECTORY } from 'constants/paths';
 
 import prisma from 'db/prisma';
 
@@ -99,7 +99,7 @@ class TorrentClient {
     });
 
     if (torrent?.name) {
-      await fs.remove(path.resolve(DOWNLOADS_DIRECTORY, torrent.name));
+      await fs.remove(path.resolve(TORRENTS_DIRECTORY, torrent.name));
     }
 
     await prisma.torrent.delete({
@@ -337,7 +337,7 @@ class TorrentClient {
     });
 
     const clientTorrent = client.add(addTorrent, {
-      path: DOWNLOADS_DIRECTORY,
+      path: TORRENTS_DIRECTORY,
       storeCacheSlots: 0,
     });
 
