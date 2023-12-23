@@ -30,7 +30,7 @@ model Torrent {
   state               TorrentState
   progress            Float
   magnetUri           String?             @map("magnet_uri")
-  torrentPath         String?             @map("torrent_path")
+  torrentFile         Bytes?              @map("torrent_file")
   errorMessage        String?             @map("error_message")
 
   createdAt           DateTime            @map("created_at") @default(now())

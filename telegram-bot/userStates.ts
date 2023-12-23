@@ -3,7 +3,7 @@ import torrentClient from 'torrent-client/client';
 
 import Response from 'telegram-bot/utilities/Response';
 import { isTorrentDocument, tryLoadDocument } from 'telegram-bot/utilities/documents';
-import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/utilities/responseUtils';
+import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/utilities/response/torrent-client';
 import CustomError from 'utilities/CustomError';
 import { formatSpeed, parseSize } from 'utilities/size';
 

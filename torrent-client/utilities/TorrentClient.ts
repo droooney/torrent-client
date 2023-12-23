@@ -14,7 +14,7 @@ import { getProgress } from 'utilities/size';
 
 interface AddFileTorrent {
   type: 'file';
-  path: string;
+  content: Buffer;
 }
 
 interface AddMagnetTorrent {
@@ -56,9 +56,7 @@ class TorrentClient {
 
     // important: await is needed, types are wrong
     const parsed =
-      addTorrent.type === 'file'
-        ? await parseTorrent(await fs.readFile(addTorrent.path))
-        : await parseTorrent(addTorrent.magnet);
+      addTorrent.type === 'file' ? await parseTorrent(addTorrent.content) : await parseTorrent(addTorrent.magnet);
 
     if (!parsed.infoHash) {
       throw new Error('Ошибка добавления торрента');
@@ -82,7 +80,7 @@ class TorrentClient {
         size: 'length' in parsed ? parsed.length ?? 0 : 0,
         progress: 0,
         magnetUri: addTorrent.type === 'magnet' ? addTorrent.magnet : null,
-        torrentPath: addTorrent.type === 'file' ? addTorrent.path : null,
+        torrentFile: addTorrent.type === 'file' ? addTorrent.content : null,
       },
     });
 
@@ -100,10 +98,9 @@ class TorrentClient {
       },
     });
 
-    await Promise.all([
-      torrent?.name && fs.remove(path.resolve(DOWNLOADS_DIRECTORY, torrent.name)),
-      torrent?.torrentPath && fs.remove(torrent.torrentPath),
-    ]);
+    if (torrent?.name) {
+      await fs.remove(path.resolve(DOWNLOADS_DIRECTORY, torrent.name));
+    }
 
     await prisma.torrent.delete({
       where: {
@@ -324,7 +321,7 @@ class TorrentClient {
   private async startTorrent(torrent: Torrent): Promise<Torrent> {
     const client = await this.clientPromise;
 
-    const addTorrent = torrent.magnetUri ?? torrent.torrentPath;
+    const addTorrent = torrent.magnetUri ?? torrent.torrentFile;
 
     if (!addTorrent) {
       throw new CustomError('Ошибка добавления торрента');

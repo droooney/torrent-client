@@ -4,7 +4,7 @@ import torrentClient from 'torrent-client/client';
 import { CommandType } from 'telegram-bot/constants/commands';
 
 import Response from 'telegram-bot/utilities/Response';
-import { getTelegramStatusResponse, getTelegramTorrentsListResponse } from 'telegram-bot/utilities/responseUtils';
+import { getStatusResponse, getTelegramTorrentsListResponse } from 'telegram-bot/utilities/response/torrent-client';
 import { formatSpeed } from 'utilities/size';
 
 import bot from 'telegram-bot/bot';
@@ -14,7 +14,7 @@ bot.handleCommand(CommandType.STATUS, async (ctx) => {
     state: TelegramUserState.Waiting,
   });
 
-  return getTelegramStatusResponse();
+  return getStatusResponse();
 });
 
 bot.handleCommand(CommandType.LIST, async (ctx) => {

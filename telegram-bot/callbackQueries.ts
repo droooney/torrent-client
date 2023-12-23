@@ -6,10 +6,10 @@ import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import {
   getAddTorrentResponse,
-  getTelegramStatusResponse,
+  getStatusResponse,
   getTelegramTorrentInfo,
   getTelegramTorrentsListResponse,
-} from 'telegram-bot/utilities/responseUtils';
+} from 'telegram-bot/utilities/response/torrent-client';
 
 import bot from 'telegram-bot/bot';
 
@@ -76,7 +76,7 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_SET_CRITICAL, async (ctx) =
 });
 
 bot.handleCallbackQuery(CallbackButtonSource.STATUS_REFRESH, async () => {
-  return getTelegramStatusResponse();
+  return getStatusResponse();
 });
 
 bot.handleCallbackQuery(CallbackButtonSource.STATUS_PAUSE, async (ctx) => {
@@ -86,7 +86,7 @@ bot.handleCallbackQuery(CallbackButtonSource.STATUS_PAUSE, async (ctx) => {
     await torrentClient.unpause();
   }
 
-  return getTelegramStatusResponse();
+  return getStatusResponse();
 });
 
 bot.handleCallbackQuery(CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT, async (ctx) => {
