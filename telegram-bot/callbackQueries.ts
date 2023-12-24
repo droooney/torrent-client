@@ -40,7 +40,7 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_DELETE_CONFIRM, async (ctx)
   await torrentClient.deleteTorrent(ctx.data.torrentId);
 
   return new Response({
-    text: 'Торрент успеешно удален',
+    text: 'Торрент успешно удален',
     keyboard: [
       [
         {

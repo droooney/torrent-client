@@ -5,8 +5,8 @@
   "main": "main.ts",
   "scripts": {
     "runPrismaStudio": "BROWSER=none prisma studio",
-    "startDev": "prisma migrate dev && ts-node-dev --inspect --transpile-only -r tsconfig-paths/register main.ts",
-    "start": "NODE_ENV=production prisma migrate deploy && ts-node --transpile-only -r tsconfig-paths/register main.ts",
+    "startDev": "prisma migrate dev && tsx watch --inspect main.ts",
+    "start": "NODE_ENV=production prisma migrate deploy && tsx main.ts",
     "typecheck": "tsc --noEmit",
     "eslint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "eslintFix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
@@ -66,9 +66,7 @@
     "rutracker-api-with-proxy": "^2.0.6",
     "sass": "^1.69.5",
     "sass-loader": "^13.3.2",
-    "ts-node": "^10.9.1",
-    "ts-node-dev": "^2.0.0",
-    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.2",
     "webpack": "^5.89.0",
     "webpack-dev-middleware": "^6.1.1",
