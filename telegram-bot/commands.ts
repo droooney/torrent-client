@@ -55,7 +55,7 @@ bot.handleCommand(CommandType.SEARCH_RUTRACKER, async (ctx) => {
   });
 
   return new Response({
-    text: 'Введите строку поиска на rutracker',
+    text: 'Введите название для поиска на rutracker',
   });
 });
 

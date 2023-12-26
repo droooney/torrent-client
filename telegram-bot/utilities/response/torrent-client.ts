@@ -141,11 +141,11 @@ export async function getStatusResponse(): Promise<Response> {
 `;
   }
 
-  status.add`Скорость загрузки: ${formatSpeed(downloadSpeed)}${
+  status.add`${Markdown.bold('Скорость загрузки')}: ${formatSpeed(downloadSpeed)}${
     clientState.downloadSpeedLimit !== null &&
     Markdown.create` (ограничение: ${formatSpeed(clientState.downloadSpeedLimit)})`
   }
-Скорость отдачи: ${formatSpeed(uploadSpeed)}${
+${Markdown.bold('Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
     clientState.uploadSpeedLimit !== null &&
     Markdown.create` (ограничение: ${formatSpeed(clientState.uploadSpeedLimit)})`
   }

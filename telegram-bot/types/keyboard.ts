@@ -103,6 +103,17 @@ export const callbackDataSchema = z.union([
 
 export type UglifiedCallbackData = z.infer<typeof callbackDataSchema>;
 
+export type UglifiedCallbackDataBySource<Source extends CallbackButtonSource> = Extract<
+  UglifiedCallbackData,
+  { $: Source }
+>;
+
+export type UglifiedCallbackDataSourceWithData = {
+  [Source in CallbackButtonSource]: Exclude<keyof UglifiedCallbackDataBySource<Source>, '$'> extends never
+    ? never
+    : Source;
+}[CallbackButtonSource];
+
 export interface TorrentsListItemCallbackData {
   source: z.infer<typeof torrentsListItemCallbackDataSchema>['$'];
   torrentId: z.infer<typeof torrentsListItemCallbackDataSchema>['t'];
@@ -187,6 +198,12 @@ export type BeautifiedCallbackDataBySource<Source extends CallbackButtonSource> 
   BeautifiedCallbackData,
   { source: Source }
 >;
+
+export type BeautifiedCallbackDataSourceWithData = {
+  [Source in CallbackButtonSource]: Exclude<keyof BeautifiedCallbackDataBySource<Source>, 'source'> extends never
+    ? never
+    : Source;
+}[CallbackButtonSource];
 
 export interface BaseInlineKeyboardButton {
   text: string;
