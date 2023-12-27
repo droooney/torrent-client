@@ -59,7 +59,7 @@ class TorrentClient {
       addTorrent.type === 'file' ? await parseTorrent(addTorrent.content) : await parseTorrent(addTorrent.magnet);
 
     if (!parsed.infoHash) {
-      throw new Error('Ошибка добавления торрента');
+      throw new CustomError('Ошибка добавления торрента');
     }
 
     let torrent = await prisma.torrent.findFirst({

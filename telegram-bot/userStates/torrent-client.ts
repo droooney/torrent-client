@@ -2,34 +2,12 @@ import { TelegramUserState } from '@prisma/client';
 import torrentClient from 'torrent-client/client';
 
 import Response from 'telegram-bot/utilities/Response';
-import { isTorrentDocument, tryLoadDocument } from 'telegram-bot/utilities/documents';
+import { tryLoadDocument } from 'telegram-bot/utilities/documents';
 import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/utilities/response/torrent-client';
 import CustomError from 'utilities/CustomError';
 import { formatSpeed, parseSize } from 'utilities/size';
 
 import bot from 'telegram-bot/bot';
-
-bot.handleUserState(TelegramUserState.First, async (ctx) => {
-  await ctx.updateUserState({
-    state: TelegramUserState.Waiting,
-  });
-
-  return new Response({
-    text: 'Привет! Я - ТоррентБот. Добавляйте торренты, чтобы поставить их на скачивание',
-  });
-});
-
-bot.handleUserState(TelegramUserState.Waiting, async (ctx) => {
-  const { text, document } = ctx.message;
-
-  if (isTorrentDocument(document)) {
-    return getAddTorrentResponse(() => tryLoadDocument(ctx));
-  }
-
-  if (text) {
-    return getSearchRutrackerResponse(text);
-  }
-});
 
 bot.handleUserState(TelegramUserState.SearchRutracker, async (ctx) => {
   await ctx.updateUserState({

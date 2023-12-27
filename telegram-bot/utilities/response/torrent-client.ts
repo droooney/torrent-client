@@ -63,7 +63,7 @@ export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | 
               type: 'callback',
               text: '▶️ Подробнее',
               callbackData: {
-                source: CallbackButtonSource.NAVIGATE_TO_TORRENT,
+                source: CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT,
                 torrentId: torrent.infoHash,
               },
             },
@@ -107,7 +107,7 @@ ${Markdown.bold('Сидов')}: ${seeds}
             type: 'callback',
             text: formatIndex(index),
             callbackData: {
-              source: CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT,
+              source: CallbackButtonSource.TORRENT_CLIENT_RUTRACKER_SEARCH_ADD_TORRENT,
               torrentId: id,
             },
           })),
@@ -164,17 +164,40 @@ ${Markdown.bold('Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
           type: 'callback',
           text: '🔄 Обновить',
           callbackData: {
-            source: CallbackButtonSource.STATUS_REFRESH,
+            source: CallbackButtonSource.TORRENT_CLIENT_STATUS_REFRESH,
+          },
+        },
+        {
+          type: 'callback',
+          text: clientState.paused ? '▶️ Продолжить' : '⏸ Пауза',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_STATUS_PAUSE,
+            pause: !clientState.paused,
           },
         },
       ],
       [
         {
           type: 'callback',
-          text: clientState.paused ? '▶️ Продолжить' : '⏸ Пауза',
+          text: '➕ Добавить',
           callbackData: {
-            source: CallbackButtonSource.STATUS_PAUSE,
-            pause: !clientState.paused,
+            source: CallbackButtonSource.TORRENT_CLIENT_ADD_TORRENT,
+          },
+        },
+        {
+          type: 'callback',
+          text: '📜 Список',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_STATUS_SHOW_TORRENTS_LIST,
+          },
+        },
+      ],
+      [
+        {
+          type: 'callback',
+          text: '◀️ Назад',
+          callbackData: {
+            source: CallbackButtonSource.ROOT_BACK_TO_ROOT,
           },
         },
       ],
@@ -205,7 +228,7 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
           type: 'callback',
           text: '🔄 Обновить',
           callbackData: {
-            source: CallbackButtonSource.TORRENTS_LIST_REFRESH,
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_REFRESH,
             page,
           },
         } as const,
@@ -215,7 +238,7 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
           type: 'callback',
           text: torrent.name ?? 'Неизвестно',
           callbackData: {
-            source: CallbackButtonSource.TORRENTS_LIST_ITEM,
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_ITEM,
             torrentId: torrent.infoHash,
           },
         } as const,
@@ -227,7 +250,7 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
                   type: 'callback',
                   text: '◀️',
                   callbackData: {
-                    source: CallbackButtonSource.TORRENTS_LIST_PAGE,
+                    source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE,
                     page: page - 1,
                   },
                 } as const)
@@ -237,13 +260,22 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
                   type: 'callback',
                   text: '▶️',
                   callbackData: {
-                    source: CallbackButtonSource.TORRENTS_LIST_PAGE,
+                    source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE,
                     page: page + 1,
                   },
                 } as const)
               : null,
           ].filter(isDefined)
         : null,
+      [
+        {
+          type: 'callback',
+          text: '◀️ Назад',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_STATUS,
+          },
+        } as const,
+      ],
     ].filter(isDefined),
   });
 }
@@ -304,7 +336,7 @@ ${Markdown.join(
               type: 'callback',
               text: '🔄 Обновить',
               callbackData: {
-                source: CallbackButtonSource.TORRENT_REFRESH,
+                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_REFRESH,
                 torrentId: infoHash,
               },
             } as const,
@@ -312,7 +344,7 @@ ${Markdown.join(
               type: 'callback',
               text: isCritical ? '❕ Сделать некритичным' : '❗️ Сделать критичным',
               callbackData: {
-                source: CallbackButtonSource.TORRENT_SET_CRITICAL,
+                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_SET_CRITICAL,
                 torrentId: infoHash,
                 critical: !isCritical,
               },
@@ -325,7 +357,7 @@ ${Markdown.join(
               type: 'callback',
               text: isPausedOrError ? '▶️ Продолжить' : '⏸ Пауза',
               callbackData: {
-                source: CallbackButtonSource.TORRENT_PAUSE,
+                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_PAUSE,
                 torrentId: infoHash,
                 pause: !isPausedOrError,
               },
@@ -333,17 +365,17 @@ ${Markdown.join(
         withDeleteConfirm
           ? ({
               type: 'callback',
-              text: '❌ Точно удалить?',
+              text: '🗑 Точно удалить?',
               callbackData: {
-                source: CallbackButtonSource.TORRENT_DELETE_CONFIRM,
+                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE_CONFIRM,
                 torrentId: infoHash,
               },
             } as const)
           : ({
               type: 'callback',
-              text: '❌ Удалить',
+              text: '🗑 Удалить',
               callbackData: {
-                source: CallbackButtonSource.TORRENT_DELETE,
+                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE,
                 torrentId: infoHash,
               },
             } as const),
@@ -353,7 +385,7 @@ ${Markdown.join(
           type: 'callback',
           text: '◀️ К списку',
           callbackData: {
-            source: CallbackButtonSource.TORRENT_BACK_TO_LIST,
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST,
           },
         } as const,
       ],

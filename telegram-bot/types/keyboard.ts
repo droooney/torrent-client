@@ -3,89 +3,140 @@ import { z } from 'zod';
 export type InlineKeyboard = InlineKeyboardButton[][];
 
 export enum CallbackButtonSource {
-  TORRENTS_LIST_ITEM = 0,
-  TORRENTS_LIST_PAGE = 1,
-  TORRENTS_LIST_REFRESH = 7,
-  TORRENT_REFRESH = 6,
-  TORRENT_DELETE = 2,
-  TORRENT_DELETE_CONFIRM = 8,
-  TORRENT_PAUSE = 3,
-  TORRENT_SET_CRITICAL = 4,
-  TORRENT_BACK_TO_LIST = 5,
-  STATUS_REFRESH = 9,
-  STATUS_PAUSE = 10,
-  NAVIGATE_TO_TORRENT = 11,
-  RUTRACKER_SEARCH_ADD_TORRENT = 12,
+  // Root
+  ROOT_BACK_TO_ROOT = 16,
+  ROOT_OPEN_SYSTEM = 14,
+  ROOT_OPEN_TORRENT_CLIENT = 15,
+
+  // System
+
+  // Torrent client
+  // Torrent client: status
+  TORRENT_CLIENT_BACK_TO_STATUS = 17,
+  TORRENT_CLIENT_STATUS_REFRESH = 9,
+  TORRENT_CLIENT_STATUS_PAUSE = 10,
+  TORRENT_CLIENT_STATUS_SHOW_TORRENTS_LIST = 13,
+
+  // Torrent client: list
+  TORRENT_CLIENT_TORRENTS_LIST_ITEM = 0,
+  TORRENT_CLIENT_TORRENTS_LIST_PAGE = 1,
+  TORRENT_CLIENT_TORRENTS_LIST_REFRESH = 7,
+
+  // Torrent client: torrent
+  TORRENT_CLIENT_TORRENT_REFRESH = 6,
+  TORRENT_CLIENT_TORRENT_DELETE = 2,
+  TORRENT_CLIENT_TORRENT_DELETE_CONFIRM = 8,
+  TORRENT_CLIENT_TORRENT_PAUSE = 3,
+  TORRENT_CLIENT_TORRENT_SET_CRITICAL = 4,
+  TORRENT_CLIENT_TORRENT_BACK_TO_LIST = 5,
+
+  // Torrent client: misc
+  TORRENT_CLIENT_ADD_TORRENT = 18,
+  TORRENT_CLIENT_NAVIGATE_TO_TORRENT = 11,
+
+  // Torrent client: rutracker
+  TORRENT_CLIENT_RUTRACKER_SEARCH_ADD_TORRENT = 12,
 }
 
 const binarySchema = z.union([z.literal(0), z.literal(1)]);
 
+export const backToRootCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.ROOT_BACK_TO_ROOT),
+});
+
+export const openSystemCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.ROOT_OPEN_SYSTEM),
+});
+
+export const openTorrentClientCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.ROOT_OPEN_TORRENT_CLIENT),
+});
+
+export const statusBackToStatusCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_BACK_TO_STATUS),
+});
+
+export const statusRefreshCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_STATUS_REFRESH),
+});
+
+export const statusPauseCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_STATUS_PAUSE),
+  p: binarySchema,
+});
+
+export const statusShowTorrentsListCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_STATUS_SHOW_TORRENTS_LIST),
+});
+
 export const torrentsListItemCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.TORRENTS_LIST_ITEM),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_ITEM),
   t: z.string(),
 });
 
 export const torrentsListPageCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.TORRENTS_LIST_PAGE),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE),
   p: z.number(),
 });
 
 export const torrentsListRefreshCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.TORRENTS_LIST_REFRESH),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_REFRESH),
   p: z.number(),
 });
 
 export const torrentRefreshCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.TORRENT_REFRESH),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_REFRESH),
   t: z.string(),
 });
 
 export const torrentDeleteCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.TORRENT_DELETE),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE),
   t: z.string(),
 });
 
 export const torrentDeleteConfirmCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.TORRENT_DELETE_CONFIRM),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE_CONFIRM),
   t: z.string(),
 });
 
 export const torrentPauseCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.TORRENT_PAUSE),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_PAUSE),
   t: z.string(),
   p: binarySchema,
 });
 
 export const torrentSetCriticalCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.TORRENT_SET_CRITICAL),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_SET_CRITICAL),
   t: z.string(),
   c: binarySchema,
 });
 
 export const torrentBackToListCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.TORRENT_BACK_TO_LIST),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST),
 });
 
-export const statusRefreshCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.STATUS_REFRESH),
-});
-
-export const statusPauseCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.STATUS_PAUSE),
-  p: binarySchema,
+export const addTorrentCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_ADD_TORRENT),
 });
 
 export const navigateToTorrentCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.NAVIGATE_TO_TORRENT),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT),
   t: z.string(),
 });
 
 export const rutrackerSearchAddTorrentCallbackDataSchema = z.object({
-  $: z.literal(CallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT),
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_RUTRACKER_SEARCH_ADD_TORRENT),
   t: z.string(),
 });
 
 export const callbackDataSchema = z.union([
+  backToRootCallbackDataSchema,
+  openSystemCallbackDataSchema,
+  openTorrentClientCallbackDataSchema,
+  statusBackToStatusCallbackDataSchema,
+  statusRefreshCallbackDataSchema,
+  statusPauseCallbackDataSchema,
+  statusShowTorrentsListCallbackDataSchema,
   torrentsListItemCallbackDataSchema,
   torrentsListPageCallbackDataSchema,
   torrentsListRefreshCallbackDataSchema,
@@ -95,8 +146,7 @@ export const callbackDataSchema = z.union([
   torrentPauseCallbackDataSchema,
   torrentSetCriticalCallbackDataSchema,
   torrentBackToListCallbackDataSchema,
-  statusRefreshCallbackDataSchema,
-  statusPauseCallbackDataSchema,
+  addTorrentCallbackDataSchema,
   navigateToTorrentCallbackDataSchema,
   rutrackerSearchAddTorrentCallbackDataSchema,
 ]);
@@ -113,6 +163,35 @@ export type UglifiedCallbackDataSourceWithData = {
     ? never
     : Source;
 }[CallbackButtonSource];
+
+export interface BackToRootCallbackData {
+  source: z.infer<typeof backToRootCallbackDataSchema>['$'];
+}
+
+export interface OpenSystemCallbackData {
+  source: z.infer<typeof openSystemCallbackDataSchema>['$'];
+}
+
+export interface OpenTorrentClientCallbackData {
+  source: z.infer<typeof openTorrentClientCallbackDataSchema>['$'];
+}
+
+export interface StatusBackToStatusCallbackData {
+  source: z.infer<typeof statusBackToStatusCallbackDataSchema>['$'];
+}
+
+export interface StatusRefreshCallbackData {
+  source: z.infer<typeof statusRefreshCallbackDataSchema>['$'];
+}
+
+export interface StatusPauseCallbackData {
+  source: z.infer<typeof statusPauseCallbackDataSchema>['$'];
+  pause: boolean;
+}
+
+export interface StatusShowTorrentsListCallbackData {
+  source: z.infer<typeof statusShowTorrentsListCallbackDataSchema>['$'];
+}
 
 export interface TorrentsListItemCallbackData {
   source: z.infer<typeof torrentsListItemCallbackDataSchema>['$'];
@@ -160,13 +239,8 @@ export interface TorrentBackToListCallbackData {
   source: z.infer<typeof torrentBackToListCallbackDataSchema>['$'];
 }
 
-export interface StatusRefreshCallbackData {
-  source: z.infer<typeof statusRefreshCallbackDataSchema>['$'];
-}
-
-export interface StatusPauseCallbackData {
-  source: z.infer<typeof statusPauseCallbackDataSchema>['$'];
-  pause: boolean;
+export interface AddTorrentCallbackData {
+  source: z.infer<typeof addTorrentCallbackDataSchema>['$'];
 }
 
 export interface NavigateToTorrentCallbackData {
@@ -180,6 +254,13 @@ export interface RutrackerSearchAddTorrentCallbackData {
 }
 
 export type BeautifiedCallbackData =
+  | BackToRootCallbackData
+  | OpenSystemCallbackData
+  | OpenTorrentClientCallbackData
+  | StatusBackToStatusCallbackData
+  | StatusRefreshCallbackData
+  | StatusPauseCallbackData
+  | StatusShowTorrentsListCallbackData
   | TorrentsListItemCallbackData
   | TorrentsListPageCallbackData
   | TorrentsListRefreshCallbackData
@@ -189,8 +270,7 @@ export type BeautifiedCallbackData =
   | TorrentPauseCallbackData
   | TorrentSetCriticalCallbackData
   | TorrentBackToListCallbackData
-  | StatusRefreshCallbackData
-  | StatusPauseCallbackData
+  | AddTorrentCallbackData
   | NavigateToTorrentCallbackData
   | RutrackerSearchAddTorrentCallbackData;
 

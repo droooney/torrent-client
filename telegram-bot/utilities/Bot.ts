@@ -15,8 +15,8 @@ import {
 
 import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Response from 'telegram-bot/utilities/Response';
+import { beautifyCallbackData } from 'telegram-bot/utilities/keyboard';
 import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
-import { beautifyCallbackData } from 'telegram-bot/utilities/serialize';
 
 export interface BotOptions {
   token: string;

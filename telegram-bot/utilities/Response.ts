@@ -7,7 +7,7 @@ import { InlineKeyboard } from 'telegram-bot/types/keyboard';
 
 import { ResponseEditContext, ResponseSendContext } from 'telegram-bot/utilities/Bot';
 import Markdown from 'telegram-bot/utilities/Markdown';
-import { prepareInlineKeyboard } from 'telegram-bot/utilities/serialize';
+import { prepareInlineKeyboard } from 'telegram-bot/utilities/keyboard';
 
 export interface ResponseOptions {
   text: string | Markdown;

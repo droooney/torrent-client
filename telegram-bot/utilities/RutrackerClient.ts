@@ -8,6 +8,7 @@ import RutrackerApi, { Torrent as RutrackerTorrent } from 'rutracker-api-with-pr
 import { DOWNLOADS_DIRECTORY } from 'constants/paths';
 
 import { loadTorrentFromFile } from 'telegram-bot/utilities/documents';
+import CustomError from 'utilities/CustomError';
 
 const { PROXY_HOST: proxyHost, RUTRACKER_LOGIN: username, RUTRACKER_PASSWORD: password } = process.env;
 
@@ -37,7 +38,7 @@ class RutrackerClient {
   private async login(): Promise<void> {
     await (this.loginPromise ??= (async () => {
       if (!username || !password) {
-        throw new Error('No rutracker auth');
+        throw new CustomError('Не авторизован на rutracker');
       }
 
       try {
