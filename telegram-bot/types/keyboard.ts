@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export type InlineKeyboard = InlineKeyboardButton[][];
+export type InlineKeyboard = ((InlineKeyboardButton | null | undefined | false)[] | null | undefined | false)[];
 
 export enum CallbackButtonSource {
   // Root
@@ -29,6 +29,13 @@ export enum CallbackButtonSource {
   TORRENT_CLIENT_TORRENT_PAUSE = 3,
   TORRENT_CLIENT_TORRENT_SET_CRITICAL = 4,
   TORRENT_CLIENT_TORRENT_BACK_TO_LIST = 5,
+  TORRENT_CLIENT_TORRENT_SHOW_FILES = 19,
+
+  // Torrent client: file list
+  TORRENT_CLIENT_TORRENT_FILES_PAGE = 20,
+  TORRENT_CLIENT_TORRENT_FILES_REFRESH = 21,
+  TORRENT_CLIENT_BACK_TO_TORRENT = 22,
+  TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE = 23,
 
   // Torrent client: misc
   TORRENT_CLIENT_ADD_TORRENT = 18,
@@ -115,6 +122,34 @@ export const torrentBackToListCallbackDataSchema = z.object({
   $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST),
 });
 
+export const torrentShowFilesCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_SHOW_FILES),
+  t: z.string(),
+});
+
+export const torrentFilesPageCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE),
+  t: z.string(),
+  p: z.number(),
+});
+
+export const torrentFilesRefreshCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_REFRESH),
+  t: z.string(),
+  p: z.number(),
+});
+
+export const torrentBackToTorrentCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT),
+  t: z.string(),
+});
+
+export const torrentNavigateToFileCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE),
+  t: z.string(),
+  p: z.string(),
+});
+
 export const addTorrentCallbackDataSchema = z.object({
   $: z.literal(CallbackButtonSource.TORRENT_CLIENT_ADD_TORRENT),
 });
@@ -146,6 +181,11 @@ export const callbackDataSchema = z.union([
   torrentPauseCallbackDataSchema,
   torrentSetCriticalCallbackDataSchema,
   torrentBackToListCallbackDataSchema,
+  torrentShowFilesCallbackDataSchema,
+  torrentFilesPageCallbackDataSchema,
+  torrentFilesRefreshCallbackDataSchema,
+  torrentBackToTorrentCallbackDataSchema,
+  torrentNavigateToFileCallbackDataSchema,
   addTorrentCallbackDataSchema,
   navigateToTorrentCallbackDataSchema,
   rutrackerSearchAddTorrentCallbackDataSchema,
@@ -239,6 +279,34 @@ export interface TorrentBackToListCallbackData {
   source: z.infer<typeof torrentBackToListCallbackDataSchema>['$'];
 }
 
+export interface TorrentShowFilesCallbackData {
+  source: z.infer<typeof torrentShowFilesCallbackDataSchema>['$'];
+  torrentId: z.infer<typeof torrentShowFilesCallbackDataSchema>['t'];
+}
+
+export interface TorrentFilesPageCallbackData {
+  source: z.infer<typeof torrentFilesPageCallbackDataSchema>['$'];
+  torrentId: z.infer<typeof torrentFilesPageCallbackDataSchema>['t'];
+  page: z.infer<typeof torrentFilesPageCallbackDataSchema>['p'];
+}
+
+export interface TorrentFilesRefreshCallbackData {
+  source: z.infer<typeof torrentFilesRefreshCallbackDataSchema>['$'];
+  torrentId: z.infer<typeof torrentFilesRefreshCallbackDataSchema>['t'];
+  page: z.infer<typeof torrentFilesRefreshCallbackDataSchema>['p'];
+}
+
+export interface TorrentBackToTorrentCallbackData {
+  source: z.infer<typeof torrentBackToTorrentCallbackDataSchema>['$'];
+  torrentId: z.infer<typeof torrentBackToTorrentCallbackDataSchema>['t'];
+}
+
+export interface TorrentNavigateToFileCallbackData {
+  source: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['$'];
+  torrentId: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['t'];
+  path: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['p'];
+}
+
 export interface AddTorrentCallbackData {
   source: z.infer<typeof addTorrentCallbackDataSchema>['$'];
 }
@@ -270,6 +338,11 @@ export type BeautifiedCallbackData =
   | TorrentPauseCallbackData
   | TorrentSetCriticalCallbackData
   | TorrentBackToListCallbackData
+  | TorrentShowFilesCallbackData
+  | TorrentFilesPageCallbackData
+  | TorrentFilesRefreshCallbackData
+  | TorrentBackToTorrentCallbackData
+  | TorrentNavigateToFileCallbackData
   | AddTorrentCallbackData
   | NavigateToTorrentCallbackData
   | RutrackerSearchAddTorrentCallbackData;

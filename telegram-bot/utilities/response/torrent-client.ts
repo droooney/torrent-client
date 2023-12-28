@@ -18,7 +18,6 @@ import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import TorrentClient from 'torrent-client/utilities/TorrentClient';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
-import { isDefined } from 'utilities/is';
 import { formatIndex, formatPercent, formatProgress, minmax } from 'utilities/number';
 import { formatSize, formatSpeed } from 'utilities/size';
 
@@ -40,7 +39,7 @@ const STATE_TITLE: { [State in TorrentState]: string } = {
   Finished: '⚪️ Завершен',
 };
 
-const LIST_PAGE_SIZE = 6;
+const LIST_PAGE_SIZE = 5;
 
 export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | null>): Promise<DeferredResponse> {
   return new DeferredResponse({
@@ -206,8 +205,8 @@ ${Markdown.bold('Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
   });
 }
 
-// TODO: add add button
 export async function getTelegramTorrentsListResponse(page: number = 0): Promise<Response> {
+  // TODO: better pagination
   const torrents = await prisma.torrent.findMany();
   const sortedTorrents = sortTorrents(torrents);
 
@@ -232,7 +231,7 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
             source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_REFRESH,
             page,
           },
-        } as const,
+        },
       ],
       ...pageTorrents.map((torrent) => [
         {
@@ -244,30 +243,24 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
           },
         } as const,
       ]),
-      hasPrevButton || hastNextButton
-        ? [
-            hasPrevButton
-              ? ({
-                  type: 'callback',
-                  text: '◀️',
-                  callbackData: {
-                    source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE,
-                    page: page - 1,
-                  },
-                } as const)
-              : null,
-            hastNextButton
-              ? ({
-                  type: 'callback',
-                  text: '▶️',
-                  callbackData: {
-                    source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE,
-                    page: page + 1,
-                  },
-                } as const)
-              : null,
-          ].filter(isDefined)
-        : null,
+      [
+        hasPrevButton && {
+          type: 'callback',
+          text: '◀️',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE,
+            page: page - 1,
+          },
+        },
+        hastNextButton && {
+          type: 'callback',
+          text: '▶️',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE,
+            page: page + 1,
+          },
+        },
+      ],
       [
         {
           type: 'callback',
@@ -275,15 +268,127 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
           callbackData: {
             source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_STATUS,
           },
-        } as const,
+        },
       ],
-    ].filter(isDefined),
+    ],
   });
 }
 
 export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm: boolean = false): Promise<Response> {
-  const [clientState, torrent, files, clientTorrent] = await Promise.all([
+  const [clientState, torrent, clientTorrent] = await Promise.all([
     torrentClient.getState(),
+    prisma.torrent.findUnique({
+      where: {
+        infoHash,
+      },
+    }),
+    torrentClient.getClientTorrent(infoHash),
+  ]);
+
+  if (!torrent) {
+    throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
+  }
+
+  const progress = TorrentClient.getRealProgress(torrent, torrent, clientTorrent);
+  const verifiedString =
+    torrent.state === TorrentState.Verifying && clientTorrent
+      ? Markdown.create`
+${Markdown.bold('Проверено')}: ${formatPercent(
+          minmax(TorrentClient.getProgress(clientTorrent) / torrent.progress || 0, 0, 1),
+        )}`
+      : '';
+  const errorString =
+    torrent.state === TorrentState.Error && torrent.errorMessage
+      ? Markdown.create`
+${torrent.errorMessage}`
+      : '';
+
+  // TODO: show remaining time
+  const info = Markdown.create`
+${Markdown.bold('Название')}: ${torrent.name}
+${Markdown.bold('Статус')}: ${STATE_TITLE[torrent.state]}
+${Markdown.bold('Размер')}: ${formatSize(torrent.size)}
+${Markdown.bold('Скачано')}: ${formatPercent(progress)}${verifiedString}${errorString}`;
+
+  const isPausedOrError = torrent.state === TorrentState.Paused || torrent.state === TorrentState.Error;
+  const isCritical = clientState.criticalTorrentId === infoHash;
+
+  return new Response({
+    text: info,
+    keyboard: [
+      torrent.state !== TorrentState.Finished && [
+        {
+          type: 'callback',
+          text: '🔄 Обновить',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_REFRESH,
+            torrentId: infoHash,
+          },
+        },
+        {
+          type: 'callback',
+          text: isCritical ? '❕ Сделать некритичным' : '❗️ Сделать критичным',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_SET_CRITICAL,
+            torrentId: infoHash,
+            critical: !isCritical,
+          },
+        },
+      ],
+      [
+        torrent.state !== TorrentState.Finished && {
+          type: 'callback',
+          text: isPausedOrError ? '▶️ Продолжить' : '⏸ Пауза',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_PAUSE,
+            torrentId: infoHash,
+            pause: !isPausedOrError,
+          },
+        },
+        withDeleteConfirm
+          ? {
+              type: 'callback',
+              text: '🗑 Точно удалить?',
+              callbackData: {
+                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE_CONFIRM,
+                torrentId: infoHash,
+              },
+            }
+          : {
+              type: 'callback',
+              text: '🗑 Удалить',
+              callbackData: {
+                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE,
+                torrentId: infoHash,
+              },
+            },
+      ],
+      [
+        {
+          type: 'callback',
+          text: '📄 Файлы',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_SHOW_FILES,
+            torrentId: infoHash,
+          },
+        },
+      ],
+      [
+        {
+          type: 'callback',
+          text: '◀️ К списку',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST,
+          },
+        },
+      ],
+    ],
+  });
+}
+
+export async function getFilesResponse(infoHash: string, page: number = 0): Promise<Response> {
+  // TODO: better pagination
+  const [torrent, files, clientTorrent] = await Promise.all([
     prisma.torrent.findUnique({
       where: {
         infoHash,
@@ -304,95 +409,62 @@ export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm
     throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
   }
 
-  const progress = TorrentClient.getRealProgress(torrent, torrent, clientTorrent);
-  const verifiedString =
-    torrent.state === TorrentState.Verifying && clientTorrent
-      ? Markdown.create`
-${Markdown.bold('Проверено')}: ${formatPercent(
-          minmax(TorrentClient.getProgress(clientTorrent) / torrent.progress || 0, 0, 1),
-        )}`
-      : '';
+  const start = page * LIST_PAGE_SIZE;
+  const end = start + LIST_PAGE_SIZE;
 
-  // TODO: show remaining time
-  const info = Markdown.create`
-${Markdown.bold('Название')}: ${torrent.name}
-${Markdown.bold('Статус')}: ${STATE_TITLE[torrent.state]}
-${Markdown.bold('Размер')}: ${formatSize(torrent.size)}
-${Markdown.bold('Скачано')}: ${formatPercent(progress)}${verifiedString}
+  const pageFiles = files.slice(start, end);
 
-${Markdown.join(
-  files.map((file) => formatTorrentFile(file, { torrent, clientTorrent })),
-  '\n\n',
-)}
-`;
-
-  const isPausedOrError = torrent.state === TorrentState.Paused || torrent.state === TorrentState.Error;
-  const isCritical = clientState.criticalTorrentId === infoHash;
+  const hasPrevButton = start > 0;
+  const hastNextButton = end < files.length;
 
   return new Response({
-    text: info,
+    text: formatTorrentFiles(pageFiles, {
+      torrent,
+      clientTorrent,
+    }),
     keyboard: [
-      torrent.state === TorrentState.Finished
-        ? null
-        : [
-            {
-              type: 'callback',
-              text: '🔄 Обновить',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_REFRESH,
-                torrentId: infoHash,
-              },
-            } as const,
-            {
-              type: 'callback',
-              text: isCritical ? '❕ Сделать некритичным' : '❗️ Сделать критичным',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_SET_CRITICAL,
-                torrentId: infoHash,
-                critical: !isCritical,
-              },
-            } as const,
-          ],
-      [
-        torrent.state === TorrentState.Finished
-          ? null
-          : ({
-              type: 'callback',
-              text: isPausedOrError ? '▶️ Продолжить' : '⏸ Пауза',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_PAUSE,
-                torrentId: infoHash,
-                pause: !isPausedOrError,
-              },
-            } as const),
-        withDeleteConfirm
-          ? ({
-              type: 'callback',
-              text: '🗑 Точно удалить?',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE_CONFIRM,
-                torrentId: infoHash,
-              },
-            } as const)
-          : ({
-              type: 'callback',
-              text: '🗑 Удалить',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE,
-                torrentId: infoHash,
-              },
-            } as const),
-      ].filter(isDefined),
       [
         {
           type: 'callback',
-          text: '◀️ К списку',
+          text: '🔄 Обновить',
           callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST,
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_REFRESH,
+            torrentId: infoHash,
+            page,
           },
-        } as const,
+        },
       ],
-    ].filter(isDefined),
+      [
+        hasPrevButton && {
+          type: 'callback',
+          text: '◀️',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE,
+            torrentId: infoHash,
+            page: page - 1,
+          },
+        },
+        hastNextButton && {
+          type: 'callback',
+          text: '▶️',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE,
+            torrentId: infoHash,
+            page: page + 1,
+          },
+        },
+      ],
+      [
+        {
+          type: 'callback',
+          text: '◀️ К торренту',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT,
+            torrentId: infoHash,
+          },
+        },
+      ],
+    ],
   });
 }
 
@@ -409,7 +481,7 @@ export async function formatTorrents(torrents: Torrent[]): Promise<Markdown> {
       const filesStrings = await Promise.all(torrents.map(formatTorrentsListItem));
 
       return Markdown.create`${Markdown.bold(STATE_TITLE[groupString as TorrentState])}
-${Markdown.join(filesStrings, '\n')}`;
+${Markdown.join(filesStrings, '\n\n')}`;
     }),
   );
 
@@ -426,6 +498,18 @@ export async function formatTorrentsListItem(torrent: Torrent): Promise<Markdown
   return Markdown.create`${clientState.criticalTorrentId === torrent.infoHash ? '❗️ ' : ''}${
     torrent.name ?? 'Неизвестно'
   } (${formatSize(torrent.size)}, ${formatPercent(progress)})`;
+}
+
+export interface FormatTorrentFilesOptions {
+  torrent: Torrent;
+  clientTorrent: ClientTorrent | null;
+}
+
+export function formatTorrentFiles(files: TorrentFile[], options: FormatTorrentFilesOptions): Markdown {
+  return Markdown.join(
+    files.map((file) => formatTorrentFile(file, options)),
+    '\n\n',
+  );
 }
 
 export interface FormatTorrentFileOptions {

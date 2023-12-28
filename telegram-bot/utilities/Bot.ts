@@ -39,6 +39,9 @@ export interface CallbackQueryHandlerContext<CallbackData extends BeautifiedCall
   data: CallbackData;
   message: Message;
   edit(response: AnyResponse): Promise<void>;
+  updateUserState(
+    data: Prisma.XOR<Prisma.TelegramUserDataUpdateInput, Prisma.TelegramUserDataUncheckedUpdateInput>,
+  ): Promise<TelegramUserData>;
 }
 
 export interface ResponseSendContext {
@@ -226,6 +229,14 @@ class Bot {
           edit: async (response) => {
             await this.editMessage(message, response);
           },
+          updateUserState: async (data) => {
+            return prisma.telegramUserData.update({
+              where: {
+                userId,
+              },
+              data,
+            });
+          },
         };
 
         const handler = this.callbackDataHandlers[beautifiedCallbackData.source] as
@@ -233,7 +244,7 @@ class Bot {
           | undefined;
 
         if (!handler) {
-          return;
+          throw new CustomError(ErrorCode.UNSUPPORTED, 'Не поддерживается');
         }
 
         const response = await handler(ctx);

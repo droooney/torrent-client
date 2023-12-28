@@ -42,6 +42,24 @@ export const uglifyCallbackDataMapper: {
   [CallbackButtonSource.TORRENT_CLIENT_STATUS_PAUSE]: ({ pause }) => ({
     p: booleanToNumber(pause),
   }),
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_SHOW_FILES]: ({ torrentId }) => ({
+    t: torrentId,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE]: ({ torrentId, page }) => ({
+    t: torrentId,
+    p: page,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_REFRESH]: ({ torrentId, page }) => ({
+    t: torrentId,
+    p: page,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT]: ({ torrentId }) => ({
+    t: torrentId,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ torrentId, path }) => ({
+    t: torrentId,
+    p: path,
+  }),
   [CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT]: ({ torrentId }) => ({
     t: torrentId,
   }),
@@ -83,6 +101,24 @@ export const beautifyCallbackDataMapper: {
   }),
   [CallbackButtonSource.TORRENT_CLIENT_STATUS_PAUSE]: ({ p }) => ({
     pause: numberToBoolean(p),
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_SHOW_FILES]: ({ t }) => ({
+    torrentId: t,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE]: ({ t, p }) => ({
+    torrentId: t,
+    page: p,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_REFRESH]: ({ t, p }) => ({
+    torrentId: t,
+    page: p,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT]: ({ t }) => ({
+    torrentId: t,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ t, p }) => ({
+    torrentId: t,
+    path: p,
   }),
   [CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT]: ({ t }) => ({
     torrentId: t,

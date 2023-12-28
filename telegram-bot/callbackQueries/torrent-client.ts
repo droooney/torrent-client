@@ -1,3 +1,4 @@
+import { TelegramUserState } from '@prisma/client';
 import torrentClient from 'torrent-client/client';
 
 import { CallbackButtonSource } from 'telegram-bot/types/keyboard';
@@ -6,6 +7,7 @@ import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import {
   getAddTorrentResponse,
+  getFilesResponse,
   getStatusResponse,
   getTelegramTorrentInfo,
   getTelegramTorrentsListResponse,
@@ -19,6 +21,7 @@ bot.handleCallbackQuery(
     CallbackButtonSource.TORRENT_CLIENT_TORRENT_REFRESH,
     CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT,
     CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE,
+    CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT,
   ],
   async (ctx) => {
     return getTelegramTorrentInfo(
@@ -99,3 +102,24 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_STATUS_PAUSE, async 
 bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_RUTRACKER_SEARCH_ADD_TORRENT, async (ctx) => {
   return getAddTorrentResponse(() => rutrackerClient.addTorrent(ctx.data.torrentId));
 });
+
+bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_ADD_TORRENT, async (ctx) => {
+  await ctx.updateUserState({
+    state: TelegramUserState.AddTorrent,
+  });
+
+  return new Response({
+    text: 'Отправьте торрент или magnet-ссылку',
+  });
+});
+
+bot.handleCallbackQuery(
+  [
+    CallbackButtonSource.TORRENT_CLIENT_TORRENT_SHOW_FILES,
+    CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE,
+    CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_REFRESH,
+  ],
+  async (ctx) => {
+    return getFilesResponse(ctx.data.torrentId, 'page' in ctx.data ? ctx.data.page : 0);
+  },
+);
