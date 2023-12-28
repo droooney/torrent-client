@@ -16,10 +16,11 @@ import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Markdown from 'telegram-bot/utilities/Markdown';
 import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
+import TorrentClient from 'torrent-client/utilities/TorrentClient';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { isDefined } from 'utilities/is';
 import { formatIndex, formatPercent, formatProgress, minmax } from 'utilities/number';
-import { formatSize, formatSpeed, getProgress, getRealProgress } from 'utilities/size';
+import { formatSize, formatSpeed } from 'utilities/size';
 
 const STATUS_STATE_SORTING: { [State in TorrentState]: number } = {
   Downloading: 0,
@@ -127,7 +128,7 @@ export async function getStatusResponse(): Promise<Response> {
     prisma.torrent.findMany({
       where: {
         state: {
-          not: 'Finished',
+          in: [TorrentState.Verifying, TorrentState.Downloading],
         },
       },
     }),
@@ -303,11 +304,13 @@ export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm
     throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
   }
 
-  const progress = getRealProgress(torrent, torrent, clientTorrent);
+  const progress = TorrentClient.getRealProgress(torrent, torrent, clientTorrent);
   const verifiedString =
-    torrent.state === 'Verifying' && clientTorrent
+    torrent.state === TorrentState.Verifying && clientTorrent
       ? Markdown.create`
-${Markdown.bold('Проверено')}: ${formatPercent(minmax(getProgress(clientTorrent) / torrent.progress || 0, 0, 1))}`
+${Markdown.bold('Проверено')}: ${formatPercent(
+          minmax(TorrentClient.getProgress(clientTorrent) / torrent.progress || 0, 0, 1),
+        )}`
       : '';
 
   // TODO: show remaining time
@@ -323,13 +326,13 @@ ${Markdown.join(
 )}
 `;
 
-  const isPausedOrError = torrent.state === 'Paused' || torrent.state === 'Error';
+  const isPausedOrError = torrent.state === TorrentState.Paused || torrent.state === TorrentState.Error;
   const isCritical = clientState.criticalTorrentId === infoHash;
 
   return new Response({
     text: info,
     keyboard: [
-      torrent.state === 'Finished'
+      torrent.state === TorrentState.Finished
         ? null
         : [
             {
@@ -351,7 +354,7 @@ ${Markdown.join(
             } as const,
           ],
       [
-        torrent.state === 'Finished'
+        torrent.state === TorrentState.Finished
           ? null
           : ({
               type: 'callback',
@@ -418,7 +421,7 @@ export async function formatTorrentsListItem(torrent: Torrent): Promise<Markdown
     torrentClient.getClientTorrent(torrent.infoHash),
     torrentClient.getState(),
   ]);
-  const progress = getRealProgress(torrent, torrent, clientTorrent);
+  const progress = TorrentClient.getRealProgress(torrent, torrent, clientTorrent);
 
   return Markdown.create`${clientState.criticalTorrentId === torrent.infoHash ? '❗️ ' : ''}${
     torrent.name ?? 'Неизвестно'
@@ -434,7 +437,7 @@ export function formatTorrentFile(file: TorrentFile, options: FormatTorrentFileO
   const { torrent, clientTorrent } = options;
 
   const clientTorrentFile = clientTorrent?.files.find(({ path }) => path === file.path);
-  const progress = getRealProgress(file, torrent, clientTorrentFile);
+  const progress = TorrentClient.getRealProgress(file, torrent, clientTorrentFile);
 
   return Markdown.create`${file.path === torrent.name ? file.path : path.relative(torrent.name ?? '', file.path)}
 ${formatProgress(progress)}

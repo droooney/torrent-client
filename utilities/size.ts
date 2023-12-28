@@ -1,8 +1,4 @@
-import { Torrent, TorrentFile } from '@prisma/client';
 import some from 'lodash/some';
-import { Torrent as ClientTorrent, TorrentFile as ClientTorrentFile } from 'webtorrent';
-
-import { minmax } from 'utilities/number';
 
 const SUFFIXES: { en: string; ru: string }[] = [
   {
@@ -64,18 +60,4 @@ export function parseSize(size: string): number | null {
   }
 
   return value * 10 ** (suffixIndex * 3);
-}
-
-export function getProgress(torrentOrFile: ClientTorrent | ClientTorrentFile): number {
-  return minmax(torrentOrFile.downloaded / torrentOrFile.length, 0, torrentOrFile.length);
-}
-
-export function getRealProgress(
-  torrentOrFile: TorrentFile | Torrent,
-  torrent: Torrent,
-  clientTorrentOrFile: ClientTorrent | ClientTorrentFile | null | undefined,
-): number {
-  return clientTorrentOrFile && torrent.state !== 'Verifying'
-    ? getProgress(clientTorrentOrFile)
-    : torrentOrFile.progress;
 }
