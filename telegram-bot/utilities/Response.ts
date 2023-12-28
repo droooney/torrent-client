@@ -8,6 +8,7 @@ import { InlineKeyboard } from 'telegram-bot/types/keyboard';
 import { ResponseEditContext, ResponseSendContext } from 'telegram-bot/utilities/Bot';
 import Markdown from 'telegram-bot/utilities/Markdown';
 import { prepareInlineKeyboard } from 'telegram-bot/utilities/keyboard';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 export interface ResponseOptions {
   text: string | Markdown;
@@ -26,14 +27,27 @@ class Response {
   async edit(ctx: ResponseEditContext): Promise<void> {
     const newText = this.text.toString();
     const newReplyMarkup = this.getReplyMarkup();
+    let isEdited = false;
 
     if (newText !== ctx.message.text || !isEqual(ctx.message.reply_markup, newReplyMarkup)) {
-      await ctx.api.editMessageText(this.text.toString(), {
-        chat_id: ctx.message.chat.id,
-        message_id: ctx.message.message_id,
-        parse_mode: this.getParseMode(),
-        reply_markup: newReplyMarkup,
-      });
+      try {
+        await ctx.api.editMessageText(this.text.toString(), {
+          chat_id: ctx.message.chat.id,
+          message_id: ctx.message.message_id,
+          parse_mode: this.getParseMode(),
+          reply_markup: newReplyMarkup,
+        });
+
+        isEdited = true;
+      } catch (err) {
+        if (!(err instanceof Error) || !/message is not modified/.test(err.message)) {
+          throw err;
+        }
+      }
+    }
+
+    if (!isEdited) {
+      throw new CustomError(ErrorCode.SAME_CONTENT, 'Сообщение не обновлено');
     }
   }
 

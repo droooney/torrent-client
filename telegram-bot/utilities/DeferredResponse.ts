@@ -4,6 +4,7 @@ import { AnyResponse, ResponseEditContext, ResponseSendContext } from 'telegram-
 import Markdown from 'telegram-bot/utilities/Markdown';
 import Response from 'telegram-bot/utilities/Response';
 import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
+import { prepareErrorForLogging } from 'utilities/error';
 import { formatProgress } from 'utilities/number';
 import { delay } from 'utilities/promise';
 
@@ -43,7 +44,7 @@ class DeferredResponse {
     try {
       await getCurrentResponse().edit(ctx);
     } catch (err) {
-      console.log(err instanceof Error ? err.stack : err);
+      console.log(prepareErrorForLogging(err));
     }
 
     startUpdating(ctx.message);
@@ -60,14 +61,14 @@ class DeferredResponse {
 
       await (deferredResponse ?? this.immediate).edit(ctx);
     } catch (err) {
-      console.log(err instanceof Error ? err.stack : err);
+      console.log(prepareErrorForLogging(err));
 
       cancelUpdating();
 
       try {
         await getErrorResponse(err).edit(ctx);
-      } catch (e) {
-        console.log(e instanceof Error ? e.stack : e);
+      } catch (err) {
+        console.log(prepareErrorForLogging(err));
       }
     }
   }
@@ -143,7 +144,7 @@ ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
     try {
       message = await getCurrentResponse().send(ctx);
     } catch (err) {
-      console.log(err instanceof Error ? err.stack : err);
+      console.log(prepareErrorForLogging(err));
 
       return (await this.getDeferred())?.send(ctx) ?? null;
     }
@@ -162,14 +163,14 @@ ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
 
       await bot.editMessage(message, deferredResponse ?? this.immediate);
     } catch (err) {
-      console.log(err instanceof Error ? err.stack : err);
+      console.log(prepareErrorForLogging(err));
 
       cancelUpdating();
 
       try {
         await bot.editMessage(message, getErrorResponse(err));
-      } catch (e) {
-        console.log(e instanceof Error ? e.stack : e);
+      } catch (err) {
+        console.log(prepareErrorForLogging(err));
       }
     }
 

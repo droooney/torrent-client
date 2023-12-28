@@ -6,6 +6,8 @@ import { beautifyCallbackDataMapper, uglifyCallbackDataMapper } from 'telegram-b
 
 import { BeautifiedCallbackData, InlineKeyboard, UglifiedCallbackData } from 'telegram-bot/types/keyboard';
 
+import CustomError, { ErrorCode } from 'utilities/CustomError';
+
 export function prepareInlineKeyboard(keyboard: InlineKeyboard): InlineKeyboardMarkup {
   return {
     inline_keyboard: keyboard.map((row) =>
@@ -15,7 +17,9 @@ export function prepareInlineKeyboard(keyboard: InlineKeyboard): InlineKeyboardM
           const callbackDataString = JSON.stringify(callbackData);
 
           if (callbackDataString.length > 64) {
-            throw new Error(`Callback data too long (${callbackDataString})`);
+            throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка добавления клавиатуры', {
+              message: `Callback data too long (${callbackDataString})`,
+            });
           }
 
           return {

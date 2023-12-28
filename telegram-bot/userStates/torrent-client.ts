@@ -4,7 +4,7 @@ import torrentClient from 'torrent-client/client';
 import Response from 'telegram-bot/utilities/Response';
 import { tryLoadDocument } from 'telegram-bot/utilities/documents';
 import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/utilities/response/torrent-client';
-import CustomError from 'utilities/CustomError';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { formatSpeed, parseSize } from 'utilities/size';
 
 import bot from 'telegram-bot/bot';
@@ -44,7 +44,7 @@ bot.handleUserState(TelegramUserState.SetDownloadLimit, async (ctx) => {
   const downloadLimit = text === '-' ? '-' : parseSize(text ?? '');
 
   if (downloadLimit === null) {
-    throw new CustomError('Ошибка формата данных');
+    throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка формата данных');
   }
 
   await ctx.updateUserState({
@@ -67,7 +67,7 @@ bot.handleUserState(TelegramUserState.SetUploadLimit, async (ctx) => {
   const uploadLimit = text === '-' ? '-' : parseSize(text ?? '');
 
   if (uploadLimit === null) {
-    throw new CustomError('Ошибка формата данных');
+    throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка формата данных');
   }
 
   await ctx.updateUserState({

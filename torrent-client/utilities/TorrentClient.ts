@@ -9,7 +9,7 @@ import { TORRENTS_DIRECTORY } from 'constants/paths';
 
 import prisma from 'db/prisma';
 
-import CustomError from 'utilities/CustomError';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { getProgress } from 'utilities/size';
 
 interface AddFileTorrent {
@@ -59,7 +59,7 @@ class TorrentClient {
       addTorrent.type === 'file' ? await parseTorrent(addTorrent.content) : await parseTorrent(addTorrent.magnet);
 
     if (!parsed.infoHash) {
-      throw new CustomError('Ошибка добавления торрента');
+      throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка добавления торрента');
     }
 
     let torrent = await prisma.torrent.findFirst({
@@ -69,7 +69,7 @@ class TorrentClient {
     });
 
     if (torrent) {
-      throw new CustomError('Торрент уже добавлен');
+      throw new CustomError(ErrorCode.ALREADY_ADDED, 'Торрент уже добавлен');
     }
 
     torrent = await prisma.torrent.create({
@@ -324,7 +324,7 @@ class TorrentClient {
     const addTorrent = torrent.magnetUri ?? torrent.torrentFile;
 
     if (!addTorrent) {
-      throw new CustomError('Ошибка добавления торрента');
+      throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка добавления торрента');
     }
 
     torrent = await prisma.torrent.update({

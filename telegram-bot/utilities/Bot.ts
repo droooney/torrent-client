@@ -17,6 +17,8 @@ import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Response from 'telegram-bot/utilities/Response';
 import { beautifyCallbackData } from 'telegram-bot/utilities/keyboard';
 import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
+import { prepareErrorForHuman, prepareErrorForLogging } from 'utilities/error';
 
 export interface BotOptions {
   token: string;
@@ -179,18 +181,18 @@ class Bot {
           await ctx.send(response);
         }
       } catch (err) {
-        console.log(err instanceof Error ? err.stack : err);
+        console.log(prepareErrorForLogging(err));
 
         try {
           await this.replyToMessage(message, getErrorResponse(err));
-        } catch (e) {
-          console.log(e instanceof Error ? e.stack : e);
+        } catch (err) {
+          console.log(prepareErrorForLogging(err));
         }
       }
     });
 
     this.api.on('callback_query', async (query) => {
-      const { from: user, message, data } = query;
+      const { id: queryId, from: user, message, data } = query;
 
       if (!user || !message || !this.isUserAllowed(user)) {
         return;
@@ -240,7 +242,21 @@ class Bot {
           await ctx.edit(response);
         }
       } catch (err) {
-        console.log(err instanceof Error ? err.stack : err);
+        let isSameContent = false;
+
+        if (err instanceof CustomError && err.code === ErrorCode.SAME_CONTENT) {
+          isSameContent = true;
+        } else {
+          console.log(prepareErrorForLogging(err));
+        }
+
+        try {
+          await this.api.answerCallbackQuery(queryId, {
+            text: isSameContent ? '' : prepareErrorForHuman(err),
+          });
+        } catch (err) {
+          console.log(prepareErrorForLogging(err));
+        }
       }
     });
 

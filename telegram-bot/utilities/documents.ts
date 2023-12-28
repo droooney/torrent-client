@@ -4,7 +4,8 @@ import { Document } from 'node-telegram-bot-api';
 import torrentClient from 'torrent-client/client';
 
 import { TextHandlerContext } from 'telegram-bot/utilities/Bot';
-import CustomError from 'utilities/CustomError';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
+import { prepareErrorForLogging } from 'utilities/error';
 
 export function isTorrentDocument(document: Document | undefined): document is Document {
   return document?.mime_type === 'application/x-bittorrent';
@@ -22,7 +23,7 @@ export async function tryLoadDocument(ctx: TextHandlerContext): Promise<Torrent 
   try {
     filePath = await ctx.downloadDocument();
   } catch (err) {
-    throw new CustomError('Ошибка загрузки файла', { cause: err });
+    throw new CustomError(ErrorCode.DOWNLOAD_ERROR, 'Ошибка загрузки файла', { cause: err });
   }
 
   if (!filePath) {
@@ -44,8 +45,8 @@ export async function loadTorrentFromFile(filePath: string): Promise<Torrent> {
   } catch (err) {
     try {
       await fs.remove(filePath);
-    } catch (e) {
-      console.log(e);
+    } catch (err) {
+      console.log(prepareErrorForLogging(err));
     }
 
     throw err;
@@ -53,8 +54,8 @@ export async function loadTorrentFromFile(filePath: string): Promise<Torrent> {
 
   try {
     await fs.remove(filePath);
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    console.log(prepareErrorForLogging(err));
   }
 
   return torrent;

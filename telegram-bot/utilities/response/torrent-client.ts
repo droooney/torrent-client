@@ -16,7 +16,7 @@ import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Markdown from 'telegram-bot/utilities/Markdown';
 import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
-import CustomError from 'utilities/CustomError';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { isDefined } from 'utilities/is';
 import { formatIndex, formatPercent, formatProgress, minmax } from 'utilities/number';
 import { formatSize, formatSpeed, getProgress, getRealProgress } from 'utilities/size';
@@ -300,7 +300,7 @@ export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm
   ]);
 
   if (!torrent) {
-    throw new CustomError('Торрент не найден');
+    throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
   }
 
   const progress = getRealProgress(torrent, torrent, clientTorrent);
