@@ -14,6 +14,7 @@ import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Markdown from 'telegram-bot/utilities/Markdown';
 import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
+import { callbackButton } from 'telegram-bot/utilities/keyboard';
 import TorrentClient from 'torrent-client/utilities/TorrentClient';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { formatDuration } from 'utilities/date';
@@ -60,14 +61,10 @@ export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | 
         text: Markdown.create`Торрент${torrent.name ? Markdown.create` "${torrent.name}"` : ''} добавлен!`,
         keyboard: [
           [
-            {
-              type: 'callback',
-              text: '▶️ Подробнее',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT,
-                torrentId: torrent.infoHash,
-              },
-            },
+            callbackButton('▶️ Подробнее', {
+              source: CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT,
+              torrentId: torrent.infoHash,
+            }),
           ],
         ],
       });
@@ -104,14 +101,12 @@ ${Markdown.bold('Сидов')}: ${seeds}
           '\n\n',
         ),
         keyboard: chunk(
-          topTorrents.map(({ id }, index) => ({
-            type: 'callback',
-            text: formatIndex(index),
-            callbackData: {
+          topTorrents.map(({ id }, index) =>
+            callbackButton(formatIndex(index), {
               source: CallbackButtonSource.TORRENT_CLIENT_RUTRACKER_SEARCH_ADD_TORRENT,
               torrentId: id,
-            },
-          })),
+            }),
+          ),
           3,
         ),
       });
@@ -161,46 +156,26 @@ ${Markdown.bold('Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
     text: status,
     keyboard: [
       [
-        {
-          type: 'callback',
-          text: '🔄 Обновить',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_STATUS_REFRESH,
-          },
-        },
-        {
-          type: 'callback',
-          text: clientState.paused ? '▶️ Продолжить' : '⏸ Пауза',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_STATUS_PAUSE,
-            pause: !clientState.paused,
-          },
-        },
+        callbackButton('🔄 Обновить', {
+          source: CallbackButtonSource.TORRENT_CLIENT_STATUS_REFRESH,
+        }),
+        callbackButton(clientState.paused ? '▶️ Продолжить' : '⏸ Пауза', {
+          source: CallbackButtonSource.TORRENT_CLIENT_STATUS_PAUSE,
+          pause: !clientState.paused,
+        }),
       ],
       [
-        {
-          type: 'callback',
-          text: '➕ Добавить',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_ADD_TORRENT,
-          },
-        },
-        {
-          type: 'callback',
-          text: '📜 Список',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_STATUS_SHOW_TORRENTS_LIST,
-          },
-        },
+        callbackButton('➕ Добавить', {
+          source: CallbackButtonSource.TORRENT_CLIENT_ADD_TORRENT,
+        }),
+        callbackButton('📜 Список', {
+          source: CallbackButtonSource.TORRENT_CLIENT_STATUS_SHOW_TORRENTS_LIST,
+        }),
       ],
       [
-        {
-          type: 'callback',
-          text: '◀️ Назад',
-          callbackData: {
-            source: CallbackButtonSource.ROOT_BACK_TO_ROOT,
-          },
-        },
+        callbackButton('◀️ Назад', {
+          source: CallbackButtonSource.ROOT_BACK_TO_ROOT,
+        }),
       ],
     ],
   });
@@ -229,51 +204,33 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
     text: text.isEmpty() ? 'Нет торрентов' : text,
     keyboard: [
       [
-        {
-          type: 'callback',
-          text: '🔄 Обновить',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_REFRESH,
-            page,
-          },
-        },
+        callbackButton('🔄 Обновить', {
+          source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_REFRESH,
+          page,
+        }),
       ],
       ...pageTorrents.map((torrent) => [
-        {
-          type: 'callback',
-          text: torrent.name ?? 'Неизвестно',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_ITEM,
-            torrentId: torrent.infoHash,
-          },
-        } as const,
+        callbackButton(`📄 ${torrent.name ?? 'Неизвестно'}`, {
+          source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_ITEM,
+          torrentId: torrent.infoHash,
+        }),
       ]),
       [
-        hasPrevButton && {
-          type: 'callback',
-          text: '◀️',
-          callbackData: {
+        hasPrevButton &&
+          callbackButton('◀️', {
             source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE,
             page: page - 1,
-          },
-        },
-        hastNextButton && {
-          type: 'callback',
-          text: '▶️',
-          callbackData: {
+          }),
+        hastNextButton &&
+          callbackButton('▶️', {
             source: CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE,
             page: page + 1,
-          },
-        },
+          }),
       ],
       [
-        {
-          type: 'callback',
-          text: '◀️ Назад',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_STATUS,
-          },
-        },
+        callbackButton('◀️ Назад', {
+          source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_STATUS,
+        }),
       ],
     ],
   });
@@ -300,70 +257,43 @@ export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm
     text: await formatTorrent(torrent),
     keyboard: [
       torrent.state !== TorrentState.Finished && [
-        {
-          type: 'callback',
-          text: '🔄 Обновить',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_REFRESH,
-            torrentId: infoHash,
-          },
-        },
-        {
-          type: 'callback',
-          text: isCritical ? '❕ Сделать некритичным' : '❗️ Сделать критичным',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_SET_CRITICAL,
-            torrentId: infoHash,
-            critical: !isCritical,
-          },
-        },
+        callbackButton('🔄 Обновить', {
+          source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_REFRESH,
+          torrentId: infoHash,
+        }),
+        callbackButton(isCritical ? '❕ Сделать некритичным' : '❗️ Сделать критичным', {
+          source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_SET_CRITICAL,
+          torrentId: infoHash,
+          critical: !isCritical,
+        }),
       ],
       [
-        torrent.state !== TorrentState.Finished && {
-          type: 'callback',
-          text: isPausedOrError ? '▶️ Продолжить' : '⏸ Пауза',
-          callbackData: {
+        torrent.state !== TorrentState.Finished &&
+          callbackButton(isPausedOrError ? '▶️ Продолжить' : '⏸ Пауза', {
             source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_PAUSE,
             torrentId: infoHash,
             pause: !isPausedOrError,
-          },
-        },
+          }),
         withDeleteConfirm
-          ? {
-              type: 'callback',
-              text: '🗑 Точно удалить?',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE_CONFIRM,
-                torrentId: infoHash,
-              },
-            }
-          : {
-              type: 'callback',
-              text: '🗑 Удалить',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE,
-                torrentId: infoHash,
-              },
-            },
+          ? callbackButton('🗑 Точно удалить?', {
+              source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE_CONFIRM,
+              torrentId: infoHash,
+            })
+          : callbackButton('🗑 Удалить', {
+              source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE,
+              torrentId: infoHash,
+            }),
       ],
       [
-        {
-          type: 'callback',
-          text: '📄 Файлы',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_SHOW_FILES,
-            torrentId: infoHash,
-          },
-        },
+        callbackButton('📄 Файлы', {
+          source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_SHOW_FILES,
+          torrentId: infoHash,
+        }),
       ],
       [
-        {
-          type: 'callback',
-          text: '◀️ К списку',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST,
-          },
-        },
+        callbackButton('◀️ К списку', {
+          source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST,
+        }),
       ],
     ],
   });
@@ -407,59 +337,40 @@ export async function getFilesResponse(infoHash: string, page: number = 0): Prom
     }),
     keyboard: [
       [
-        {
-          type: 'callback',
-          text: '🔄 Обновить',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_REFRESH,
-            torrentId: infoHash,
-            page,
-          },
-        },
+        callbackButton('🔄 Обновить', {
+          source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_REFRESH,
+          torrentId: infoHash,
+          page,
+        }),
       ],
       ...chunk(
-        pageFiles.map(
-          ({ id }, index) =>
-            ({
-              type: 'callback',
-              text: formatIndex(index),
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE,
-                fileId: id,
-              },
-            }) as const,
+        pageFiles.map(({ id }, index) =>
+          callbackButton(formatIndex(index), {
+            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE,
+            fileId: id,
+          }),
         ),
         3,
       ),
       [
-        hasPrevButton && {
-          type: 'callback',
-          text: '◀️',
-          callbackData: {
+        hasPrevButton &&
+          callbackButton('◀️', {
             source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE,
             torrentId: infoHash,
             page: page - 1,
-          },
-        },
-        hastNextButton && {
-          type: 'callback',
-          text: '▶️',
-          callbackData: {
+          }),
+        hastNextButton &&
+          callbackButton('▶️', {
             source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE,
             torrentId: infoHash,
             page: page + 1,
-          },
-        },
+          }),
       ],
       [
-        {
-          type: 'callback',
-          text: '◀️ К торренту',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT,
-            torrentId: infoHash,
-          },
-        },
+        callbackButton('◀️ К торренту', {
+          source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT,
+          torrentId: infoHash,
+        }),
       ],
     ],
   });
@@ -496,43 +407,27 @@ export async function getFileResponse(fileId: number, withDeleteConfirm: boolean
     }),
     keyboard: [
       file.state !== TorrentFileState.Finished && [
-        {
-          type: 'callback',
-          text: '🔄 Обновить',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_FILE_REFRESH,
-            fileId,
-          },
-        },
+        callbackButton('🔄 Обновить', {
+          source: CallbackButtonSource.TORRENT_FILE_REFRESH,
+          fileId,
+        }),
       ],
       file.state === TorrentFileState.Finished && [
         withDeleteConfirm
-          ? {
-              type: 'callback',
-              text: '🗑 Точно удалить?',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM,
-                fileId,
-              },
-            }
-          : {
-              type: 'callback',
-              text: '🗑 Удалить',
-              callbackData: {
-                source: CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE,
-                fileId,
-              },
-            },
+          ? callbackButton('🗑 Точно удалить?', {
+              source: CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM,
+              fileId,
+            })
+          : callbackButton('🗑 Удалить', {
+              source: CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE,
+              fileId,
+            }),
       ],
       [
-        {
-          type: 'callback',
-          text: '◀️ К файлам',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES,
-            torrentId: file.torrentId,
-          },
-        },
+        callbackButton('◀️ К файлам', {
+          source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES,
+          torrentId: file.torrentId,
+        }),
       ],
     ],
   });

@@ -4,10 +4,23 @@ import { InlineKeyboardMarkup } from 'node-telegram-bot-api';
 
 import { beautifyCallbackDataMapper, uglifyCallbackDataMapper } from 'telegram-bot/constants/callbackData';
 
-import { BeautifiedCallbackData, InlineKeyboard, UglifiedCallbackData } from 'telegram-bot/types/keyboard';
+import {
+  BeautifiedCallbackData,
+  CallbackInlineKeyboardButton,
+  InlineKeyboard,
+  UglifiedCallbackData,
+} from 'telegram-bot/types/keyboard';
 
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { isTruthy } from 'utilities/is';
+
+export function callbackButton(text: string, callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
+  return {
+    type: 'callback',
+    text,
+    callbackData,
+  };
+}
 
 export function prepareInlineKeyboard(keyboard: InlineKeyboard): InlineKeyboardMarkup {
   return {

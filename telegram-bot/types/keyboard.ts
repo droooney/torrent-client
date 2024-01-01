@@ -411,6 +411,7 @@ export type BeautifiedCallbackDataSourceWithData = {
 }[CallbackButtonSource];
 
 export interface BaseInlineKeyboardButton {
+  // TODO: add icon
   text: string;
 }
 

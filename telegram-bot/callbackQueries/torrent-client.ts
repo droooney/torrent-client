@@ -7,6 +7,7 @@ import { CallbackButtonSource } from 'telegram-bot/types/keyboard';
 
 import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
+import { callbackButton } from 'telegram-bot/utilities/keyboard';
 import {
   getAddTorrentResponse,
   getFileResponse,
@@ -54,13 +55,9 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE_CONFI
     text: 'Торрент успешно удален',
     keyboard: [
       [
-        {
-          type: 'callback',
-          text: '◀️ К списку',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST,
-          },
-        },
+        callbackButton('◀️ К списку', {
+          source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST,
+        }),
       ],
     ],
   });
@@ -157,14 +154,10 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM,
     text: 'Файл успешно удален',
     keyboard: [
       [
-        {
-          type: 'callback',
-          text: '◀️ К файлам',
-          callbackData: {
-            source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES,
-            torrentId: file.torrentId,
-          },
-        },
+        callbackButton('◀️ К файлам', {
+          source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES,
+          torrentId: file.torrentId,
+        }),
       ],
     ],
   });
