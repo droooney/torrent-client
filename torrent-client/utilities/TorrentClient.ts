@@ -103,6 +103,36 @@ class TorrentClient {
     return newActiveTorrent?.infoHash === torrent.infoHash ? newActiveTorrent : torrent;
   }
 
+  async deleteFile(fileId: number): Promise<void> {
+    const file = await prisma.torrentFile.findUnique({
+      where: {
+        id: fileId,
+      },
+    });
+
+    if (!file) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Файл не найден');
+    }
+
+    const torrent = await prisma.torrent.findUnique({
+      where: {
+        infoHash: file.torrentId,
+      },
+    });
+
+    if (torrent?.state !== TorrentState.Finished) {
+      throw new CustomError(ErrorCode.NOT_FINISHED, 'Торрент еще не закончил скачивание');
+    }
+
+    await fs.remove(path.resolve(TORRENTS_DIRECTORY, file.path));
+
+    await prisma.torrentFile.delete({
+      where: {
+        id: fileId,
+      },
+    });
+  }
+
   async deleteTorrent(infoHash: string): Promise<void> {
     await this.destroyClientTorrent(infoHash);
 
@@ -111,6 +141,10 @@ class TorrentClient {
         infoHash,
       },
     });
+
+    if (!torrent) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
+    }
 
     if (torrent?.name) {
       await fs.remove(path.resolve(TORRENTS_DIRECTORY, torrent.name));

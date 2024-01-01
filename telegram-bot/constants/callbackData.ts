@@ -56,9 +56,20 @@ export const uglifyCallbackDataMapper: {
   [CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT]: ({ torrentId }) => ({
     t: torrentId,
   }),
-  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ torrentId, fileId }) => ({
-    t: torrentId,
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ fileId }) => ({
     f: fileId,
+  }),
+  [CallbackButtonSource.TORRENT_FILE_REFRESH]: ({ fileId }) => ({
+    f: fileId,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE]: ({ fileId }) => ({
+    f: fileId,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM]: ({ fileId }) => ({
+    f: fileId,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES]: ({ torrentId }) => ({
+    t: torrentId,
   }),
   [CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT]: ({ torrentId }) => ({
     t: torrentId,
@@ -116,9 +127,20 @@ export const beautifyCallbackDataMapper: {
   [CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT]: ({ t }) => ({
     torrentId: t,
   }),
-  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ t, f }) => ({
-    torrentId: t,
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ f }) => ({
     fileId: f,
+  }),
+  [CallbackButtonSource.TORRENT_FILE_REFRESH]: ({ f }) => ({
+    fileId: f,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE]: ({ f }) => ({
+    fileId: f,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM]: ({ f }) => ({
+    fileId: f,
+  }),
+  [CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES]: ({ t }) => ({
+    torrentId: t,
   }),
   [CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT]: ({ t }) => ({
     torrentId: t,

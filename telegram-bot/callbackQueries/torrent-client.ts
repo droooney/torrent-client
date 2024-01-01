@@ -1,17 +1,21 @@
 import { TelegramUserState } from '@prisma/client';
 import torrentClient from 'torrent-client/client';
 
+import prisma from 'db/prisma';
+
 import { CallbackButtonSource } from 'telegram-bot/types/keyboard';
 
 import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import {
   getAddTorrentResponse,
+  getFileResponse,
   getFilesResponse,
   getStatusResponse,
   getTelegramTorrentInfo,
   getTelegramTorrentsListResponse,
 } from 'telegram-bot/utilities/response/torrent-client';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 import bot from 'telegram-bot/bot';
 
@@ -118,8 +122,50 @@ bot.handleCallbackQuery(
     CallbackButtonSource.TORRENT_CLIENT_TORRENT_SHOW_FILES,
     CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE,
     CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_REFRESH,
+    CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES,
   ],
   async (ctx) => {
     return getFilesResponse(ctx.data.torrentId, 'page' in ctx.data ? ctx.data.page : 0);
   },
 );
+
+bot.handleCallbackQuery(
+  [
+    CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE,
+    CallbackButtonSource.TORRENT_FILE_REFRESH,
+    CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE,
+  ],
+  async (ctx) => {
+    return getFileResponse(ctx.data.fileId, ctx.data.source === CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE);
+  },
+);
+
+bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM, async (ctx) => {
+  const file = await prisma.torrentFile.findUnique({
+    where: {
+      id: ctx.data.fileId,
+    },
+  });
+
+  if (!file) {
+    throw new CustomError(ErrorCode.NOT_FOUND, 'Файл не найден');
+  }
+
+  await torrentClient.deleteFile(ctx.data.fileId);
+
+  return new Response({
+    text: 'Файл успешно удален',
+    keyboard: [
+      [
+        {
+          type: 'callback',
+          text: '◀️ К файлам',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES,
+            torrentId: file.torrentId,
+          },
+        },
+      ],
+    ],
+  });
+});

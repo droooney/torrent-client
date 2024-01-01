@@ -6,6 +6,7 @@ export enum ErrorCode {
   ALREADY_ADDED = 'ALREADY_ADDED',
   SAME_CONTENT = 'SAME_CONTENT',
   UNSUPPORTED = 'UNSUPPORTED',
+  NOT_FINISHED = 'NOT_FINISHED',
 }
 
 class CustomError extends Error {

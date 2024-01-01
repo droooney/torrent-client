@@ -37,6 +37,12 @@ export enum CallbackButtonSource {
   TORRENT_CLIENT_BACK_TO_TORRENT = 22,
   TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE = 23,
 
+  // Torrent client: file
+  TORRENT_FILE_REFRESH = 27,
+  TORRENT_CLIENT_DELETE_FILE = 24,
+  TORRENT_CLIENT_DELETE_FILE_CONFIRM = 26,
+  TORRENT_CLIENT_BACK_TO_FILES = 25,
+
   // Torrent client: misc
   TORRENT_CLIENT_ADD_TORRENT = 18,
   TORRENT_CLIENT_NAVIGATE_TO_TORRENT = 11,
@@ -146,8 +152,27 @@ export const torrentBackToTorrentCallbackDataSchema = z.object({
 
 export const torrentNavigateToFileCallbackDataSchema = z.object({
   $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE),
-  t: z.string(),
   f: z.number(),
+});
+
+export const torrentFileRefreshCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_FILE_REFRESH),
+  f: z.number(),
+});
+
+export const torrentDeleteFileCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE),
+  f: z.number(),
+});
+
+export const torrentDeleteFileConfirmCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM),
+  f: z.number(),
+});
+
+export const torrentBackToFilesCallbackDataSchema = z.object({
+  $: z.literal(CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES),
+  t: z.string(),
 });
 
 export const addTorrentCallbackDataSchema = z.object({
@@ -186,6 +211,10 @@ export const callbackDataSchema = z.union([
   torrentFilesRefreshCallbackDataSchema,
   torrentBackToTorrentCallbackDataSchema,
   torrentNavigateToFileCallbackDataSchema,
+  torrentFileRefreshCallbackDataSchema,
+  torrentDeleteFileCallbackDataSchema,
+  torrentDeleteFileConfirmCallbackDataSchema,
+  torrentBackToFilesCallbackDataSchema,
   addTorrentCallbackDataSchema,
   navigateToTorrentCallbackDataSchema,
   rutrackerSearchAddTorrentCallbackDataSchema,
@@ -303,8 +332,27 @@ export interface TorrentBackToTorrentCallbackData {
 
 export interface TorrentNavigateToFileCallbackData {
   source: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['$'];
-  torrentId: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['t'];
   fileId: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['f'];
+}
+
+export interface TorrentFileRefreshCallbackData {
+  source: z.infer<typeof torrentFileRefreshCallbackDataSchema>['$'];
+  fileId: z.infer<typeof torrentFileRefreshCallbackDataSchema>['f'];
+}
+
+export interface TorrentDeleteFileCallbackData {
+  source: z.infer<typeof torrentDeleteFileCallbackDataSchema>['$'];
+  fileId: z.infer<typeof torrentDeleteFileCallbackDataSchema>['f'];
+}
+
+export interface TorrentDeleteFileConfirmCallbackData {
+  source: z.infer<typeof torrentDeleteFileConfirmCallbackDataSchema>['$'];
+  fileId: z.infer<typeof torrentDeleteFileConfirmCallbackDataSchema>['f'];
+}
+
+export interface TorrentBackToFilesCallbackData {
+  source: z.infer<typeof torrentBackToFilesCallbackDataSchema>['$'];
+  torrentId: z.infer<typeof torrentBackToFilesCallbackDataSchema>['t'];
 }
 
 export interface AddTorrentCallbackData {
@@ -343,6 +391,10 @@ export type BeautifiedCallbackData =
   | TorrentFilesRefreshCallbackData
   | TorrentBackToTorrentCallbackData
   | TorrentNavigateToFileCallbackData
+  | TorrentFileRefreshCallbackData
+  | TorrentDeleteFileCallbackData
+  | TorrentDeleteFileConfirmCallbackData
+  | TorrentBackToFilesCallbackData
   | AddTorrentCallbackData
   | NavigateToTorrentCallbackData
   | RutrackerSearchAddTorrentCallbackData;

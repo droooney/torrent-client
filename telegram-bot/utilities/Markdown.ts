@@ -2,14 +2,14 @@ import MarkdownEntity from 'telegram-bot/utilities/MarkdownEntity';
 
 const CHARACTERS_TO_ESCAPE = /[_*[\]()~`>#+\-=|{}.!\\]/g;
 
-export type AllowedEntity = string | number | false | null | undefined | MarkdownEntity | Markdown;
+export type MarkdownAllowedEntity = string | number | false | null | undefined | MarkdownEntity | Markdown;
 
 class Markdown {
   static bold(value: string): MarkdownEntity {
     return new MarkdownEntity(`*${Markdown.escape(value)}*`);
   }
 
-  private static compile(strings: TemplateStringsArray, ...entities: AllowedEntity[]): string {
+  private static compile(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): string {
     return entities.reduce<string>((text, entity, index) => {
       const entityString =
         entity === false || entity == null
@@ -22,7 +22,7 @@ class Markdown {
     }, Markdown.escape(strings[0]));
   }
 
-  static create(strings: TemplateStringsArray, ...entities: AllowedEntity[]): Markdown {
+  static create(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): Markdown {
     return new Markdown(Markdown.compile(strings, ...entities));
   }
 
@@ -30,7 +30,7 @@ class Markdown {
     return value.replace(CHARACTERS_TO_ESCAPE, '\\$&');
   }
 
-  static join(markdowns: Markdown[], joiner: AllowedEntity): Markdown {
+  static join(markdowns: Markdown[], joiner: MarkdownAllowedEntity): Markdown {
     const markdown = new Markdown();
 
     markdowns.forEach((text, index) => {
@@ -50,7 +50,7 @@ class Markdown {
     this.value = value;
   }
 
-  add(strings: TemplateStringsArray, ...entities: AllowedEntity[]): void {
+  add(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): void {
     this.value += Markdown.compile(strings, ...entities);
   }
 

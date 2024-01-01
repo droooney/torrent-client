@@ -1,9 +1,7 @@
 import path from 'node:path';
 
-import { Torrent, TorrentFile, TorrentState } from '@prisma/client';
+import { Torrent, TorrentFile, TorrentFileState, TorrentState } from '@prisma/client';
 import chunk from 'lodash/chunk';
-import groupBy from 'lodash/groupBy';
-import map from 'lodash/map';
 import sortBy from 'lodash/sortBy';
 import torrentClient from 'torrent-client/client';
 import { Torrent as ClientTorrent } from 'webtorrent';
@@ -18,25 +16,28 @@ import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import TorrentClient from 'torrent-client/utilities/TorrentClient';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
+import { formatDuration } from 'utilities/date';
+import { getFileIcon } from 'utilities/file';
+import { isDefined } from 'utilities/is';
 import { formatIndex, formatPercent, formatProgress, minmax } from 'utilities/number';
 import { formatSize, formatSpeed } from 'utilities/size';
 
-const STATUS_STATE_SORTING: { [State in TorrentState]: number } = {
-  Downloading: 0,
-  Verifying: 1,
-  Queued: 2,
-  Paused: 3,
-  Error: 4,
-  Finished: 5,
+const STATUS_STATE_SORTING: Record<TorrentState, number> = {
+  [TorrentState.Downloading]: 0,
+  [TorrentState.Verifying]: 1,
+  [TorrentState.Queued]: 2,
+  [TorrentState.Paused]: 3,
+  [TorrentState.Error]: 4,
+  [TorrentState.Finished]: 5,
 };
 
-const STATE_TITLE: { [State in TorrentState]: string } = {
-  Downloading: '🟢 Скачивается',
-  Verifying: '🟡 Проверяется',
-  Queued: '🔵 В очереди',
-  Paused: '🟠 На паузе',
-  Error: '🔴 Ошибка',
-  Finished: '⚪️ Завершен',
+const STATE_TITLE: Record<TorrentState, string> = {
+  [TorrentState.Downloading]: '🟢 Скачивается',
+  [TorrentState.Verifying]: '🟡 Проверяется',
+  [TorrentState.Queued]: '🔵 В очереди',
+  [TorrentState.Paused]: '🟠 На паузе',
+  [TorrentState.Error]: '🔴 Ошибка',
+  [TorrentState.Finished]: '⚪️ Завершен',
 };
 
 const LIST_PAGE_SIZE = 5;
@@ -207,7 +208,11 @@ ${Markdown.bold('Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
 
 export async function getTelegramTorrentsListResponse(page: number = 0): Promise<Response> {
   // TODO: better pagination
-  const torrents = await prisma.torrent.findMany();
+  const torrents = await prisma.torrent.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
   const sortedTorrents = sortTorrents(torrents);
 
   const start = page * LIST_PAGE_SIZE;
@@ -275,46 +280,24 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
 }
 
 export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm: boolean = false): Promise<Response> {
-  const [clientState, torrent, clientTorrent] = await Promise.all([
+  const [clientState, torrent] = await Promise.all([
     torrentClient.getState(),
     prisma.torrent.findUnique({
       where: {
         infoHash,
       },
     }),
-    torrentClient.getClientTorrent(infoHash),
   ]);
 
   if (!torrent) {
     throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
   }
 
-  const progress = TorrentClient.getRealProgress(torrent, torrent, clientTorrent);
-  const verifiedString =
-    torrent.state === TorrentState.Verifying && clientTorrent
-      ? Markdown.create`
-${Markdown.bold('Проверено')}: ${formatPercent(
-          minmax(TorrentClient.getProgress(clientTorrent) / torrent.progress || 0, 0, 1),
-        )}`
-      : '';
-  const errorString =
-    torrent.state === TorrentState.Error && torrent.errorMessage
-      ? Markdown.create`
-${torrent.errorMessage}`
-      : '';
-
-  // TODO: show remaining time
-  const info = Markdown.create`
-${Markdown.bold('Название')}: ${torrent.name}
-${Markdown.bold('Статус')}: ${STATE_TITLE[torrent.state]}
-${Markdown.bold('Размер')}: ${formatSize(torrent.size)}
-${Markdown.bold('Скачано')}: ${formatPercent(progress)}${verifiedString}${errorString}`;
-
   const isPausedOrError = torrent.state === TorrentState.Paused || torrent.state === TorrentState.Error;
   const isCritical = clientState.criticalTorrentId === infoHash;
 
   return new Response({
-    text: info,
+    text: await formatTorrent(torrent),
     keyboard: [
       torrent.state !== TorrentState.Finished && [
         {
@@ -434,6 +417,20 @@ export async function getFilesResponse(infoHash: string, page: number = 0): Prom
           },
         },
       ],
+      ...chunk(
+        pageFiles.map(
+          ({ id }, index) =>
+            ({
+              type: 'callback',
+              text: formatIndex(index),
+              callbackData: {
+                source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE,
+                fileId: id,
+              },
+            }) as const,
+        ),
+        3,
+      ),
       [
         hasPrevButton && {
           type: 'callback',
@@ -468,36 +465,128 @@ export async function getFilesResponse(infoHash: string, page: number = 0): Prom
   });
 }
 
+export async function getFileResponse(fileId: number, withDeleteConfirm: boolean = false): Promise<Response> {
+  const file = await prisma.torrentFile.findUnique({
+    where: {
+      id: fileId,
+    },
+  });
+
+  if (!file) {
+    throw new CustomError(ErrorCode.NOT_FOUND, 'Файл не найден');
+  }
+
+  const [torrent, clientTorrent] = await Promise.all([
+    prisma.torrent.findUnique({
+      where: {
+        infoHash: file.torrentId,
+      },
+    }),
+    torrentClient.getClientTorrent(file.torrentId),
+  ]);
+
+  if (!torrent) {
+    throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
+  }
+
+  return new Response({
+    text: formatTorrentFile(file, {
+      torrent,
+      clientTorrent,
+    }),
+    keyboard: [
+      file.state !== TorrentFileState.Finished && [
+        {
+          type: 'callback',
+          text: '🔄 Обновить',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_FILE_REFRESH,
+            fileId,
+          },
+        },
+      ],
+      file.state === TorrentFileState.Finished && [
+        withDeleteConfirm
+          ? {
+              type: 'callback',
+              text: '🗑 Точно удалить?',
+              callbackData: {
+                source: CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM,
+                fileId,
+              },
+            }
+          : {
+              type: 'callback',
+              text: '🗑 Удалить',
+              callbackData: {
+                source: CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE,
+                fileId,
+              },
+            },
+      ],
+      [
+        {
+          type: 'callback',
+          text: '◀️ К файлам',
+          callbackData: {
+            source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES,
+            torrentId: file.torrentId,
+          },
+        },
+      ],
+    ],
+  });
+}
+
 export function sortTorrents(torrents: Torrent[]): Torrent[] {
   return sortBy(torrents, ({ state }) => STATUS_STATE_SORTING[state]);
 }
 
 export async function formatTorrents(torrents: Torrent[]): Promise<Markdown> {
   const sortedTorrents = sortTorrents(torrents);
-  const groupedTorrents = groupBy(sortedTorrents, ({ state }) => state);
+  const formattedTorrents = await Promise.all(sortedTorrents.map(formatTorrent));
 
-  const formattedGroups = await Promise.all(
-    map(groupedTorrents, async (torrents, groupString) => {
-      const filesStrings = await Promise.all(torrents.map(formatTorrentsListItem));
-
-      return Markdown.create`${Markdown.bold(STATE_TITLE[groupString as TorrentState])}
-${Markdown.join(filesStrings, '\n\n')}`;
-    }),
-  );
-
-  return Markdown.join(formattedGroups, '\n\n');
+  return Markdown.join(formattedTorrents, '\n\n');
 }
 
-export async function formatTorrentsListItem(torrent: Torrent): Promise<Markdown> {
-  const [clientTorrent, clientState] = await Promise.all([
+export async function formatTorrent(torrent: Torrent): Promise<Markdown> {
+  const [clientTorrent, clientState, downloadSpeed] = await Promise.all([
     torrentClient.getClientTorrent(torrent.infoHash),
     torrentClient.getState(),
+    torrentClient.getDownloadSpeed(),
   ]);
   const progress = TorrentClient.getRealProgress(torrent, torrent, clientTorrent);
 
-  return Markdown.create`${clientState.criticalTorrentId === torrent.infoHash ? '❗️ ' : ''}${
-    torrent.name ?? 'Неизвестно'
-  } (${formatSize(torrent.size)}, ${formatPercent(progress)})`;
+  const text = Markdown.create`🅰️ ${Markdown.bold('Название')}: ${
+    clientState.criticalTorrentId === torrent.infoHash ? '❗️ ' : ''
+  }${torrent.name ?? 'Неизвестно'}
+⚫️ ${Markdown.bold('Статус')}: ${STATE_TITLE[torrent.state]}
+💾 ${Markdown.bold('Размер')}: ${formatSize(torrent.size)}`;
+
+  if (torrent.state !== TorrentState.Finished) {
+    text.add`
+💯 ${Markdown.bold('Прогресс')}: ${formatProgress(progress)} ${formatPercent(progress)}`;
+  }
+
+  if (torrent.state === TorrentState.Downloading && clientTorrent) {
+    text.add`
+⏳ ${Markdown.bold('Осталось')}: ${formatDuration(clientTorrent.timeRemaining)}
+⚡️ ${Markdown.bold('Скорость загрузки')}: ${formatSpeed(downloadSpeed)}`;
+  }
+
+  if (torrent.state === TorrentState.Verifying && clientTorrent) {
+    const verifiedProgress = minmax(TorrentClient.getProgress(clientTorrent) / torrent.progress || 0, 0, 1);
+
+    text.add`
+⚠️ ${Markdown.bold('Проверено')}: ${formatProgress(verifiedProgress)} ${formatPercent(verifiedProgress)}`;
+  }
+
+  if (torrent.state === 'Error' && torrent.errorMessage) {
+    text.add`
+${Markdown.bold('Ошибка')}: ${torrent.errorMessage}`;
+  }
+
+  return text;
 }
 
 export interface FormatTorrentFilesOptions {
@@ -507,7 +596,7 @@ export interface FormatTorrentFilesOptions {
 
 export function formatTorrentFiles(files: TorrentFile[], options: FormatTorrentFilesOptions): Markdown {
   return Markdown.join(
-    files.map((file) => formatTorrentFile(file, options)),
+    files.map((file, index) => formatTorrentFile(file, { ...options, index })),
     '\n\n',
   );
 }
@@ -515,15 +604,25 @@ export function formatTorrentFiles(files: TorrentFile[], options: FormatTorrentF
 export interface FormatTorrentFileOptions {
   torrent: Torrent;
   clientTorrent: ClientTorrent | null;
+  index?: number;
 }
 
 export function formatTorrentFile(file: TorrentFile, options: FormatTorrentFileOptions): Markdown {
-  const { torrent, clientTorrent } = options;
+  const { torrent, clientTorrent, index } = options;
 
   const clientTorrentFile = clientTorrent?.files.find(({ path }) => path === file.path);
-  const progress = TorrentClient.getRealProgress(file, torrent, clientTorrentFile);
 
-  return Markdown.create`${file.path === torrent.name ? file.path : path.relative(torrent.name ?? '', file.path)}
-${formatProgress(progress)}
-${formatSize(file.size)}, ${formatPercent(progress)}`;
+  const text = Markdown.create`🅰️ ${Markdown.bold('Файл')}: ${
+    isDefined(index) && Markdown.create`${formatIndex(index)} `
+  }${getFileIcon(file.path)} ${file.path === torrent.name ? file.path : path.relative(torrent.name ?? '', file.path)}
+💾 ${Markdown.bold('Размер')}: ${formatSize(file.size)}`;
+
+  if (file.state !== TorrentFileState.Finished) {
+    const progress = TorrentClient.getRealProgress(file, torrent, clientTorrentFile);
+
+    text.add`
+💯 ${Markdown.bold('Прогресс')}: ${formatProgress(progress)} ${formatPercent(progress)}`;
+  }
+
+  return text;
 }
