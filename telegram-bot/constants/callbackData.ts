@@ -56,9 +56,9 @@ export const uglifyCallbackDataMapper: {
   [CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT]: ({ torrentId }) => ({
     t: torrentId,
   }),
-  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ torrentId, path }) => ({
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ torrentId, fileId }) => ({
     t: torrentId,
-    p: path,
+    f: fileId,
   }),
   [CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT]: ({ torrentId }) => ({
     t: torrentId,
@@ -116,9 +116,9 @@ export const beautifyCallbackDataMapper: {
   [CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT]: ({ t }) => ({
     torrentId: t,
   }),
-  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ t, p }) => ({
+  [CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE]: ({ t, f }) => ({
     torrentId: t,
-    path: p,
+    fileId: f,
   }),
   [CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT]: ({ t }) => ({
     torrentId: t,

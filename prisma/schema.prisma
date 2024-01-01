@@ -47,6 +47,7 @@ enum TorrentFileState {
 model TorrentFile {
   @@map("torrent_file")
 
+  id        Int              @id @default(autoincrement())
   path      String           @unique
   torrentId String           @map("torrent_id")
   state     TorrentFileState

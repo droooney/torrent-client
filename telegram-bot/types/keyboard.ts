@@ -147,7 +147,7 @@ export const torrentBackToTorrentCallbackDataSchema = z.object({
 export const torrentNavigateToFileCallbackDataSchema = z.object({
   $: z.literal(CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE),
   t: z.string(),
-  p: z.string(),
+  f: z.number(),
 });
 
 export const addTorrentCallbackDataSchema = z.object({
@@ -304,7 +304,7 @@ export interface TorrentBackToTorrentCallbackData {
 export interface TorrentNavigateToFileCallbackData {
   source: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['$'];
   torrentId: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['t'];
-  path: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['p'];
+  fileId: z.infer<typeof torrentNavigateToFileCallbackDataSchema>['f'];
 }
 
 export interface AddTorrentCallbackData {
