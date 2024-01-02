@@ -28,3 +28,11 @@ export function formatProgress(value: number, options: FormatProgressOptions = {
 export function formatIndex(index: number): string {
   return ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'].at(index) ?? `[${String(index + 1)}]`;
 }
+
+export function bigintMax(...values: bigint[]): bigint {
+  return values.reduce((max, value) => (value > max ? value : max));
+}
+
+export function bigintMin(...values: bigint[]): bigint {
+  return values.reduce((max, value) => (value < max ? value : max));
+}

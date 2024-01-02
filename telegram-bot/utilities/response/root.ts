@@ -1,4 +1,4 @@
-import { CallbackButtonSource } from 'telegram-bot/types/keyboard';
+import { RootCallbackButtonSource } from 'telegram-bot/types/keyboard/root';
 
 import Response from 'telegram-bot/utilities/Response';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
@@ -9,12 +9,12 @@ export async function getRootResponse(): Promise<Response> {
     keyboard: [
       [
         callbackButton('💻 Система', {
-          source: CallbackButtonSource.ROOT_OPEN_SYSTEM,
+          source: RootCallbackButtonSource.OPEN_SYSTEM,
         }),
       ],
       [
         callbackButton('📽 Торрент клиент', {
-          source: CallbackButtonSource.ROOT_OPEN_TORRENT_CLIENT,
+          source: RootCallbackButtonSource.OPEN_TORRENT_CLIENT,
         }),
       ],
     ],

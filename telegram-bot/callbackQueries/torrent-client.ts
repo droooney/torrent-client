@@ -3,7 +3,7 @@ import torrentClient from 'torrent-client/client';
 
 import prisma from 'db/prisma';
 
-import { CallbackButtonSource } from 'telegram-bot/types/keyboard';
+import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/torrent-client';
 
 import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
@@ -22,33 +22,33 @@ import bot from 'telegram-bot/bot';
 
 bot.handleCallbackQuery(
   [
-    CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_ITEM,
-    CallbackButtonSource.TORRENT_CLIENT_TORRENT_REFRESH,
-    CallbackButtonSource.TORRENT_CLIENT_NAVIGATE_TO_TORRENT,
-    CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE,
-    CallbackButtonSource.TORRENT_CLIENT_BACK_TO_TORRENT,
+    TorrentClientCallbackButtonSource.TORRENTS_LIST_ITEM,
+    TorrentClientCallbackButtonSource.TORRENT_REFRESH,
+    TorrentClientCallbackButtonSource.NAVIGATE_TO_TORRENT,
+    TorrentClientCallbackButtonSource.TORRENT_DELETE,
+    TorrentClientCallbackButtonSource.FILES_LIST_BACK_TO_TORRENT,
   ],
   async (ctx) => {
     return getTelegramTorrentInfo(
       ctx.data.torrentId,
-      ctx.data.source === CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE,
+      ctx.data.source === TorrentClientCallbackButtonSource.TORRENT_DELETE,
     );
   },
 );
 
 bot.handleCallbackQuery(
   [
-    CallbackButtonSource.TORRENT_CLIENT_STATUS_SHOW_TORRENTS_LIST,
-    CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_PAGE,
-    CallbackButtonSource.TORRENT_CLIENT_TORRENTS_LIST_REFRESH,
-    CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST,
+    TorrentClientCallbackButtonSource.STATUS_SHOW_TORRENTS_LIST,
+    TorrentClientCallbackButtonSource.TORRENTS_LIST_PAGE,
+    TorrentClientCallbackButtonSource.TORRENTS_LIST_REFRESH,
+    TorrentClientCallbackButtonSource.TORRENT_BACK_TO_LIST,
   ],
   async (ctx) => {
     return getTelegramTorrentsListResponse('page' in ctx.data ? ctx.data.page : 0);
   },
 );
 
-bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE_CONFIRM, async (ctx) => {
+bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_DELETE_CONFIRM, async (ctx) => {
   await torrentClient.deleteTorrent(ctx.data.torrentId);
 
   return new Response({
@@ -56,14 +56,14 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_TORRENT_DELETE_CONFI
     keyboard: [
       [
         callbackButton('◀️ К списку', {
-          source: CallbackButtonSource.TORRENT_CLIENT_TORRENT_BACK_TO_LIST,
+          source: TorrentClientCallbackButtonSource.TORRENT_BACK_TO_LIST,
         }),
       ],
     ],
   });
 });
 
-bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_TORRENT_PAUSE, async (ctx) => {
+bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_PAUSE, async (ctx) => {
   const { torrentId, pause } = ctx.data;
 
   if (pause) {
@@ -75,7 +75,7 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_TORRENT_PAUSE, async
   return getTelegramTorrentInfo(torrentId);
 });
 
-bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_TORRENT_SET_CRITICAL, async (ctx) => {
+bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_SET_CRITICAL, async (ctx) => {
   const { torrentId, critical } = ctx.data;
 
   await torrentClient.setCriticalTorrent(torrentId, critical);
@@ -84,13 +84,13 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_TORRENT_SET_CRITICAL
 });
 
 bot.handleCallbackQuery(
-  [CallbackButtonSource.TORRENT_CLIENT_BACK_TO_STATUS, CallbackButtonSource.TORRENT_CLIENT_STATUS_REFRESH],
+  [TorrentClientCallbackButtonSource.BACK_TO_STATUS, TorrentClientCallbackButtonSource.STATUS_REFRESH],
   async () => {
     return getStatusResponse();
   },
 );
 
-bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_STATUS_PAUSE, async (ctx) => {
+bot.handleCallbackQuery(TorrentClientCallbackButtonSource.STATUS_PAUSE, async (ctx) => {
   if (ctx.data.pause) {
     await torrentClient.pause();
   } else {
@@ -100,11 +100,11 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_STATUS_PAUSE, async 
   return getStatusResponse();
 });
 
-bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_RUTRACKER_SEARCH_ADD_TORRENT, async (ctx) => {
+bot.handleCallbackQuery(TorrentClientCallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT, async (ctx) => {
   return getAddTorrentResponse(() => rutrackerClient.addTorrent(ctx.data.torrentId));
 });
 
-bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_ADD_TORRENT, async (ctx) => {
+bot.handleCallbackQuery(TorrentClientCallbackButtonSource.ADD_TORRENT, async (ctx) => {
   await ctx.updateUserState({
     state: TelegramUserState.AddTorrent,
   });
@@ -116,10 +116,10 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_ADD_TORRENT, async (
 
 bot.handleCallbackQuery(
   [
-    CallbackButtonSource.TORRENT_CLIENT_TORRENT_SHOW_FILES,
-    CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_PAGE,
-    CallbackButtonSource.TORRENT_CLIENT_TORRENT_FILES_REFRESH,
-    CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES,
+    TorrentClientCallbackButtonSource.TORRENT_SHOW_FILES,
+    TorrentClientCallbackButtonSource.FILES_LIST_PAGE,
+    TorrentClientCallbackButtonSource.FILES_LIST_REFRESH,
+    TorrentClientCallbackButtonSource.BACK_TO_FILES_LIST,
   ],
   async (ctx) => {
     return getFilesResponse(ctx.data.torrentId, 'page' in ctx.data ? ctx.data.page : 0);
@@ -128,16 +128,16 @@ bot.handleCallbackQuery(
 
 bot.handleCallbackQuery(
   [
-    CallbackButtonSource.TORRENT_CLIENT_TORRENT_NAVIGATE_TO_FILE,
-    CallbackButtonSource.TORRENT_FILE_REFRESH,
-    CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE,
+    TorrentClientCallbackButtonSource.NAVIGATE_TO_FILE,
+    TorrentClientCallbackButtonSource.FILE_REFRESH,
+    TorrentClientCallbackButtonSource.DELETE_FILE,
   ],
   async (ctx) => {
-    return getFileResponse(ctx.data.fileId, ctx.data.source === CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE);
+    return getFileResponse(ctx.data.fileId, ctx.data.source === TorrentClientCallbackButtonSource.DELETE_FILE);
   },
 );
 
-bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM, async (ctx) => {
+bot.handleCallbackQuery(TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM, async (ctx) => {
   const file = await prisma.torrentFile.findUnique({
     where: {
       id: ctx.data.fileId,
@@ -155,7 +155,7 @@ bot.handleCallbackQuery(CallbackButtonSource.TORRENT_CLIENT_DELETE_FILE_CONFIRM,
     keyboard: [
       [
         callbackButton('◀️ К файлам', {
-          source: CallbackButtonSource.TORRENT_CLIENT_BACK_TO_FILES,
+          source: TorrentClientCallbackButtonSource.BACK_TO_FILES_LIST,
           torrentId: file.torrentId,
         }),
       ],

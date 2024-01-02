@@ -10,7 +10,8 @@ import { TORRENTS_DIRECTORY } from 'constants/paths';
 import prisma from 'db/prisma';
 
 import CustomError, { ErrorCode } from 'utilities/CustomError';
-import { minmax } from 'utilities/number';
+import { prepareErrorForLogging } from 'utilities/error';
+import { bigintMax, minmax } from 'utilities/number';
 
 interface AddFileTorrent {
   type: 'file';
@@ -114,22 +115,34 @@ class TorrentClient {
       throw new CustomError(ErrorCode.NOT_FOUND, 'Файл не найден');
     }
 
-    const torrent = await prisma.torrent.findUnique({
-      where: {
-        infoHash: file.torrentId,
-      },
-    });
+    await prisma.$transaction(async (tx) => {
+      const torrent = await tx.torrent.findUnique({
+        where: {
+          infoHash: file.torrentId,
+        },
+      });
 
-    if (torrent?.state !== TorrentState.Finished) {
-      throw new CustomError(ErrorCode.NOT_FINISHED, 'Торрент еще не закончил скачивание');
-    }
+      if (torrent?.state !== TorrentState.Finished) {
+        throw new CustomError(ErrorCode.NOT_FINISHED, 'Торрент еще не закончил скачивание');
+      }
 
-    await fs.remove(path.resolve(TORRENTS_DIRECTORY, file.path));
+      await fs.remove(path.resolve(TORRENTS_DIRECTORY, file.path));
 
-    await prisma.torrentFile.delete({
-      where: {
-        id: fileId,
-      },
+      await Promise.all([
+        tx.torrentFile.delete({
+          where: {
+            id: fileId,
+          },
+        }),
+        tx.torrent.update({
+          where: {
+            infoHash: file.torrentId,
+          },
+          data: {
+            size: bigintMax(0n, torrent.size - file.size),
+          },
+        }),
+      ]);
     });
   }
 
@@ -427,7 +440,7 @@ class TorrentClient {
         },
         data: {
           state: TorrentState.Error,
-          errorMessage: err instanceof Error ? err.stack : String(err),
+          errorMessage: prepareErrorForLogging(err),
         },
       });
 

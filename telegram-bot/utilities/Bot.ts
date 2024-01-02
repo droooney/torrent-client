@@ -220,8 +220,15 @@ class Bot {
           return;
         }
 
-        const uglifiedCallbackData = callbackDataSchema.parse(callbackData);
-        const beautifiedCallbackData = beautifyCallbackData(uglifiedCallbackData);
+        const parsed = callbackDataSchema.safeParse(callbackData);
+
+        if (!parsed.success) {
+          throw new CustomError(ErrorCode.UNSUPPORTED, 'Не поддерживается', {
+            cause: parsed.error,
+          });
+        }
+
+        const beautifiedCallbackData = beautifyCallbackData(parsed.data);
 
         const ctx: CallbackQueryHandlerContext<typeof beautifiedCallbackData> = {
           data: beautifiedCallbackData,
