@@ -13,8 +13,8 @@ import {
   callbackDataSchema,
 } from 'telegram-bot/types/keyboard';
 
-import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Response from 'telegram-bot/utilities/Response';
+import TextResponse from 'telegram-bot/utilities/TextResponse';
 import { beautifyCallbackData } from 'telegram-bot/utilities/keyboard';
 import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
@@ -28,7 +28,7 @@ export interface BotOptions {
 export interface TextHandlerContext {
   message: Message;
   userData: TelegramUserData;
-  send(response: AnyResponse): Promise<typeof response extends Response ? Message : Message | null>;
+  send(response: Response): Promise<typeof response extends TextResponse ? Message : Message | null>;
   downloadDocument(): Promise<string | null>;
   updateUserState(
     data: Prisma.XOR<Prisma.TelegramUserDataUpdateInput, Prisma.TelegramUserDataUncheckedUpdateInput>,
@@ -38,7 +38,7 @@ export interface TextHandlerContext {
 export interface CallbackQueryHandlerContext<CallbackData extends BeautifiedCallbackData> {
   data: CallbackData;
   message: Message;
-  edit(response: AnyResponse): Promise<void>;
+  edit(response: Response): Promise<void>;
   updateUserState(
     data: Prisma.XOR<Prisma.TelegramUserDataUpdateInput, Prisma.TelegramUserDataUncheckedUpdateInput>,
   ): Promise<TelegramUserData>;
@@ -54,13 +54,11 @@ export interface ResponseEditContext {
   api: TelegramBotApi;
 }
 
-export type AnyResponse = Response | DeferredResponse;
-
-export type TextHandler = (ctx: TextHandlerContext) => Promise<AnyResponse | null | undefined | void>;
+export type TextHandler = (ctx: TextHandlerContext) => Promise<Response | null | undefined | void>;
 
 export type CallbackQueryHandler<CallbackData extends BeautifiedCallbackData> = (
   ctx: CallbackQueryHandlerContext<CallbackData>,
-) => Promise<AnyResponse | null | undefined | void>;
+) => Promise<Response | null | undefined | void>;
 
 class Bot {
   private readonly api: TelegramBotApi;
@@ -90,7 +88,7 @@ class Bot {
     });
   }
 
-  async editMessage(message: Message, response: AnyResponse): Promise<void> {
+  async editMessage(message: Message, response: Response): Promise<void> {
     await response.edit({
       message,
       api: this.api,
@@ -109,10 +107,7 @@ class Bot {
     return this.usernameWhitelist.includes(user.username);
   }
 
-  async replyToMessage(
-    message: Message,
-    response: AnyResponse,
-  ): Promise<typeof response extends Response ? Message : Message | null> {
+  async replyToMessage(message: Message, response: Response): Promise<Message> {
     return response.send({
       message,
       api: this.api,

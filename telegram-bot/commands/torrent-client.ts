@@ -2,7 +2,7 @@ import { TelegramUserState } from '@prisma/client';
 
 import { CommandType } from 'telegram-bot/constants/commands';
 
-import Response from 'telegram-bot/utilities/Response';
+import TextResponse from 'telegram-bot/utilities/TextResponse';
 
 import bot from 'telegram-bot/bot';
 
@@ -51,7 +51,7 @@ bot.handleCommand(CommandType.SEARCH_RUTRACKER, async (ctx) => {
     state: TelegramUserState.SearchRutracker,
   });
 
-  return new Response({
+  return new TextResponse({
     text: 'Введите название для поиска на rutracker',
   });
 });

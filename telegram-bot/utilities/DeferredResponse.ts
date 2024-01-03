@@ -1,8 +1,9 @@
 import { Message } from 'node-telegram-bot-api';
 
-import { AnyResponse, ResponseEditContext, ResponseSendContext } from 'telegram-bot/utilities/Bot';
+import { ResponseEditContext, ResponseSendContext } from 'telegram-bot/utilities/Bot';
 import Markdown from 'telegram-bot/utilities/Markdown';
 import Response from 'telegram-bot/utilities/Response';
+import TextResponse from 'telegram-bot/utilities/TextResponse';
 import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
 import { prepareErrorForLogging } from 'utilities/error';
 import { formatProgress } from 'utilities/number';
@@ -10,16 +11,16 @@ import { delay } from 'utilities/promise';
 
 import bot from 'telegram-bot/bot';
 
-export interface DeferredResponseOptions {
-  immediate: Response;
-  getDeferred(): Promise<AnyResponse | null | undefined | void>;
+export interface DeferredResponseOptions<R extends Response> {
+  immediate: TextResponse;
+  getDeferred(): Promise<R | DeferredResponse<R>>;
   minimalDelay?: number;
 }
 
 interface Updater {
   start(message: Message): void;
   cancel(): void;
-  getCurrentResponse(): Response;
+  getCurrentResponse(): TextResponse;
   waitForLatestUpdate(): Promise<void>;
 }
 
@@ -27,12 +28,14 @@ const MINIMAL_DELAY = 1000;
 const UPDATE_INTERVAL = 1000;
 const PROGRESS_EMOJI_COUNT = 3;
 
-class DeferredResponse {
-  private readonly immediate: Response;
-  private readonly getDeferred: () => Promise<AnyResponse | null | undefined | void>;
+class DeferredResponse<R extends Response = Response> extends Response {
+  private readonly immediate: TextResponse;
+  private readonly getDeferred: () => Promise<R | DeferredResponse<R>>;
   private readonly minimalDelay: number;
 
-  constructor(options: DeferredResponseOptions) {
+  constructor(options: DeferredResponseOptions<R>) {
+    super();
+
     this.immediate = options.immediate;
     this.getDeferred = options.getDeferred;
     this.minimalDelay = options.minimalDelay ?? MINIMAL_DELAY;
@@ -79,10 +82,10 @@ class DeferredResponse {
     let timeoutCanceled = false;
     let messageToUpdate: Message | undefined;
 
-    const getLoadingResponse = (): Response => {
+    const getLoadingResponse = (): TextResponse => {
       const { text, keyboard } = this.immediate;
 
-      return new Response({
+      return new TextResponse({
         text: Markdown.create`${text}
 
 ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
@@ -136,7 +139,7 @@ ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
     };
   }
 
-  async send(ctx: ResponseSendContext): Promise<Message | null> {
+  async send(ctx: ResponseSendContext): Promise<Message> {
     const { start: startUpdating, cancel: cancelUpdating, getCurrentResponse, waitForLatestUpdate } = this.getUpdater();
 
     let message: Message;
@@ -146,7 +149,7 @@ ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
     } catch (err) {
       console.log(prepareErrorForLogging(err));
 
-      return (await this.getDeferred())?.send(ctx) ?? null;
+      return (await this.getDeferred()).send(ctx);
     }
 
     startUpdating(message);

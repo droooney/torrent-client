@@ -15,6 +15,7 @@ import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
 import Markdown from 'telegram-bot/utilities/Markdown';
 import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
+import TextResponse from 'telegram-bot/utilities/TextResponse';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
 import TorrentClient from 'torrent-client/utilities/TorrentClient';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
@@ -44,21 +45,21 @@ const STATE_TITLE: Record<TorrentState, string> = {
 
 const LIST_PAGE_SIZE = 5;
 
-export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | null>): Promise<DeferredResponse> {
+export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | null>): Promise<Response> {
   return new DeferredResponse({
-    immediate: new Response({
+    immediate: new TextResponse({
       text: 'Торрент добавляется...',
     }),
     async getDeferred() {
       const torrent = await getTorrent();
 
       if (!torrent) {
-        return new Response({
+        return new TextResponse({
           text: 'Данные торрента отсутствуют',
         });
       }
 
-      return new Response({
+      return new TextResponse({
         text: Markdown.create`Торрент${torrent.name ? Markdown.create` "${torrent.name}"` : ''} добавлен!`,
         keyboard: [
           [
@@ -73,9 +74,9 @@ export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | 
   });
 }
 
-export async function getSearchRutrackerResponse(text: string): Promise<DeferredResponse> {
+export async function getSearchRutrackerResponse(text: string): Promise<Response> {
   return new DeferredResponse({
-    immediate: new Response({
+    immediate: new TextResponse({
       text: Markdown.create`Запущен поиск на rutracker по строке "${text}"...`,
     }),
     async getDeferred() {
@@ -83,12 +84,12 @@ export async function getSearchRutrackerResponse(text: string): Promise<Deferred
       const topTorrents = torrents.slice(0, 10);
 
       if (!torrents.length) {
-        return new Response({
+        return new TextResponse({
           text: 'Результатов не найдено',
         });
       }
 
-      return new Response({
+      return new TextResponse({
         text: Markdown.join(
           topTorrents.map(
             ({ title, author, seeds, size }, index) => Markdown.create`🅰️ ${Markdown.bold('Название')}: ${formatIndex(
@@ -152,7 +153,7 @@ ${Markdown.bold('Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
 
   status.add`${notFinishedTorrentsText.isEmpty() ? 'Нет активных торрентов' : notFinishedTorrentsText}`;
 
-  return new Response({
+  return new TextResponse({
     text: status,
     keyboard: [
       [
@@ -200,7 +201,7 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
 
   const text = await formatTorrents(pageTorrents);
 
-  return new Response({
+  return new TextResponse({
     text: text.isEmpty() ? 'Нет торрентов' : text,
     keyboard: [
       [
@@ -253,7 +254,7 @@ export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm
   const isPausedOrError = torrent.state === TorrentState.Paused || torrent.state === TorrentState.Error;
   const isCritical = clientState.criticalTorrentId === infoHash;
 
-  return new Response({
+  return new TextResponse({
     text: await formatTorrent(torrent),
     keyboard: [
       torrent.state !== TorrentState.Finished && [
@@ -335,7 +336,7 @@ export async function getFilesResponse(infoHash: string, page: number = 0): Prom
     clientTorrent,
   });
 
-  return new Response({
+  return new TextResponse({
     text: text.isEmpty() ? 'Нет файлов' : text,
     keyboard: [
       [
@@ -402,7 +403,7 @@ export async function getFileResponse(fileId: number, withDeleteConfirm: boolean
     throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
   }
 
-  return new Response({
+  return new TextResponse({
     text: formatTorrentFile(file, {
       torrent,
       clientTorrent,

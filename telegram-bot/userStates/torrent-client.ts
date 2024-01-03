@@ -1,7 +1,7 @@
 import { TelegramUserState } from '@prisma/client';
 import torrentClient from 'torrent-client/client';
 
-import Response from 'telegram-bot/utilities/Response';
+import TextResponse from 'telegram-bot/utilities/TextResponse';
 import { tryLoadDocument } from 'telegram-bot/utilities/documents';
 import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/utilities/response/torrent-client';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
@@ -53,7 +53,7 @@ bot.handleUserState(TelegramUserState.SetDownloadLimit, async (ctx) => {
 
   await torrentClient.setDownloadSpeedLimit(downloadLimit === '-' ? null : downloadLimit);
 
-  return new Response({
+  return new TextResponse({
     text:
       downloadLimit === '-'
         ? 'Ограничение загрузки снято'
@@ -76,7 +76,7 @@ bot.handleUserState(TelegramUserState.SetUploadLimit, async (ctx) => {
 
   await torrentClient.setUploadSpeedLimit(uploadLimit === '-' ? null : uploadLimit);
 
-  return new Response({
+  return new TextResponse({
     text:
       uploadLimit === '-' ? 'Ограничение отдачи снято' : `Выставлено ограничение отдачи ${formatSpeed(uploadLimit)}`,
   });
