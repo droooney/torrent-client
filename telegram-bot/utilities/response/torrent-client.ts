@@ -189,7 +189,7 @@ ${Markdown.bold('💾 Размер всех торрентов')}: ${formatSize(
   });
 }
 
-export async function getTelegramTorrentsListResponse(page: number = 0): Promise<ImmediateTextResponse> {
+export async function getTorrentsListResponse(page: number = 0): Promise<ImmediateTextResponse> {
   // TODO: better pagination
   const torrents = await prisma.torrent.findMany({
     orderBy: {
@@ -244,7 +244,7 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
   });
 }
 
-export async function getTelegramTorrentInfo(
+export async function getTorrentResponse(
   infoHash: string,
   withDeleteConfirm: boolean = false,
 ): Promise<ImmediateTextResponse> {
@@ -349,7 +349,7 @@ export async function getFilesResponse(infoHash: string, page: number = 0): Prom
   return new ImmediateTextResponse({
     text: text.isEmpty() ? 'Нет файлов' : text,
     keyboard: [
-      [
+      torrent.state !== TorrentState.Finished && [
         callbackButton('🔄 Обновить', {
           source: TorrentClientCallbackButtonSource.FILES_LIST_REFRESH,
           torrentId: infoHash,

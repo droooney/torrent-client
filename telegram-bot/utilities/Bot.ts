@@ -170,6 +170,7 @@ class Bot {
         if (response) {
           await response.respondToMessage({
             message,
+            bot: this,
             api: this.api,
           });
         }
@@ -246,6 +247,7 @@ class Bot {
         if (response) {
           await response.respondToCallbackQuery({
             query,
+            bot: this,
             api: this.api,
           });
         }

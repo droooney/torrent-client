@@ -48,7 +48,7 @@ bot.handleUserState(TelegramUserState.SetDownloadLimit, async (ctx) => {
   }
 
   await ctx.updateUserState({
-    state: 'Waiting',
+    state: TelegramUserState.Waiting,
   });
 
   await torrentClient.setDownloadSpeedLimit(downloadLimit === '-' ? null : downloadLimit);
@@ -71,7 +71,7 @@ bot.handleUserState(TelegramUserState.SetUploadLimit, async (ctx) => {
   }
 
   await ctx.updateUserState({
-    state: 'Waiting',
+    state: TelegramUserState.Waiting,
   });
 
   await torrentClient.setUploadSpeedLimit(uploadLimit === '-' ? null : uploadLimit);
