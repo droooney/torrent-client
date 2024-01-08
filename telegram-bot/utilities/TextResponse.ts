@@ -1,74 +1,40 @@
-/* eslint-disable camelcase */
+import TelegramBotApi, { Message } from 'node-telegram-bot-api';
 
-import isEqual from 'lodash/isEqual';
-import { InlineKeyboardMarkup, Message, ParseMode } from 'node-telegram-bot-api';
+import Response, { RespondToCallbackQueryContext, RespondToMessageContext } from 'telegram-bot/utilities/Response';
 
-import { InlineKeyboard } from 'telegram-bot/types/keyboard';
-
-import { ResponseEditContext, ResponseSendContext } from 'telegram-bot/utilities/Bot';
-import Markdown from 'telegram-bot/utilities/Markdown';
-import Response from 'telegram-bot/utilities/Response';
-import { prepareInlineKeyboard } from 'telegram-bot/utilities/keyboard';
-import CustomError, { ErrorCode } from 'utilities/CustomError';
-
-export interface ResponseOptions {
-  text: string | Markdown;
-  keyboard?: InlineKeyboard;
+export interface EditMessageContext {
+  message: Message;
+  api: TelegramBotApi;
 }
 
-class TextResponse extends Response {
-  readonly text: string | Markdown;
-  readonly keyboard?: InlineKeyboard;
+export interface SendMessageContext {
+  chatId: number;
+  replyToMessageId?: number;
+  api: TelegramBotApi;
+}
 
-  constructor(options: ResponseOptions) {
-    super();
+export default abstract class TextResponse extends Response {
+  abstract editMessage(ctx: EditMessageContext): Promise<Message>;
+  abstract sendMessage(ctx: SendMessageContext): Promise<Message>;
 
-    this.text = options.text;
-    this.keyboard = options.keyboard;
-  }
+  async respondToCallbackQuery(ctx: RespondToCallbackQueryContext): Promise<void> {
+    const { message } = ctx.query;
 
-  async edit(ctx: ResponseEditContext): Promise<void> {
-    const newText = this.text.toString();
-    const newReplyMarkup = this.getReplyMarkup();
-    let isEdited = false;
-
-    if (newText !== ctx.message.text || !isEqual(ctx.message.reply_markup, newReplyMarkup)) {
-      try {
-        await ctx.api.editMessageText(this.text.toString(), {
-          chat_id: ctx.message.chat.id,
-          message_id: ctx.message.message_id,
-          parse_mode: this.getParseMode(),
-          reply_markup: newReplyMarkup,
-        });
-
-        isEdited = true;
-      } catch (err) {
-        if (!(err instanceof Error) || !/message is not modified/.test(err.message)) {
-          throw err;
-        }
-      }
+    if (!message) {
+      return;
     }
 
-    if (!isEdited) {
-      throw new CustomError(ErrorCode.SAME_CONTENT, 'Сообщение не обновлено');
-    }
+    await this.editMessage({
+      message,
+      api: ctx.api,
+    });
   }
 
-  private getParseMode(): ParseMode | undefined {
-    return this.text instanceof Markdown ? 'MarkdownV2' : undefined;
-  }
-
-  private getReplyMarkup(): InlineKeyboardMarkup | undefined {
-    return this.keyboard && prepareInlineKeyboard(this.keyboard);
-  }
-
-  async send(ctx: ResponseSendContext): Promise<Message> {
-    return ctx.api.sendMessage(ctx.message.chat.id, this.text.toString(), {
-      reply_to_message_id: ctx.message.message_id,
-      parse_mode: this.getParseMode(),
-      reply_markup: this.getReplyMarkup(),
+  async respondToMessage(ctx: RespondToMessageContext): Promise<void> {
+    await this.sendMessage({
+      chatId: ctx.message.chat.id,
+      replyToMessageId: ctx.message.message_id,
+      api: ctx.api,
     });
   }
 }
-
-export default TextResponse;

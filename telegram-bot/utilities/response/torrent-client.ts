@@ -11,11 +11,10 @@ import prisma from 'db/prisma';
 import { RootCallbackButtonSource } from 'telegram-bot/types/keyboard/root';
 import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/torrent-client';
 
-import DeferredResponse from 'telegram-bot/utilities/DeferredResponse';
+import DeferredTextResponse from 'telegram-bot/utilities/DeferredTextResponse';
+import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import Markdown from 'telegram-bot/utilities/Markdown';
-import Response from 'telegram-bot/utilities/Response';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
-import TextResponse from 'telegram-bot/utilities/TextResponse';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
 import TorrentClient from 'torrent-client/utilities/TorrentClient';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
@@ -45,21 +44,21 @@ const STATE_TITLE: Record<TorrentState, string> = {
 
 const LIST_PAGE_SIZE = 5;
 
-export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | null>): Promise<Response> {
-  return new DeferredResponse({
-    immediate: new TextResponse({
+export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | null>): Promise<DeferredTextResponse> {
+  return new DeferredTextResponse({
+    immediate: new ImmediateTextResponse({
       text: 'Торрент добавляется...',
     }),
     async getDeferred() {
       const torrent = await getTorrent();
 
       if (!torrent) {
-        return new TextResponse({
+        return new ImmediateTextResponse({
           text: 'Данные торрента отсутствуют',
         });
       }
 
-      return new TextResponse({
+      return new ImmediateTextResponse({
         text: Markdown.create`Торрент${torrent.name ? Markdown.create` "${torrent.name}"` : ''} добавлен!`,
         keyboard: [
           [
@@ -74,9 +73,9 @@ export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | 
   });
 }
 
-export async function getSearchRutrackerResponse(text: string): Promise<Response> {
-  return new DeferredResponse({
-    immediate: new TextResponse({
+export async function getSearchRutrackerResponse(text: string): Promise<DeferredTextResponse> {
+  return new DeferredTextResponse({
+    immediate: new ImmediateTextResponse({
       text: Markdown.create`Запущен поиск на rutracker по строке "${text}"...`,
     }),
     async getDeferred() {
@@ -84,12 +83,12 @@ export async function getSearchRutrackerResponse(text: string): Promise<Response
       const topTorrents = torrents.slice(0, 10);
 
       if (!torrents.length) {
-        return new TextResponse({
+        return new ImmediateTextResponse({
           text: 'Результатов не найдено',
         });
       }
 
-      return new TextResponse({
+      return new ImmediateTextResponse({
         text: Markdown.join(
           topTorrents.map(
             ({ title, author, seeds, size }, index) => Markdown.create`🅰️ ${Markdown.bold('Название')}: ${formatIndex(
@@ -116,8 +115,8 @@ export async function getSearchRutrackerResponse(text: string): Promise<Response
 }
 
 // TODO: add keyboard (settings, set limits)
-export async function getStatusResponse(): Promise<Response> {
-  const [clientState, downloadSpeed, uploadSpeed, notFinishedTorrents] = await Promise.all([
+export async function getStatusResponse(): Promise<ImmediateTextResponse> {
+  const [clientState, downloadSpeed, uploadSpeed, notFinishedTorrents, { _sum: allTorrentsSum }] = await Promise.all([
     torrentClient.getState(),
     torrentClient.getDownloadSpeed(),
     torrentClient.getUploadSpeed(),
@@ -128,7 +127,14 @@ export async function getStatusResponse(): Promise<Response> {
         },
       },
     }),
+    prisma.torrent.aggregate({
+      _sum: {
+        size: true,
+      },
+    }),
   ]);
+
+  const allTorrentsSize = allTorrentsSum.size ?? 0n;
 
   const status = new Markdown();
 
@@ -138,14 +144,15 @@ export async function getStatusResponse(): Promise<Response> {
 `;
   }
 
-  status.add`${Markdown.bold('Скорость загрузки')}: ${formatSpeed(downloadSpeed)}${
+  status.add`${Markdown.bold('⚡️ Скорость загрузки')}: ${formatSpeed(downloadSpeed)}${
     clientState.downloadSpeedLimit !== null &&
     Markdown.create` (ограничение: ${formatSpeed(clientState.downloadSpeedLimit)})`
   }
-${Markdown.bold('Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
+${Markdown.bold('⚡️ Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
     clientState.uploadSpeedLimit !== null &&
     Markdown.create` (ограничение: ${formatSpeed(clientState.uploadSpeedLimit)})`
   }
+${Markdown.bold('💾 Размер всех торрентов')}: ${formatSize(allTorrentsSize)}
 
 `;
 
@@ -153,7 +160,7 @@ ${Markdown.bold('Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
 
   status.add`${notFinishedTorrentsText.isEmpty() ? 'Нет активных торрентов' : notFinishedTorrentsText}`;
 
-  return new TextResponse({
+  return new ImmediateTextResponse({
     text: status,
     keyboard: [
       [
@@ -182,7 +189,7 @@ ${Markdown.bold('Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
   });
 }
 
-export async function getTelegramTorrentsListResponse(page: number = 0): Promise<Response> {
+export async function getTelegramTorrentsListResponse(page: number = 0): Promise<ImmediateTextResponse> {
   // TODO: better pagination
   const torrents = await prisma.torrent.findMany({
     orderBy: {
@@ -201,7 +208,7 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
 
   const text = await formatTorrents(pageTorrents);
 
-  return new TextResponse({
+  return new ImmediateTextResponse({
     text: text.isEmpty() ? 'Нет торрентов' : text,
     keyboard: [
       [
@@ -237,7 +244,10 @@ export async function getTelegramTorrentsListResponse(page: number = 0): Promise
   });
 }
 
-export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm: boolean = false): Promise<Response> {
+export async function getTelegramTorrentInfo(
+  infoHash: string,
+  withDeleteConfirm: boolean = false,
+): Promise<ImmediateTextResponse> {
   const [clientState, torrent] = await Promise.all([
     torrentClient.getState(),
     prisma.torrent.findUnique({
@@ -254,7 +264,7 @@ export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm
   const isPausedOrError = torrent.state === TorrentState.Paused || torrent.state === TorrentState.Error;
   const isCritical = clientState.criticalTorrentId === infoHash;
 
-  return new TextResponse({
+  return new ImmediateTextResponse({
     text: await formatTorrent(torrent),
     keyboard: [
       torrent.state !== TorrentState.Finished && [
@@ -300,7 +310,7 @@ export async function getTelegramTorrentInfo(infoHash: string, withDeleteConfirm
   });
 }
 
-export async function getFilesResponse(infoHash: string, page: number = 0): Promise<Response> {
+export async function getFilesResponse(infoHash: string, page: number = 0): Promise<ImmediateTextResponse> {
   // TODO: better pagination
   const [torrent, files, clientTorrent] = await Promise.all([
     prisma.torrent.findUnique({
@@ -336,7 +346,7 @@ export async function getFilesResponse(infoHash: string, page: number = 0): Prom
     clientTorrent,
   });
 
-  return new TextResponse({
+  return new ImmediateTextResponse({
     text: text.isEmpty() ? 'Нет файлов' : text,
     keyboard: [
       [
@@ -379,7 +389,10 @@ export async function getFilesResponse(infoHash: string, page: number = 0): Prom
   });
 }
 
-export async function getFileResponse(fileId: number, withDeleteConfirm: boolean = false): Promise<Response> {
+export async function getFileResponse(
+  fileId: number,
+  withDeleteConfirm: boolean = false,
+): Promise<ImmediateTextResponse> {
   const file = await prisma.torrentFile.findUnique({
     where: {
       id: fileId,
@@ -403,7 +416,7 @@ export async function getFileResponse(fileId: number, withDeleteConfirm: boolean
     throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
   }
 
-  return new TextResponse({
+  return new ImmediateTextResponse({
     text: formatTorrentFile(file, {
       torrent,
       clientTorrent,

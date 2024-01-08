@@ -1,11 +1,10 @@
 import { RootCallbackButtonSource } from 'telegram-bot/types/keyboard/root';
 
-import Response from 'telegram-bot/utilities/Response';
-import TextResponse from 'telegram-bot/utilities/TextResponse';
+import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
 
-export async function getRootResponse(): Promise<Response> {
-  return new TextResponse({
+export async function getRootResponse(): Promise<ImmediateTextResponse> {
+  return new ImmediateTextResponse({
     text: 'Привет! Я - Страж Дома! Воспользуйся одной из кнопок ниже',
     keyboard: [
       [

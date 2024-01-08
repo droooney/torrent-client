@@ -1,9 +1,8 @@
-import Response from 'telegram-bot/utilities/Response';
-import TextResponse from 'telegram-bot/utilities/TextResponse';
+import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import { prepareErrorForHuman } from 'utilities/error';
 
-export function getErrorResponse(err: unknown): Response {
-  return new TextResponse({
+export function getErrorResponse(err: unknown): ImmediateTextResponse {
+  return new ImmediateTextResponse({
     text: prepareErrorForHuman(err),
   });
 }

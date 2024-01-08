@@ -5,8 +5,8 @@ import prisma from 'db/prisma';
 
 import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/torrent-client';
 
+import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
-import TextResponse from 'telegram-bot/utilities/TextResponse';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
 import {
   getAddTorrentResponse,
@@ -51,7 +51,7 @@ bot.handleCallbackQuery(
 bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_DELETE_CONFIRM, async (ctx) => {
   await torrentClient.deleteTorrent(ctx.data.torrentId);
 
-  return new TextResponse({
+  return new ImmediateTextResponse({
     text: 'Торрент успешно удален',
     keyboard: [
       [
@@ -109,7 +109,7 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.ADD_TORRENT, async (ct
     state: TelegramUserState.AddTorrent,
   });
 
-  return new TextResponse({
+  return new ImmediateTextResponse({
     text: 'Отправьте торрент или magnet-ссылку',
   });
 });
@@ -150,7 +150,7 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM, a
 
   await torrentClient.deleteFile(ctx.data.fileId);
 
-  return new TextResponse({
+  return new ImmediateTextResponse({
     text: 'Файл успешно удален',
     keyboard: [
       [

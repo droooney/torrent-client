@@ -13,7 +13,7 @@ import {
   callbackDataSchema,
 } from 'telegram-bot/types/keyboard';
 
-import Response from 'telegram-bot/utilities/Response';
+import { CallbackQueryResponse, MessageResponse } from 'telegram-bot/utilities/Response';
 import TextResponse from 'telegram-bot/utilities/TextResponse';
 import { beautifyCallbackData } from 'telegram-bot/utilities/keyboard';
 import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
@@ -28,7 +28,6 @@ export interface BotOptions {
 export interface TextHandlerContext {
   message: Message;
   userData: TelegramUserData;
-  send(response: Response): Promise<typeof response extends TextResponse ? Message : Message | null>;
   downloadDocument(): Promise<string | null>;
   updateUserState(
     data: Prisma.XOR<Prisma.TelegramUserDataUpdateInput, Prisma.TelegramUserDataUncheckedUpdateInput>,
@@ -38,27 +37,16 @@ export interface TextHandlerContext {
 export interface CallbackQueryHandlerContext<CallbackData extends BeautifiedCallbackData> {
   data: CallbackData;
   message: Message;
-  edit(response: Response): Promise<void>;
   updateUserState(
     data: Prisma.XOR<Prisma.TelegramUserDataUpdateInput, Prisma.TelegramUserDataUncheckedUpdateInput>,
   ): Promise<TelegramUserData>;
 }
 
-export interface ResponseSendContext {
-  message: Message;
-  api: TelegramBotApi;
-}
-
-export interface ResponseEditContext {
-  message: Message;
-  api: TelegramBotApi;
-}
-
-export type TextHandler = (ctx: TextHandlerContext) => Promise<Response | null | undefined | void>;
+export type TextHandler = (ctx: TextHandlerContext) => Promise<MessageResponse | null | undefined | void>;
 
 export type CallbackQueryHandler<CallbackData extends BeautifiedCallbackData> = (
   ctx: CallbackQueryHandlerContext<CallbackData>,
-) => Promise<Response | null | undefined | void>;
+) => Promise<CallbackQueryResponse | null | undefined | void>;
 
 class Bot {
   private readonly api: TelegramBotApi;
@@ -78,6 +66,12 @@ class Bot {
     this.usernameWhitelist = options.usernameWhitelist;
   }
 
+  async answerCallbackQuery(queryId: string, text: string): Promise<void> {
+    await this.api.answerCallbackQuery(queryId, {
+      text,
+    });
+  }
+
   handleCallbackQuery<Source extends CallbackButtonSource>(
     source: Source | Source[],
     handler: CallbackQueryHandler<BeautifiedCallbackDataBySource<Source>>,
@@ -88,8 +82,8 @@ class Bot {
     });
   }
 
-  async editMessage(message: Message, response: Response): Promise<void> {
-    await response.edit({
+  async editMessage(message: Message, response: TextResponse): Promise<Message> {
+    return response.editMessage({
       message,
       api: this.api,
     });
@@ -107,9 +101,10 @@ class Bot {
     return this.usernameWhitelist.includes(user.username);
   }
 
-  async replyToMessage(message: Message, response: Response): Promise<Message> {
-    return response.send({
-      message,
+  async sendMessage(chatId: number, response: TextResponse, replyToMessageId?: number): Promise<Message> {
+    return response.sendMessage({
+      chatId,
+      replyToMessageId,
       api: this.api,
     });
   }
@@ -139,9 +134,6 @@ class Bot {
         const ctx: TextHandlerContext = {
           message,
           userData,
-          send: async (response) => {
-            return this.replyToMessage(message, response);
-          },
           downloadDocument: async () => {
             if (!document) {
               return null;
@@ -176,13 +168,16 @@ class Bot {
         const response = await handler(ctx);
 
         if (response) {
-          await ctx.send(response);
+          await response.respondToMessage({
+            message,
+            api: this.api,
+          });
         }
       } catch (err) {
         console.log(prepareErrorForLogging(err));
 
         try {
-          await this.replyToMessage(message, getErrorResponse(err));
+          await this.sendMessage(message.chat.id, getErrorResponse(err), message.message_id);
         } catch (err) {
           console.log(prepareErrorForLogging(err));
         }
@@ -228,9 +223,6 @@ class Bot {
         const ctx: CallbackQueryHandlerContext<typeof beautifiedCallbackData> = {
           data: beautifiedCallbackData,
           message,
-          edit: async (response) => {
-            await this.editMessage(message, response);
-          },
           updateUserState: async (data) => {
             return prisma.telegramUserData.update({
               where: {
@@ -252,7 +244,10 @@ class Bot {
         const response = await handler(ctx);
 
         if (response) {
-          await ctx.edit(response);
+          await response.respondToCallbackQuery({
+            query,
+            api: this.api,
+          });
         }
       } catch (err) {
         let isSameContent = false;
@@ -264,9 +259,7 @@ class Bot {
         }
 
         try {
-          await this.api.answerCallbackQuery(queryId, {
-            text: isSameContent ? '' : prepareErrorForHuman(err),
-          });
+          await this.answerCallbackQuery(queryId, isSameContent ? '' : prepareErrorForHuman(err));
         } catch (err) {
           console.log(prepareErrorForLogging(err));
         }

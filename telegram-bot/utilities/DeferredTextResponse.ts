@@ -1,9 +1,8 @@
 import { Message } from 'node-telegram-bot-api';
 
-import { ResponseEditContext, ResponseSendContext } from 'telegram-bot/utilities/Bot';
+import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import Markdown from 'telegram-bot/utilities/Markdown';
-import Response from 'telegram-bot/utilities/Response';
-import TextResponse from 'telegram-bot/utilities/TextResponse';
+import TextResponse, { EditMessageContext, SendMessageContext } from 'telegram-bot/utilities/TextResponse';
 import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
 import { prepareErrorForLogging } from 'utilities/error';
 import { formatProgress } from 'utilities/number';
@@ -11,29 +10,29 @@ import { delay } from 'utilities/promise';
 
 import bot from 'telegram-bot/bot';
 
-export interface DeferredResponseOptions<R extends Response> {
-  immediate: TextResponse;
-  getDeferred(): Promise<R | DeferredResponse<R>>;
+export interface DeferredResponseOptions {
+  immediate: ImmediateTextResponse;
+  getDeferred(): Promise<TextResponse>;
   minimalDelay?: number;
 }
 
 interface Updater {
   start(message: Message): void;
   cancel(): void;
-  getCurrentResponse(): TextResponse;
+  getCurrentResponse(): ImmediateTextResponse;
   waitForLatestUpdate(): Promise<void>;
 }
 
 const MINIMAL_DELAY = 1000;
-const UPDATE_INTERVAL = 1000;
+const UPDATE_INTERVAL = 2000;
 const PROGRESS_EMOJI_COUNT = 3;
 
-class DeferredResponse<R extends Response = Response> extends Response {
-  private readonly immediate: TextResponse;
-  private readonly getDeferred: () => Promise<R | DeferredResponse<R>>;
+class DeferredTextResponse extends TextResponse {
+  private readonly immediate: ImmediateTextResponse;
+  private readonly getDeferred: () => Promise<TextResponse>;
   private readonly minimalDelay: number;
 
-  constructor(options: DeferredResponseOptions<R>) {
+  constructor(options: DeferredResponseOptions) {
     super();
 
     this.immediate = options.immediate;
@@ -41,11 +40,12 @@ class DeferredResponse<R extends Response = Response> extends Response {
     this.minimalDelay = options.minimalDelay ?? MINIMAL_DELAY;
   }
 
-  async edit(ctx: ResponseEditContext): Promise<void> {
+  async editMessage(ctx: EditMessageContext): Promise<Message> {
     const { start: startUpdating, cancel: cancelUpdating, getCurrentResponse, waitForLatestUpdate } = this.getUpdater();
+    let message = ctx.message;
 
     try {
-      await getCurrentResponse().edit(ctx);
+      message = await getCurrentResponse().editMessage(ctx);
     } catch (err) {
       console.log(prepareErrorForLogging(err));
     }
@@ -62,18 +62,20 @@ class DeferredResponse<R extends Response = Response> extends Response {
 
       await waitForLatestUpdate();
 
-      await (deferredResponse ?? this.immediate).edit(ctx);
+      message = await (deferredResponse ?? this.immediate).editMessage(ctx);
     } catch (err) {
       console.log(prepareErrorForLogging(err));
 
       cancelUpdating();
 
       try {
-        await getErrorResponse(err).edit(ctx);
+        message = await getErrorResponse(err).editMessage(ctx);
       } catch (err) {
         console.log(prepareErrorForLogging(err));
       }
     }
+
+    return message;
   }
 
   private getUpdater(): Updater {
@@ -82,10 +84,10 @@ class DeferredResponse<R extends Response = Response> extends Response {
     let timeoutCanceled = false;
     let messageToUpdate: Message | undefined;
 
-    const getLoadingResponse = (): TextResponse => {
+    const getLoadingResponse = (): ImmediateTextResponse => {
       const { text, keyboard } = this.immediate;
 
-      return new TextResponse({
+      return new ImmediateTextResponse({
         text: Markdown.create`${text}
 
 ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
@@ -139,17 +141,17 @@ ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
     };
   }
 
-  async send(ctx: ResponseSendContext): Promise<Message> {
+  async sendMessage(ctx: SendMessageContext): Promise<Message> {
     const { start: startUpdating, cancel: cancelUpdating, getCurrentResponse, waitForLatestUpdate } = this.getUpdater();
 
     let message: Message;
 
     try {
-      message = await getCurrentResponse().send(ctx);
+      message = await getCurrentResponse().sendMessage(ctx);
     } catch (err) {
       console.log(prepareErrorForLogging(err));
 
-      return (await this.getDeferred()).send(ctx);
+      return (await this.getDeferred()).sendMessage(ctx);
     }
 
     startUpdating(message);
@@ -164,14 +166,16 @@ ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
 
       await waitForLatestUpdate();
 
-      await bot.editMessage(message, deferredResponse ?? this.immediate);
+      message = await bot.editMessage(message, deferredResponse ?? this.immediate);
     } catch (err) {
       console.log(prepareErrorForLogging(err));
 
       cancelUpdating();
 
+      await waitForLatestUpdate();
+
       try {
-        await bot.editMessage(message, getErrorResponse(err));
+        message = await bot.editMessage(message, getErrorResponse(err));
       } catch (err) {
         console.log(prepareErrorForLogging(err));
       }
@@ -181,4 +185,4 @@ ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
   }
 }
 
-export default DeferredResponse;
+export default DeferredTextResponse;
