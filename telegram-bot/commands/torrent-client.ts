@@ -2,7 +2,7 @@ import { TelegramUserState } from '@prisma/client';
 
 import { CommandType } from 'telegram-bot/constants/commands';
 
-import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
+import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 
 import bot from 'telegram-bot/bot';
 

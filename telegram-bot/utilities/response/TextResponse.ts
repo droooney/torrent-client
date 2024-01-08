@@ -1,6 +1,9 @@
 import TelegramBotApi, { Message } from 'node-telegram-bot-api';
 
-import Response, { RespondToCallbackQueryContext, RespondToMessageContext } from 'telegram-bot/utilities/Response';
+import Response, {
+  RespondToCallbackQueryContext,
+  RespondToMessageContext,
+} from 'telegram-bot/utilities/response/Response';
 
 export interface EditMessageContext {
   message: Message;

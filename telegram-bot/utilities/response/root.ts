@@ -1,7 +1,7 @@
 import { RootCallbackButtonSource } from 'telegram-bot/types/keyboard/root';
 
-import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
+import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 
 export async function getRootResponse(): Promise<ImmediateTextResponse> {
   return new ImmediateTextResponse({

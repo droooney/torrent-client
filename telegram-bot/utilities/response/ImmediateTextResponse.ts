@@ -6,8 +6,8 @@ import { InlineKeyboardMarkup, Message, ParseMode } from 'node-telegram-bot-api'
 import { InlineKeyboard } from 'telegram-bot/types/keyboard';
 
 import Markdown from 'telegram-bot/utilities/Markdown';
-import TextResponse, { EditMessageContext, SendMessageContext } from 'telegram-bot/utilities/TextResponse';
 import { prepareInlineKeyboard } from 'telegram-bot/utilities/keyboard';
+import TextResponse, { EditMessageContext, SendMessageContext } from 'telegram-bot/utilities/response/TextResponse';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 export interface ResponseOptions {

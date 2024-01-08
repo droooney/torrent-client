@@ -13,10 +13,10 @@ import {
   callbackDataSchema,
 } from 'telegram-bot/types/keyboard';
 
-import { CallbackQueryResponse, MessageResponse } from 'telegram-bot/utilities/Response';
-import TextResponse from 'telegram-bot/utilities/TextResponse';
 import { beautifyCallbackData } from 'telegram-bot/utilities/keyboard';
-import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
+import { CallbackQueryResponse, MessageResponse } from 'telegram-bot/utilities/response/Response';
+import TextResponse from 'telegram-bot/utilities/response/TextResponse';
+import { getErrorResponse } from 'telegram-bot/utilities/response/common';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { prepareErrorForHuman, prepareErrorForLogging } from 'utilities/error';
 

@@ -1,9 +1,9 @@
 import { Message } from 'node-telegram-bot-api';
 
-import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import Markdown from 'telegram-bot/utilities/Markdown';
-import TextResponse, { EditMessageContext, SendMessageContext } from 'telegram-bot/utilities/TextResponse';
-import { getErrorResponse } from 'telegram-bot/utilities/responseUtils';
+import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
+import TextResponse, { EditMessageContext, SendMessageContext } from 'telegram-bot/utilities/response/TextResponse';
+import { getErrorResponse } from 'telegram-bot/utilities/response/common';
 import { prepareErrorForLogging } from 'utilities/error';
 import { formatProgress } from 'utilities/number';
 import { delay } from 'utilities/promise';

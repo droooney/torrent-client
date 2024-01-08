@@ -5,9 +5,9 @@ import prisma from 'db/prisma';
 
 import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/torrent-client';
 
-import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
+import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import {
   getAddTorrentResponse,
   getFileResponse,

@@ -11,11 +11,11 @@ import prisma from 'db/prisma';
 import { RootCallbackButtonSource } from 'telegram-bot/types/keyboard/root';
 import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/torrent-client';
 
-import DeferredTextResponse from 'telegram-bot/utilities/DeferredTextResponse';
-import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import Markdown from 'telegram-bot/utilities/Markdown';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
+import DeferredTextResponse from 'telegram-bot/utilities/response/DeferredTextResponse';
+import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import TorrentClient from 'torrent-client/utilities/TorrentClient';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { formatDuration } from 'utilities/date';

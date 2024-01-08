@@ -1,4 +1,4 @@
-import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
+import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import { prepareErrorForHuman } from 'utilities/error';
 
 export function getErrorResponse(err: unknown): ImmediateTextResponse {

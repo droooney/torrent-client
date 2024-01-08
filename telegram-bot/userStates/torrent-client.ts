@@ -1,8 +1,8 @@
 import { TelegramUserState } from '@prisma/client';
 import torrentClient from 'torrent-client/client';
 
-import ImmediateTextResponse from 'telegram-bot/utilities/ImmediateTextResponse';
 import { tryLoadDocument } from 'telegram-bot/utilities/documents';
+import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/utilities/response/torrent-client';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { formatSpeed, parseSize } from 'utilities/size';
