@@ -14,6 +14,8 @@ import {
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { isTruthy } from 'utilities/is';
 
+const BUTTON_TEXT_LIMIT = 120;
+
 export function callbackButton(text: string, callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
   return {
     type: 'callback',
@@ -28,25 +30,28 @@ export function prepareInlineKeyboard(keyboard: InlineKeyboard): InlineKeyboardM
       .filter(isTruthy)
       .map((row) =>
         row.filter(isTruthy).map((button) => {
-          if (button.type === 'callback') {
-            const callbackData: UglifiedCallbackData = uglifyCallbackData(button.callbackData);
-            const callbackDataString = JSON.stringify(callbackData);
+          const buttonText =
+            button.text.length > BUTTON_TEXT_LIMIT ? `${button.text.slice(0, BUTTON_TEXT_LIMIT - 1)}…` : button.text;
 
-            if (callbackDataString.length > 64) {
-              throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка добавления клавиатуры', {
-                message: `Callback data too long (${callbackDataString})`,
-              });
-            }
-
+          if (button.type === 'url') {
             return {
-              text: button.text,
-              callback_data: callbackDataString,
+              text: buttonText,
+              url: button.url,
             };
           }
 
+          const callbackData: UglifiedCallbackData = uglifyCallbackData(button.callbackData);
+          const callbackDataString = JSON.stringify(callbackData);
+
+          if (callbackDataString.length > 64) {
+            throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка добавления клавиатуры', {
+              message: `Callback data too long (${callbackDataString})`,
+            });
+          }
+
           return {
-            text: button.text,
-            url: button.url,
+            text: buttonText,
+            callback_data: callbackDataString,
           };
         }),
       )
