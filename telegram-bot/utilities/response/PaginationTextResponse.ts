@@ -3,10 +3,11 @@ import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
 import { Message } from 'node-telegram-bot-api';
 
-import { InlineKeyboard, InlineKeyboardButton } from 'telegram-bot/types/keyboard';
+import { BeautifiedCallbackData, InlineKeyboard, InlineKeyboardButton } from 'telegram-bot/types/keyboard';
 import { MaybePromise } from 'types/common';
 
 import Markdown from 'telegram-bot/utilities/Markdown';
+import { callbackButton } from 'telegram-bot/utilities/keyboard';
 import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import TextResponse, { EditMessageContext, SendMessageContext } from 'telegram-bot/utilities/response/TextResponse';
 import { formatIndex } from 'utilities/number';
@@ -17,8 +18,8 @@ export interface PaginationTextResponseOptions<Item> {
   itemsPerRow?: number;
   emptyPageText?: string | Markdown;
   getPageItemsInfo(options: GetPageItemsOptions): MaybePromise<PageItemsInfo<Item>>;
-  getPageButton(page: number, buttonText: string): InlineKeyboardButton;
-  getItemButton(item: Item, indexString: string): InlineKeyboardButton;
+  getPageButtonCallbackData(page: number): BeautifiedCallbackData;
+  getItemButton(item: Item, indexIcon: string): InlineKeyboardButton;
   getItemText(item: Item, indexString: string): MaybePromise<string | Markdown>;
   getKeyboard(paginationButtons: InlineKeyboardButton[][]): MaybePromise<InlineKeyboard>;
 }
@@ -43,7 +44,7 @@ export default class PaginationTextResponse<Item> extends TextResponse {
   private readonly itemsPerRow: number;
   private readonly emptyPageText: string | Markdown;
   private readonly getPageItemsInfo: PaginationTextResponseOptions<Item>['getPageItemsInfo'];
-  private readonly getPageButton: PaginationTextResponseOptions<Item>['getPageButton'];
+  private readonly getPageButtonCallbackData: PaginationTextResponseOptions<Item>['getPageButtonCallbackData'];
   private readonly getItemButton: PaginationTextResponseOptions<Item>['getItemButton'];
   private readonly getItemText: PaginationTextResponseOptions<Item>['getItemText'];
   private readonly getKeyboard: PaginationTextResponseOptions<Item>['getKeyboard'];
@@ -56,7 +57,7 @@ export default class PaginationTextResponse<Item> extends TextResponse {
     this.itemsPerRow = options.itemsPerRow ?? DEFAULT_ITEMS_PER_ROW;
     this.emptyPageText = options.emptyPageText ?? DEFAULT_EMPTY_PAGE_TEXT;
     this.getPageItemsInfo = options.getPageItemsInfo;
-    this.getPageButton = options.getPageButton;
+    this.getPageButtonCallbackData = options.getPageButtonCallbackData;
     this.getKeyboard = options.getKeyboard;
     this.getItemButton = options.getItemButton;
     this.getItemText = options.getItemText;
@@ -93,7 +94,7 @@ export default class PaginationTextResponse<Item> extends TextResponse {
       allPagesCount < 2
         ? ''
         : Markdown.create`📄 ${Markdown.bold('Страница')}: ${page + 1} из ${allPagesCount}
-📄 ${Markdown.bold('Показаны результаты')}: ${start + 1}-${Math.min(end, allCount)} из ${allCount}`;
+🔢 ${Markdown.bold('Показаны результаты')}: ${start + 1}-${Math.min(end, allCount)} из ${allCount}`;
     const itemsText = Markdown.join(
       await Promise.all(items.map((item, index) => this.getItemText(item, formatIndex(index)))),
       '\n\n\n',
@@ -109,9 +110,10 @@ export default class PaginationTextResponse<Item> extends TextResponse {
           this.itemsPerRow,
         ),
         uniq(sortBy(allowedPages)).map((p) =>
-          this.getPageButton(
-            p,
-            `${p === page - 1 ? '◀️' : p === page + 1 ? '▶️' : p === 0 ? '⏪' : '⏩'} Стр. ${p + 1}`,
+          callbackButton(
+            p === page - 1 ? '◀️' : p === page + 1 ? '▶️' : p === 0 ? '⏪' : '⏩',
+            `Стр. ${p + 1}`,
+            this.getPageButtonCallbackData(p),
           ),
         ),
       ]),

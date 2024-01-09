@@ -42,7 +42,7 @@ export type BeautifiedCallbackDataSourceWithData<ButtonSource extends CallbackBu
 }[ButtonSource];
 
 export interface BaseInlineKeyboardButton {
-  // TODO: add icon
+  icon: string;
   text: string;
 }
 

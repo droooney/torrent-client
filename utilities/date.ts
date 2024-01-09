@@ -31,6 +31,10 @@ const DURATIONS: Duration[] = [
 const PERIODS_SHOWN_COUNT = 2;
 
 export function formatDuration(ms: number): string {
+  if (ms === Infinity) {
+    return '∞';
+  }
+
   let maxPeriodIndex = DURATIONS.findIndex(({ value }) => ms < value);
 
   if (maxPeriodIndex === -1) {

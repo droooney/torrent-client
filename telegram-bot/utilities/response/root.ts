@@ -8,12 +8,12 @@ export async function getRootResponse(): Promise<ImmediateTextResponse> {
     text: 'Привет! Я - Страж Дома! Воспользуйся одной из кнопок ниже',
     keyboard: [
       [
-        callbackButton('💻 Система', {
+        callbackButton('💻', 'Система', {
           source: RootCallbackButtonSource.OPEN_SYSTEM,
         }),
       ],
       [
-        callbackButton('📽 Торрент клиент', {
+        callbackButton('📽', 'Торрент клиент', {
           source: RootCallbackButtonSource.OPEN_TORRENT_CLIENT,
         }),
       ],

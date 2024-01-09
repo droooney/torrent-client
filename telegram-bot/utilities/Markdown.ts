@@ -35,6 +35,10 @@ class Markdown {
     return entity !== false && entity != null && entity !== '';
   }
 
+  static italic(value: string): MarkdownEntity {
+    return new MarkdownEntity(`_${Markdown.escape(value)}_`);
+  }
+
   static join(markdowns: MarkdownAllowedEntity[], joiner: MarkdownNotEmptyAllowedEntity): Markdown {
     const markdown = new Markdown();
 
