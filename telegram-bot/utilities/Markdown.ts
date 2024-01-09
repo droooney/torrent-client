@@ -4,6 +4,8 @@ const CHARACTERS_TO_ESCAPE = /[_*[\]()~`>#+\-=|{}.!\\]/g;
 
 export type MarkdownAllowedEntity = string | number | false | null | undefined | MarkdownEntity | Markdown;
 
+export type MarkdownNotEmptyAllowedEntity = Exclude<MarkdownAllowedEntity, false | null | undefined | ''>;
+
 class Markdown {
   static bold(value: string): MarkdownEntity {
     return new MarkdownEntity(`*${Markdown.escape(value)}*`);
@@ -11,12 +13,11 @@ class Markdown {
 
   private static compile(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): string {
     return entities.reduce<string>((text, entity, index) => {
-      const entityString =
-        entity === false || entity == null
-          ? ''
-          : entity instanceof MarkdownEntity || entity instanceof Markdown
-            ? entity.toString()
-            : Markdown.escape(String(entity));
+      const entityString = Markdown.isNotEmptyAllowedEntity(entity)
+        ? entity instanceof MarkdownEntity || entity instanceof Markdown
+          ? entity.toString()
+          : Markdown.escape(String(entity))
+        : '';
 
       return `${text}${entityString}${Markdown.escape(strings[index + 1])}`;
     }, Markdown.escape(strings[0]));
@@ -30,11 +31,15 @@ class Markdown {
     return value.replace(CHARACTERS_TO_ESCAPE, '\\$&');
   }
 
-  static join(markdowns: Markdown[], joiner: MarkdownAllowedEntity): Markdown {
+  static isNotEmptyAllowedEntity(entity: MarkdownAllowedEntity): entity is MarkdownNotEmptyAllowedEntity {
+    return entity !== false && entity != null && entity !== '';
+  }
+
+  static join(markdowns: MarkdownAllowedEntity[], joiner: MarkdownNotEmptyAllowedEntity): Markdown {
     const markdown = new Markdown();
 
-    markdowns.forEach((text, index) => {
-      markdown.add`${text}`;
+    markdowns.filter(Markdown.isNotEmptyAllowedEntity).forEach((entity, index) => {
+      markdown.add`${entity}`;
 
       if (index < markdowns.length - 1) {
         markdown.add`${joiner}`;

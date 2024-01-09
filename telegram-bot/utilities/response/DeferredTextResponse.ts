@@ -10,7 +10,7 @@ import { delay } from 'utilities/promise';
 
 import bot from 'telegram-bot/bot';
 
-export interface DeferredResponseOptions {
+export interface DeferredTextResponseOptions {
   immediate: ImmediateTextResponse;
   getDeferred(): Promise<TextResponse>;
   minimalDelay?: number;
@@ -32,7 +32,7 @@ class DeferredTextResponse extends TextResponse {
   private readonly getDeferred: () => Promise<TextResponse>;
   private readonly minimalDelay: number;
 
-  constructor(options: DeferredResponseOptions) {
+  constructor(options: DeferredTextResponseOptions) {
     super();
 
     this.immediate = options.immediate;

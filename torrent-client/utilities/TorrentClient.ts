@@ -38,6 +38,10 @@ const ACTIVE_TORRENT_STATES: TorrentState[] = [TorrentState.Verifying, TorrentSt
 const UPDATE_DB_TORRENT_INTERVAL = 5000;
 
 class TorrentClient {
+  static getFileRelativePath(file: TorrentFile, torrent: Torrent): string {
+    return file.path === torrent.name ? file.path : path.relative(torrent.name ?? '', file.path);
+  }
+
   static getProgress(torrentOrFile: ClientTorrent | ClientTorrentFile): number {
     return minmax(torrentOrFile.downloaded / torrentOrFile.length, 0, torrentOrFile.length);
   }

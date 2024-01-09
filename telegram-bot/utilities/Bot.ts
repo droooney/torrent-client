@@ -214,9 +214,7 @@ class Bot {
         const parsed = callbackDataSchema.safeParse(callbackData);
 
         if (!parsed.success) {
-          throw new CustomError(ErrorCode.UNSUPPORTED, 'Не поддерживается', {
-            cause: parsed.error,
-          });
+          throw new CustomError(ErrorCode.UNSUPPORTED, 'Не поддерживается');
         }
 
         const beautifiedCallbackData = beautifyCallbackData(parsed.data);
@@ -252,16 +250,10 @@ class Bot {
           });
         }
       } catch (err) {
-        let isSameContent = false;
-
-        if (err instanceof CustomError && err.code === ErrorCode.SAME_CONTENT) {
-          isSameContent = true;
-        } else {
-          console.log(prepareErrorForLogging(err));
-        }
+        console.log(prepareErrorForLogging(err));
 
         try {
-          await this.answerCallbackQuery(queryId, isSameContent ? '' : prepareErrorForHuman(err));
+          await this.answerCallbackQuery(queryId, prepareErrorForHuman(err));
         } catch (err) {
           console.log(prepareErrorForLogging(err));
         }

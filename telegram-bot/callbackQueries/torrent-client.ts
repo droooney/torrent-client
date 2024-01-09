@@ -49,7 +49,9 @@ bot.handleCallbackQuery(
 );
 
 bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENTS_LIST_REFRESH, async (ctx) => {
-  return new RefreshNotificationResponse(await getTorrentsListResponse(ctx.data.page));
+  return new RefreshNotificationResponse(
+    await (await getTorrentsListResponse(ctx.data.page)).generateImmediateResponse(),
+  );
 });
 
 bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_DELETE_CONFIRM, async (ctx) => {
@@ -57,7 +59,7 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_DELETE_CONFIRM
 
   return new NotificationResponse({
     text: 'Торрент успешно удален',
-    updateMessage: await getTorrentsListResponse(),
+    updateMessage: await (await getTorrentsListResponse()).generateImmediateResponse(),
   });
 });
 
@@ -136,7 +138,9 @@ bot.handleCallbackQuery(
 );
 
 bot.handleCallbackQuery(TorrentClientCallbackButtonSource.FILES_LIST_REFRESH, async (ctx) => {
-  return new RefreshNotificationResponse(await getFilesResponse(ctx.data.torrentId, ctx.data.page));
+  return new RefreshNotificationResponse(
+    await (await getFilesResponse(ctx.data.torrentId, ctx.data.page)).generateImmediateResponse(),
+  );
 });
 
 bot.handleCallbackQuery(
@@ -175,6 +179,6 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM, a
 
   return new NotificationResponse({
     text: 'Файл успешно удален',
-    updateMessage: await getFilesResponse(torrent.infoHash),
+    updateMessage: await (await getFilesResponse(torrent.infoHash)).generateImmediateResponse(),
   });
 });

@@ -10,7 +10,7 @@ import { prepareInlineKeyboard } from 'telegram-bot/utilities/keyboard';
 import TextResponse, { EditMessageContext, SendMessageContext } from 'telegram-bot/utilities/response/TextResponse';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
-export interface ResponseOptions {
+export interface ImmediateTextResponseOptions {
   text: string | Markdown;
   keyboard?: InlineKeyboard;
 }
@@ -19,7 +19,7 @@ class ImmediateTextResponse extends TextResponse {
   readonly text: string | Markdown;
   readonly keyboard?: InlineKeyboard;
 
-  constructor(options: ResponseOptions) {
+  constructor(options: ImmediateTextResponseOptions) {
     super();
 
     this.text = options.text;

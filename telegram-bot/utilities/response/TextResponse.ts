@@ -4,6 +4,7 @@ import Response, {
   RespondToCallbackQueryContext,
   RespondToMessageContext,
 } from 'telegram-bot/utilities/response/Response';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 export interface EditMessageContext {
   message: Message;
@@ -21,16 +22,22 @@ export default abstract class TextResponse extends Response {
   abstract sendMessage(ctx: SendMessageContext): Promise<Message>;
 
   async respondToCallbackQuery(ctx: RespondToCallbackQueryContext): Promise<void> {
-    const { message } = ctx.query;
+    const { id: queryId, message } = ctx.query;
 
     if (!message) {
       return;
     }
 
-    await this.editMessage({
-      message,
-      api: ctx.api,
-    });
+    try {
+      await this.editMessage({
+        message,
+        api: ctx.api,
+      });
+    } catch (err) {
+      if (err instanceof CustomError && err.code === ErrorCode.SAME_CONTENT) {
+        await ctx.bot.answerCallbackQuery(queryId, '');
+      }
+    }
   }
 
   async respondToMessage(ctx: RespondToMessageContext): Promise<void> {
