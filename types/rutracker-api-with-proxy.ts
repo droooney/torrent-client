@@ -9,6 +9,7 @@ declare module 'rutracker-api-with-proxy' {
     author: string;
     size: number;
     seeds: number;
+    url: string;
   }
 
   export interface LoginOptions {

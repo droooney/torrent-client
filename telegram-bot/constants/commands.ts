@@ -6,7 +6,7 @@ export enum CommandType {
   HELP = '/help',
 
   // Torrent client
-  SEARCH_RUTRACKER = '/searchrutracker',
+  // SEARCH_RUTRACKER = '/searchrutracker',
   // ADD_TORRENT = '/addtorrent',
   // STATUS = '/status',
   // LIST = '/list',
@@ -25,10 +25,10 @@ const commands: CustomBotCommand[] = [
     command: CommandType.HELP,
     description: 'Помощь',
   },
-  {
-    command: CommandType.SEARCH_RUTRACKER,
-    description: 'Искать на rutracker',
-  },
+  // {
+  //   command: CommandType.SEARCH_RUTRACKER,
+  //   description: 'Искать на rutracker',
+  // },
   // {
   //   command: CommandType.ADD_TORRENT,
   //   description: 'Добавить торрент',

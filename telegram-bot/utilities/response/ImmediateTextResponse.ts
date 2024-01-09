@@ -13,17 +13,20 @@ import CustomError, { ErrorCode } from 'utilities/CustomError';
 export interface ImmediateTextResponseOptions {
   text: string | Markdown;
   keyboard?: InlineKeyboard;
+  disableWebPagePreview?: boolean;
 }
 
 class ImmediateTextResponse extends TextResponse {
   readonly text: string | Markdown;
   readonly keyboard?: InlineKeyboard;
+  readonly disableWebPagePreview?: boolean;
 
   constructor(options: ImmediateTextResponseOptions) {
     super();
 
     this.text = options.text;
     this.keyboard = options.keyboard;
+    this.disableWebPagePreview = options.disableWebPagePreview;
   }
 
   async editMessage(ctx: EditMessageContext): Promise<Message> {
@@ -38,6 +41,7 @@ class ImmediateTextResponse extends TextResponse {
           message_id: ctx.message.message_id,
           parse_mode: this.getParseMode(),
           reply_markup: newReplyMarkup,
+          disable_web_page_preview: this.disableWebPagePreview,
         });
 
         if (typeof editResult === 'object') {
@@ -70,6 +74,7 @@ class ImmediateTextResponse extends TextResponse {
       reply_to_message_id: ctx.replyToMessageId,
       parse_mode: this.getParseMode(),
       reply_markup: this.getReplyMarkup(),
+      disable_web_page_preview: this.disableWebPagePreview,
     });
   }
 }

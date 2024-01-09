@@ -40,6 +40,7 @@ export enum TorrentClientCallbackButtonSource {
   NAVIGATE_TO_TORRENT = 't23',
 
   // Rutracker
+  RUTRACKER_SEARCH = 't25',
   RUTRACKER_SEARCH_ADD_TORRENT = 't24',
 }
 
@@ -162,6 +163,10 @@ export const navigateToTorrentCallbackDataSchema = z.object({
   t: z.string(),
 });
 
+export const rutrackerSearchCallbackDataSchema = z.object({
+  $: z.literal(TorrentClientCallbackButtonSource.RUTRACKER_SEARCH),
+});
+
 export const rutrackerSearchAddTorrentCallbackDataSchema = z.object({
   $: z.literal(TorrentClientCallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT),
   t: z.string(),
@@ -192,6 +197,7 @@ export const torrentClientCallbackDataSchema = z.union([
   backToFilesListCallbackDataSchema,
   addTorrentCallbackDataSchema,
   navigateToTorrentCallbackDataSchema,
+  rutrackerSearchCallbackDataSchema,
   rutrackerSearchAddTorrentCallbackDataSchema,
 ]);
 
@@ -314,6 +320,10 @@ export interface NavigateToTorrentCallbackData {
   torrentId: z.infer<typeof navigateToTorrentCallbackDataSchema>['t'];
 }
 
+export interface RutrackerSearchCallbackData {
+  source: z.infer<typeof rutrackerSearchCallbackDataSchema>['$'];
+}
+
 export interface RutrackerSearchAddTorrentCallbackData {
   source: z.infer<typeof rutrackerSearchAddTorrentCallbackDataSchema>['$'];
   torrentId: z.infer<typeof rutrackerSearchAddTorrentCallbackDataSchema>['t'];
@@ -344,4 +354,5 @@ export type TorrentClientBeautifiedCallbackData =
   | BackToFilesListCallbackData
   | AddTorrentCallbackData
   | NavigateToTorrentCallbackData
+  | RutrackerSearchCallbackData
   | RutrackerSearchAddTorrentCallbackData;

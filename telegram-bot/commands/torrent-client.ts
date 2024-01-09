@@ -45,17 +45,17 @@ import bot from 'telegram-bot/bot';
 //     text: 'Клиент снят с паузы',
 //   });
 // });
-
-bot.handleCommand(CommandType.SEARCH_RUTRACKER, async (ctx) => {
-  await ctx.updateUserState({
-    state: TelegramUserState.SearchRutracker,
-  });
-
-  return new ImmediateTextResponse({
-    text: 'Введите название для поиска на rutracker',
-  });
-});
-
+//
+// bot.handleCommand(CommandType.SEARCH_RUTRACKER, async (ctx) => {
+//   await ctx.updateUserState({
+//     state: TelegramUserState.SearchRutracker,
+//   });
+//
+//   return new ImmediateTextResponse({
+//     text: 'Введите название для поиска на rutracker',
+//   });
+// });
+//
 // bot.handleCommand(CommandType.ADD_TORRENT, async (ctx) => {
 //   await ctx.updateUserState({
 //     state: TelegramUserState.AddTorrent,

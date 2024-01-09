@@ -6,6 +6,7 @@ import prisma from 'db/prisma';
 import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/torrent-client';
 
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
+import { backCallbackButton } from 'telegram-bot/utilities/keyboard';
 import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import NotificationResponse from 'telegram-bot/utilities/response/NotificationResponse';
 import RefreshNotificationResponse from 'telegram-bot/utilities/response/RefreshNotificationResponse';
@@ -123,6 +124,13 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.ADD_TORRENT, async (ct
 
   return new ImmediateTextResponse({
     text: 'Отправьте торрент или magnet-ссылку',
+    keyboard: [
+      [
+        backCallbackButton({
+          source: TorrentClientCallbackButtonSource.BACK_TO_STATUS,
+        }),
+      ],
+    ],
   });
 });
 
@@ -180,5 +188,22 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM, a
   return new NotificationResponse({
     text: 'Файл успешно удален',
     updateMessage: await (await getFilesResponse(torrent.infoHash)).generateImmediateResponse(),
+  });
+});
+
+bot.handleCallbackQuery(TorrentClientCallbackButtonSource.RUTRACKER_SEARCH, async (ctx) => {
+  await ctx.updateUserState({
+    state: TelegramUserState.SearchRutracker,
+  });
+
+  return new ImmediateTextResponse({
+    text: 'Введите название для поиска на rutracker',
+    keyboard: [
+      [
+        backCallbackButton({
+          source: TorrentClientCallbackButtonSource.BACK_TO_STATUS,
+        }),
+      ],
+    ],
   });
 });

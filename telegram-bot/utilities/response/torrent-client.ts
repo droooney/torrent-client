@@ -12,7 +12,7 @@ import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/t
 
 import Markdown from 'telegram-bot/utilities/Markdown';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
-import { callbackButton } from 'telegram-bot/utilities/keyboard';
+import { backCallbackButton, callbackButton } from 'telegram-bot/utilities/keyboard';
 import DeferredTextResponse from 'telegram-bot/utilities/response/DeferredTextResponse';
 import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import PaginationTextResponse from 'telegram-bot/utilities/response/PaginationTextResponse';
@@ -77,7 +77,7 @@ export async function getSearchRutrackerResponse(text: string): Promise<Deferred
     }),
     async getDeferred() {
       const torrents = await rutrackerClient.search(text);
-      const topTorrents = torrents.slice(0, 10);
+      const topTorrents = torrents.slice(0, 6);
 
       if (!torrents.length) {
         return new ImmediateTextResponse({
@@ -88,24 +88,31 @@ export async function getSearchRutrackerResponse(text: string): Promise<Deferred
       return new ImmediateTextResponse({
         text: Markdown.join(
           topTorrents.map(
-            ({ title, author, seeds, size }, index) => Markdown.create`🅰️ ${Markdown.bold('Название')}: ${formatIndex(
-              index,
-            )} ${title}
-🧑 ${Markdown.bold('Автор')}: ${author}
-💾 ${Markdown.bold('Размер')}: ${formatSize(size)}
-🔼 ${Markdown.bold('Сидов')}: ${seeds}`,
+            (torrent, index) => Markdown.create`🅰️ ${Markdown.bold('Название')}: ${formatIndex(index)} ${torrent.title}
+🧑 ${Markdown.bold('Автор')}: ${torrent.author}
+💾 ${Markdown.bold('Размер')}: ${formatSize(torrent.size)}
+🔼 ${Markdown.bold('Сидов')}: ${torrent.seeds}
+🌐 ${Markdown.bold('Ссылка')}: ${torrent.url}`,
           ),
           '\n\n\n',
         ),
-        keyboard: chunk(
-          topTorrents.map(({ id }, index) =>
-            callbackButton(formatIndex(index), {
-              source: TorrentClientCallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT,
-              torrentId: id,
-            }),
+        keyboard: [
+          ...chunk(
+            topTorrents.map(({ id }, index) =>
+              callbackButton(formatIndex(index), {
+                source: TorrentClientCallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT,
+                torrentId: id,
+              }),
+            ),
+            2,
           ),
-          2,
-        ),
+          [
+            backCallbackButton({
+              source: TorrentClientCallbackButtonSource.BACK_TO_STATUS,
+            }),
+          ],
+        ],
+        disableWebPagePreview: true,
       });
     },
   });
@@ -178,7 +185,12 @@ ${Markdown.bold('💾 Размер всех торрентов')}: ${formatSize(
         }),
       ],
       [
-        callbackButton('◀️ Назад', {
+        callbackButton('🔎 Поиск по Rutracker', {
+          source: TorrentClientCallbackButtonSource.RUTRACKER_SEARCH,
+        }),
+      ],
+      [
+        backCallbackButton({
           source: RootCallbackButtonSource.BACK_TO_ROOT,
         }),
       ],
@@ -226,7 +238,7 @@ export async function getTorrentsListResponse(page: number = 0): Promise<Paginat
       ],
       ...paginationButtons,
       [
-        callbackButton('◀️ Назад', {
+        backCallbackButton({
           source: TorrentClientCallbackButtonSource.BACK_TO_STATUS,
         }),
       ],

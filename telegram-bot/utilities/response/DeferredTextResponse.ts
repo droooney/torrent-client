@@ -85,7 +85,7 @@ class DeferredTextResponse extends TextResponse {
     let messageToUpdate: Message | undefined;
 
     const getLoadingResponse = (): ImmediateTextResponse => {
-      const { text, keyboard } = this.immediate;
+      const { text, ...rest } = this.immediate;
 
       return new ImmediateTextResponse({
         text: Markdown.create`${text}
@@ -94,7 +94,7 @@ ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
   emojiCount: PROGRESS_EMOJI_COUNT,
   shape: 'circle',
 })}`,
-        keyboard,
+        ...rest,
       });
     };
 

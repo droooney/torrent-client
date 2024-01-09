@@ -24,6 +24,14 @@ export function callbackButton(text: string, callbackData: BeautifiedCallbackDat
   };
 }
 
+export function backCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
+  return {
+    type: 'callback',
+    text: '◀️ Назад',
+    callbackData,
+  };
+}
+
 export function prepareInlineKeyboard(keyboard: InlineKeyboard): InlineKeyboardMarkup {
   return {
     inline_keyboard: keyboard
