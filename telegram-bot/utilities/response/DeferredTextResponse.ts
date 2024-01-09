@@ -62,7 +62,7 @@ class DeferredTextResponse extends TextResponse {
 
       await waitForLatestUpdate();
 
-      message = await (deferredResponse ?? this.immediate).editMessage(ctx);
+      message = await deferredResponse.editMessage(ctx);
     } catch (err) {
       console.log(prepareErrorForLogging(err));
 
@@ -166,7 +166,7 @@ ${formatProgress(((counter % 3) + 1) / PROGRESS_EMOJI_COUNT, {
 
       await waitForLatestUpdate();
 
-      message = await bot.editMessage(message, deferredResponse ?? this.immediate);
+      message = await bot.editMessage(message, deferredResponse);
     } catch (err) {
       console.log(prepareErrorForLogging(err));
 
