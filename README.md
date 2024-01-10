@@ -1,4 +1,4 @@
-# Необходимые инструменты
+# Required tools
 
 - Node.JS
 - Postgres

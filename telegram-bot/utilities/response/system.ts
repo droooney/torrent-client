@@ -18,6 +18,7 @@ export async function getStatusResponse(): Promise<ImmediateTextResponse> {
   const osUsedMemory = osTotalMemory - systemClient.getOsFreeMemory();
 
   const text = Markdown.create`💻 ${Markdown.bold('Система')}
+
 🧮 ${Markdown.bold('Использование CPU')}: ${formatPercent(cpuUsage.os)}
 🛠 ${Markdown.bold('Использование RAM')}: ${formatSize(osUsedMemory)} (${formatPercent(osUsedMemory / osTotalMemory)})
 🕖 ${Markdown.bold('Время работы')}: ${formatDuration(systemClient.getOsUptime())}`;
@@ -32,7 +33,10 @@ export async function getStatusResponse(): Promise<ImmediateTextResponse> {
   text.add`
 
 
+
+
 🤖 ${Markdown.bold('Процесс')}
+
 🧮 ${Markdown.bold('Использование CPU')}: ${formatPercent(cpuUsage.process)}
 🛠 ${Markdown.bold('Использование RAM')}: ${formatSize(systemClient.getProcessUsedMemory())}
 🕖 ${Markdown.bold('Время работы')}: ${formatDuration(systemClient.getProcessUptime())}`;

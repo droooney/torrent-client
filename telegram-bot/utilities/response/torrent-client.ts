@@ -76,32 +76,28 @@ export async function getAddTorrentResponse(getTorrent: () => Promise<Torrent | 
   });
 }
 
-export async function getSearchRutrackerResponse(text: string): Promise<DeferredTextResponse> {
+export async function getSearchRutrackerResponse(query: string): Promise<DeferredTextResponse> {
   return new DeferredTextResponse({
     immediate: new ImmediateTextResponse({
-      text: Markdown.create`Запущен поиск на rutracker по строке "${text}"...`,
+      text: Markdown.create`Запущен поиск на rutracker по строке "${query}"...`,
     }),
     async getDeferred() {
-      const torrents = await rutrackerClient.search(text);
+      const torrents = await rutrackerClient.search(query);
       const topTorrents = torrents.slice(0, 6);
 
-      if (!torrents.length) {
-        return new ImmediateTextResponse({
-          text: 'Результатов не найдено',
-        });
-      }
-
-      return new ImmediateTextResponse({
-        text: Markdown.join(
-          topTorrents.map(
-            (torrent, index) => Markdown.create`🅰️ ${Markdown.bold('Название')}: ${formatIndex(index)} ${torrent.title}
+      const text = Markdown.join(
+        topTorrents.map(
+          (torrent, index) => Markdown.create`🅰️ ${Markdown.bold('Название')}: ${formatIndex(index)} ${torrent.title}
 🧑 ${Markdown.bold('Автор')}: ${torrent.author}
 💾 ${Markdown.bold('Размер')}: ${formatSize(torrent.size)}
 🔼 ${Markdown.bold('Сидов')}: ${torrent.seeds}
 🔗 ${Markdown.bold('Ссылка')}: ${torrent.url}`,
-          ),
-          '\n\n\n',
         ),
+        '\n\n\n',
+      );
+
+      return new ImmediateTextResponse({
+        text: text.isEmpty() ? 'Результатов не найдено' : text,
         keyboard: [
           ...chunk(
             topTorrents.map(({ id }, index) =>
