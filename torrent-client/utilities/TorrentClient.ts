@@ -211,7 +211,7 @@ class TorrentClient {
     const client = new WebTorrent();
 
     client.on('error', (err) => {
-      console.log('client error', err);
+      console.log(prepareErrorForLogging(err));
     });
 
     this.resolveClient?.(client);
@@ -436,7 +436,7 @@ class TorrentClient {
     });
 
     clientTorrent.once('error', async (err) => {
-      console.log('torrent error', err);
+      console.log(prepareErrorForLogging(err));
 
       await prisma.torrent.update({
         where: {

@@ -48,6 +48,7 @@
     "html-webpack-plugin": "^5.5.3",
     "http-errors": "^2.0.0",
     "https-proxy-agent": "^7.0.2",
+    "is-wsl": "^3.1.0",
     "koa": "^2.14.2",
     "koa-compose": "^4.1.0",
     "koa-connect": "^2.1.0",

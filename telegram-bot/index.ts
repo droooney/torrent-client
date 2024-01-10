@@ -2,6 +2,8 @@ import * as util from 'node:util';
 
 import { blue, green } from 'colors/safe';
 
+import { prepareErrorForLogging } from 'utilities/error';
+
 import bot from 'telegram-bot/bot';
 
 import './commands';
@@ -17,7 +19,7 @@ console.log(blue('Bot started'));
 
   console.log(green('Bot listening...'));
 })().catch((err) => {
-  console.log(err);
+  console.log(prepareErrorForLogging(err));
 
   process.exit(1);
 });

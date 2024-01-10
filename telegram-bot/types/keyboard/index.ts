@@ -6,6 +6,11 @@ import {
   rootCallbackDataSchema,
 } from 'telegram-bot/types/keyboard/root';
 import {
+  SystemBeautifiedCallbackData,
+  SystemCallbackButtonSource,
+  systemCallbackDataSchema,
+} from 'telegram-bot/types/keyboard/system';
+import {
   TorrentClientBeautifiedCallbackData,
   TorrentClientCallbackButtonSource,
   torrentClientCallbackDataSchema,
@@ -13,9 +18,16 @@ import {
 
 export type InlineKeyboard = ((InlineKeyboardButton | null | undefined | false)[] | null | undefined | false)[];
 
-export type CallbackButtonSource = RootCallbackButtonSource | TorrentClientCallbackButtonSource;
+export type CallbackButtonSource =
+  | RootCallbackButtonSource
+  | SystemCallbackButtonSource
+  | TorrentClientCallbackButtonSource;
 
-export const callbackDataSchema = z.union([rootCallbackDataSchema, torrentClientCallbackDataSchema]);
+export const callbackDataSchema = z.union([
+  rootCallbackDataSchema,
+  systemCallbackDataSchema,
+  torrentClientCallbackDataSchema,
+]);
 
 export type UglifiedCallbackData = z.infer<typeof callbackDataSchema>;
 
@@ -28,7 +40,10 @@ export type UglifiedCallbackDataSourceWithData<ButtonSource extends CallbackButt
   [Source in ButtonSource]: Exclude<keyof UglifiedCallbackDataBySource<Source>, '$'> extends never ? never : Source;
 }[ButtonSource];
 
-export type BeautifiedCallbackData = RootBeautifiedCallbackData | TorrentClientBeautifiedCallbackData;
+export type BeautifiedCallbackData =
+  | RootBeautifiedCallbackData
+  | SystemBeautifiedCallbackData
+  | TorrentClientBeautifiedCallbackData;
 
 export type BeautifiedCallbackDataBySource<Source extends CallbackButtonSource> = Extract<
   BeautifiedCallbackData,

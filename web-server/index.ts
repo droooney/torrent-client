@@ -3,6 +3,8 @@ import connect from 'koa-connect';
 import webpack from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 
+import { prepareErrorForLogging } from 'utilities/error';
+
 import render from 'web-server/middlewares/render';
 import serve from 'web-server/middlewares/serve';
 import { app, server } from 'web-server/server';
@@ -37,7 +39,7 @@ console.log(blue('Web server started'));
 
   console.log(green(`Web server listening on http://localhost:${PORT}...`));
 })().catch((err) => {
-  console.log(err);
+  console.log(prepareErrorForLogging(err));
 
   process.exit(1);
 });

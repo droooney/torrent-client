@@ -16,6 +16,7 @@
       "constants/*": ["./constants/*"],
       "db/*": ["./prisma/*"],
       "telegram-bot/*": ["./telegram-bot/*"],
+      "system-client/*": ["./system-client/*"],
       "torrent-client/*": ["./torrent-client/*"],
       "types/*": ["./types/*"],
       "utilities/*": ["./utilities/*"],

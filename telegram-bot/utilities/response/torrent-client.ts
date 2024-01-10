@@ -98,7 +98,7 @@ export async function getSearchRutrackerResponse(text: string): Promise<Deferred
 🧑 ${Markdown.bold('Автор')}: ${torrent.author}
 💾 ${Markdown.bold('Размер')}: ${formatSize(torrent.size)}
 🔼 ${Markdown.bold('Сидов')}: ${torrent.seeds}
-🌐 ${Markdown.bold('Ссылка')}: ${torrent.url}`,
+🔗 ${Markdown.bold('Ссылка')}: ${torrent.url}`,
           ),
           '\n\n\n',
         ),

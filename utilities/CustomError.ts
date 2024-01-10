@@ -7,6 +7,7 @@ export enum ErrorCode {
   SAME_CONTENT = 'SAME_CONTENT',
   UNSUPPORTED = 'UNSUPPORTED',
   NOT_FINISHED = 'NOT_FINISHED',
+  COMMAND_ERROR = 'COMMAND_ERROR',
 }
 
 class CustomError extends Error {
