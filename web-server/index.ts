@@ -1,10 +1,12 @@
 import { blue, green } from 'colors/safe';
+import { Middleware } from 'koa';
 import connect from 'koa-connect';
 import webpack from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 
-import { prepareErrorForLogging } from 'utilities/error';
+import { runMain } from 'utilities/process';
 
+import api from 'web-server/api';
 import render from 'web-server/middlewares/render';
 import serve from 'web-server/middlewares/serve';
 import { app, server } from 'web-server/server';
@@ -28,18 +30,16 @@ if (process.env.NODE_ENV !== 'production') {
   );
 }
 
+app.use(api.routes() as Middleware);
+app.use(api.allowedMethods() as Middleware);
 app.use(render);
 
 console.log(blue('Web server started'));
 
-(async () => {
+runMain(async () => {
   await new Promise<void>((resolve) => {
     server.listen(PORT, resolve);
   });
 
   console.log(green(`Web server listening on http://localhost:${PORT}...`));
-})().catch((err) => {
-  console.log(prepareErrorForLogging(err));
-
-  process.exit(1);
 });

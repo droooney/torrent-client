@@ -2,8 +2,8 @@ import os from 'node:os';
 
 import isWsl from 'is-wsl';
 
+import { exec } from 'utilities/process';
 import { delay } from 'utilities/promise';
-import { exec } from 'utilities/system';
 
 interface CpuUsageInfo {
   process: number;

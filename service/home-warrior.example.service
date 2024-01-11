@@ -1,0 +1,11 @@
+[Unit]
+Description=Home Warrior
+
+[Service]
+ExecStart=+/bin/bash -c "./service/start-service.sh"
+Type=simple
+Restart=always
+WorkingDirectory=/home/<username>/projects/smart-home
+
+[Install]
+WantedBy=default.target

@@ -6,6 +6,9 @@ build
 assets-storage/downloads/*
 assets-storage/torrents/*
 
+*.service
+!*.example.service
+
 *.env
 !.example.env
 !.secret.example.env

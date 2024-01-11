@@ -2,7 +2,7 @@ import * as util from 'node:util';
 
 import { blue, green } from 'colors/safe';
 
-import { prepareErrorForLogging } from 'utilities/error';
+import { runMain } from 'utilities/process';
 
 import bot from 'telegram-bot/bot';
 
@@ -14,12 +14,8 @@ util.inspect.defaultOptions.depth = null;
 
 console.log(blue('Bot started'));
 
-(async () => {
+runMain(async () => {
   await bot.start();
 
   console.log(green('Bot listening...'));
-})().catch((err) => {
-  console.log(prepareErrorForLogging(err));
-
-  process.exit(1);
 });
