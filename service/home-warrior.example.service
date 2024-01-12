@@ -1,5 +1,7 @@
 [Unit]
 Description=Home Warrior
+Requires=postgresql.service
+Requires=network.target
 
 [Service]
 ExecStart=+/bin/bash -c "./service/start-service.sh"
