@@ -1,13 +1,15 @@
 [Unit]
 Description=Home Warrior
 Requires=postgresql.service
-Requires=network.target
+Requires=network-online.target
 
 [Service]
 ExecStart=+/bin/bash -c "./service/start-service.sh"
 Type=simple
 Restart=always
 WorkingDirectory=/home/<username>/projects/smart-home
+User=<username>
+Group=<username>
 
 [Install]
 WantedBy=default.target
