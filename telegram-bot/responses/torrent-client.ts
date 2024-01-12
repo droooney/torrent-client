@@ -13,10 +13,11 @@ import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/t
 import Markdown from 'telegram-bot/utilities/Markdown';
 import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import {
+  addCallbackButton,
   backCallbackButton,
   callbackButton,
-  confirmDeleteCallbackButton,
   deleteCallbackButton,
+  listCallbackButton,
   refreshCallbackButton,
 } from 'telegram-bot/utilities/keyboard';
 import DeferredTextResponse from 'telegram-bot/utilities/response/DeferredTextResponse';
@@ -164,7 +165,9 @@ ${Markdown.bold('💾 Размер всех торрентов')}: ${formatSize(
 
   const notFinishedTorrentsText = await formatTorrents(notFinishedTorrents);
 
-  status.add`${notFinishedTorrentsText.isEmpty() ? 'Нет активных торрентов' : notFinishedTorrentsText}`;
+  status.add`${
+    notFinishedTorrentsText.isEmpty() ? Markdown.italic('Нет активных торрентов') : notFinishedTorrentsText
+  }`;
 
   return new ImmediateTextResponse({
     text: status,
@@ -184,10 +187,10 @@ ${Markdown.bold('💾 Размер всех торрентов')}: ${formatSize(
             }),
       ],
       [
-        callbackButton('➕', 'Добавить', {
+        addCallbackButton({
           source: TorrentClientCallbackButtonSource.ADD_TORRENT,
         }),
-        callbackButton('📜', 'Список', {
+        listCallbackButton({
           source: TorrentClientCallbackButtonSource.STATUS_SHOW_TORRENTS_LIST,
         }),
       ],
@@ -208,7 +211,7 @@ ${Markdown.bold('💾 Размер всех торрентов')}: ${formatSize(
 export async function getTorrentsListResponse(page: number = 0): Promise<PaginationTextResponse<Torrent>> {
   return new PaginationTextResponse({
     page,
-    emptyPageText: 'Нет торрентов',
+    emptyPageText: Markdown.italic('Нет торрентов'),
     getPageItemsInfo: async (options) => {
       const { items, allCount } = await getPaginationInfo({
         table: 'torrent',
@@ -305,15 +308,17 @@ export async function getTorrentResponse(
                 torrentId: infoHash,
                 pause: true,
               })),
-        withDeleteConfirm
-          ? confirmDeleteCallbackButton({
-              source: TorrentClientCallbackButtonSource.TORRENT_DELETE_CONFIRM,
-              torrentId: infoHash,
-            })
-          : deleteCallbackButton({
-              source: TorrentClientCallbackButtonSource.TORRENT_DELETE,
-              torrentId: infoHash,
-            }),
+        deleteCallbackButton(
+          withDeleteConfirm,
+          {
+            source: TorrentClientCallbackButtonSource.TORRENT_DELETE_CONFIRM,
+            torrentId: infoHash,
+          },
+          {
+            source: TorrentClientCallbackButtonSource.TORRENT_DELETE,
+            torrentId: infoHash,
+          },
+        ),
       ],
       [
         callbackButton('📄', 'Файлы', {
@@ -349,7 +354,7 @@ export async function getFilesResponse(
 
   return new PaginationTextResponse({
     page,
-    emptyPageText: 'Нет файлов',
+    emptyPageText: Markdown.italic('Нет файлов'),
     getPageItemsInfo: async (options) =>
       getPaginationInfo({
         table: 'torrentFile',
@@ -438,15 +443,17 @@ export async function getFileResponse(
         }),
       ],
       file.state === TorrentFileState.Finished && [
-        withDeleteConfirm
-          ? confirmDeleteCallbackButton({
-              source: TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM,
-              fileId,
-            })
-          : deleteCallbackButton({
-              source: TorrentClientCallbackButtonSource.DELETE_FILE,
-              fileId,
-            }),
+        deleteCallbackButton(
+          withDeleteConfirm,
+          {
+            source: TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM,
+            fileId,
+          },
+          {
+            source: TorrentClientCallbackButtonSource.DELETE_FILE,
+            fileId,
+          },
+        ),
       ],
       [
         callbackButton('◀️', 'К файлам', {
@@ -469,7 +476,7 @@ export async function formatTorrents(torrents: Torrent[]): Promise<Markdown> {
   return Markdown.join(formattedTorrents, '\n\n\n');
 }
 
-interface FormatTorrentOptions {
+export interface FormatTorrentOptions {
   indexString?: string;
 }
 

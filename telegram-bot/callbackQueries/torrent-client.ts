@@ -10,6 +10,9 @@ import { backCallbackButton } from 'telegram-bot/utilities/keyboard';
 import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import NotificationResponse from 'telegram-bot/utilities/response/NotificationResponse';
 import RefreshNotificationResponse from 'telegram-bot/utilities/response/RefreshNotificationResponse';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
+
+import bot from 'telegram-bot/bot';
 import {
   getAddTorrentResponse,
   getFileResponse,
@@ -17,10 +20,7 @@ import {
   getStatusResponse,
   getTorrentResponse,
   getTorrentsListResponse,
-} from 'telegram-bot/utilities/response/torrent-client';
-import CustomError, { ErrorCode } from 'utilities/CustomError';
-
-import bot from 'telegram-bot/bot';
+} from 'telegram-bot/responses/torrent-client';
 
 bot.handleCallbackQuery(
   [

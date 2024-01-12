@@ -13,6 +13,11 @@ export async function getRootResponse(): Promise<ImmediateTextResponse> {
         }),
       ],
       [
+        callbackButton('📺', 'Устройства', {
+          source: RootCallbackButtonSource.OPEN_DEVICES,
+        }),
+      ],
+      [
         callbackButton('📽', 'Торрент клиент', {
           source: RootCallbackButtonSource.OPEN_TORRENT_CLIENT,
         }),

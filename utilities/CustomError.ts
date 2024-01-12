@@ -10,11 +10,15 @@ export enum ErrorCode {
   COMMAND_ERROR = 'COMMAND_ERROR',
 }
 
+export interface CustomErrorOptions extends ErrorOptions {
+  message?: string;
+}
+
 class CustomError extends Error {
   code: ErrorCode;
   humanMessage?: string;
 
-  constructor(code: ErrorCode, humanMessage?: string, options?: ErrorOptions & { message?: string }) {
+  constructor(code: ErrorCode, humanMessage?: string, options?: CustomErrorOptions) {
     super(options?.message ?? humanMessage ?? code, options);
 
     this.code = code;

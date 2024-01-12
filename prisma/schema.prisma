@@ -74,6 +74,14 @@ enum TelegramUserState {
 
   First
   Waiting
+
+  // Devices client
+  AddDeviceSetName
+  AddDeviceSetType
+  AddDeviceSetMac
+  AddDeviceSetAddress
+
+  // Torrent client
   SearchRutracker
   AddTorrent
   SetDownloadLimit
@@ -83,6 +91,25 @@ enum TelegramUserState {
 model TelegramUserData {
   @@map("telegram_user_data")
 
-  userId          Int               @map("user_id") @unique()
-  state           TelegramUserState
+  userId           Int               @map("user_id") @unique()
+  state            TelegramUserState
+  addDevicePayload Json?
+}
+
+enum DeviceType {
+  @@map("device_type")
+
+  Tv
+}
+
+model Device {
+  @@map("device")
+
+  id        Int        @id @default(autoincrement())
+  name      String
+  type      DeviceType
+  mac       String
+  address   String
+
+  createdAt DateTime   @map("created_at") @default(now())
 }

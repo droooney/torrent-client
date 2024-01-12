@@ -1,8 +1,7 @@
 import { TelegramUserState } from '@prisma/client';
 
-import { getRootResponse } from 'telegram-bot/utilities/response/root';
-
 import bot from 'telegram-bot/bot';
+import { getRootResponse } from 'telegram-bot/responses/root';
 
 bot.handleUserState(TelegramUserState.First, async (ctx) => {
   await ctx.updateUserState({

@@ -37,6 +37,7 @@ export interface TextHandlerContext {
 export interface CallbackQueryHandlerContext<CallbackData extends BeautifiedCallbackData> {
   data: CallbackData;
   message: Message;
+  userData: TelegramUserData;
   updateUserState(
     data: Prisma.XOR<Prisma.TelegramUserDataUpdateInput, Prisma.TelegramUserDataUncheckedUpdateInput>,
   ): Promise<TelegramUserData>;
@@ -222,6 +223,7 @@ class Bot {
         const ctx: CallbackQueryHandlerContext<typeof beautifiedCallbackData> = {
           data: beautifiedCallbackData,
           message,
+          userData,
           updateUserState: async (data) => {
             return prisma.telegramUserData.update({
               where: {

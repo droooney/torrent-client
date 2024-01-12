@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
 import {
+  DevicesClientBeautifiedCallbackData,
+  DevicesClientCallbackButtonSource,
+  devicesClientCallbackDataSchema,
+} from 'telegram-bot/types/keyboard/devices-client';
+import {
   RootBeautifiedCallbackData,
   RootCallbackButtonSource,
   rootCallbackDataSchema,
@@ -21,11 +26,13 @@ export type InlineKeyboard = ((InlineKeyboardButton | null | undefined | false)[
 export type CallbackButtonSource =
   | RootCallbackButtonSource
   | SystemCallbackButtonSource
+  | DevicesClientCallbackButtonSource
   | TorrentClientCallbackButtonSource;
 
 export const callbackDataSchema = z.union([
   rootCallbackDataSchema,
   systemCallbackDataSchema,
+  devicesClientCallbackDataSchema,
   torrentClientCallbackDataSchema,
 ]);
 
@@ -43,6 +50,7 @@ export type UglifiedCallbackDataSourceWithData<ButtonSource extends CallbackButt
 export type BeautifiedCallbackData =
   | RootBeautifiedCallbackData
   | SystemBeautifiedCallbackData
+  | DevicesClientBeautifiedCallbackData
   | TorrentClientBeautifiedCallbackData;
 
 export type BeautifiedCallbackDataBySource<Source extends CallbackButtonSource> = Extract<

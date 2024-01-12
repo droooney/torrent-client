@@ -1,3 +1,7 @@
+import {
+  devicesClientBeautifyCallbackDataMapper,
+  devicesClientUglifyCallbackDataMapper,
+} from 'telegram-bot/constants/callbackData/devices-client';
 import { rootBeautifyCallbackDataMapper, rootUglifyCallbackDataMapper } from 'telegram-bot/constants/callbackData/root';
 import {
   systemBeautifyCallbackDataMapper,
@@ -17,11 +21,13 @@ import {
 export const uglifyCallbackDataMapper: UglifyCallbackDataMapper<CallbackButtonSource> = {
   ...rootUglifyCallbackDataMapper,
   ...systemUglifyCallbackDataMapper,
+  ...devicesClientUglifyCallbackDataMapper,
   ...torrentClientUglifyCallbackDataMapper,
 };
 
 export const beautifyCallbackDataMapper: BeautifyCallbackDataMapper<CallbackButtonSource> = {
   ...rootBeautifyCallbackDataMapper,
   ...systemBeautifyCallbackDataMapper,
+  ...devicesClientBeautifyCallbackDataMapper,
   ...torrentClientBeautifyCallbackDataMapper,
 };

@@ -15,6 +15,7 @@
       "@/*": ["./*"],
       "constants/*": ["./constants/*"],
       "db/*": ["./prisma/*"],
+      "devices-client/*": ["./devices-client/*"],
       "telegram-bot/*": ["./telegram-bot/*"],
       "system-client/*": ["./system-client/*"],
       "torrent-client/*": ["./torrent-client/*"],

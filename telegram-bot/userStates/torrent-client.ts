@@ -3,11 +3,11 @@ import torrentClient from 'torrent-client/client';
 
 import { tryLoadDocument } from 'telegram-bot/utilities/documents';
 import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
-import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/utilities/response/torrent-client';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { formatSpeed, parseSize } from 'utilities/size';
 
 import bot from 'telegram-bot/bot';
+import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/responses/torrent-client';
 
 bot.handleUserState(TelegramUserState.SearchRutracker, async (ctx) => {
   await ctx.updateUserState({

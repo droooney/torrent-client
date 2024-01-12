@@ -30,39 +30,29 @@ export function callbackButton(
 }
 
 export function backCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
-  return {
-    type: 'callback',
-    icon: '◀️',
-    text: 'Назад',
-    callbackData,
-  };
+  return callbackButton('◀️', 'Назад', callbackData);
 }
 
 export function refreshCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
-  return {
-    type: 'callback',
-    icon: '🔄',
-    text: 'Обновить',
-    callbackData,
-  };
+  return callbackButton('🔄', 'Обновить', callbackData);
 }
 
-export function deleteCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
-  return {
-    type: 'callback',
-    icon: '🗑',
-    text: 'Удалить',
-    callbackData,
-  };
+export function deleteCallbackButton(
+  withDeleteConfirm: boolean,
+  confirmCallbackData: BeautifiedCallbackData,
+  deleteCallbackData: BeautifiedCallbackData,
+): CallbackInlineKeyboardButton {
+  return withDeleteConfirm
+    ? callbackButton('🗑', 'Точно удалить?', confirmCallbackData)
+    : callbackButton('🗑', 'Удалить', deleteCallbackData);
 }
 
-export function confirmDeleteCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
-  return {
-    type: 'callback',
-    icon: '🗑',
-    text: 'Точно удалить?',
-    callbackData,
-  };
+export function addCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
+  return callbackButton('➕', 'Добавить', callbackData);
+}
+
+export function listCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
+  return callbackButton('📜', 'Список', callbackData);
 }
 
 export function prepareInlineKeyboard(keyboard: InlineKeyboard): InlineKeyboardMarkup {
