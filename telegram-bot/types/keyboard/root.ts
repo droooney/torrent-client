@@ -7,47 +7,34 @@ export enum RootCallbackButtonSource {
   OPEN_TORRENT_CLIENT = 'r2',
 }
 
-export const backToRootCallbackDataSchema = z.object({
-  $: z.literal(RootCallbackButtonSource.BACK_TO_ROOT),
-});
-
-export const openSystemCallbackDataSchema = z.object({
-  $: z.literal(RootCallbackButtonSource.OPEN_SYSTEM),
-});
-
-export const openDevicesCallbackDataSchema = z.object({
-  $: z.literal(RootCallbackButtonSource.OPEN_DEVICES),
-});
-
-export const openTorrentClientCallbackDataSchema = z.object({
-  $: z.literal(RootCallbackButtonSource.OPEN_TORRENT_CLIENT),
-});
-
 export const rootCallbackDataSchema = z.union([
-  backToRootCallbackDataSchema,
-  openSystemCallbackDataSchema,
-  openDevicesCallbackDataSchema,
-  openTorrentClientCallbackDataSchema,
+  z.object({
+    $: z.literal(RootCallbackButtonSource.BACK_TO_ROOT),
+  }),
+
+  z.object({
+    $: z.literal(RootCallbackButtonSource.OPEN_SYSTEM),
+  }),
+
+  z.object({
+    $: z.literal(RootCallbackButtonSource.OPEN_DEVICES),
+  }),
+
+  z.object({
+    $: z.literal(RootCallbackButtonSource.OPEN_TORRENT_CLIENT),
+  }),
 ]);
 
-export interface BackToRootCallbackData {
-  source: z.infer<typeof backToRootCallbackDataSchema>['$'];
-}
-
-export interface OpenSystemCallbackData {
-  source: z.infer<typeof openSystemCallbackDataSchema>['$'];
-}
-
-export interface OpenDevicesCallbackData {
-  source: z.infer<typeof openDevicesCallbackDataSchema>['$'];
-}
-
-export interface OpenTorrentClientCallbackData {
-  source: z.infer<typeof openTorrentClientCallbackDataSchema>['$'];
-}
-
 export type RootBeautifiedCallbackData =
-  | BackToRootCallbackData
-  | OpenSystemCallbackData
-  | OpenDevicesCallbackData
-  | OpenTorrentClientCallbackData;
+  | {
+      source: RootCallbackButtonSource.BACK_TO_ROOT;
+    }
+  | {
+      source: RootCallbackButtonSource.OPEN_SYSTEM;
+    }
+  | {
+      source: RootCallbackButtonSource.OPEN_DEVICES;
+    }
+  | {
+      source: RootCallbackButtonSource.OPEN_TORRENT_CLIENT;
+    };
