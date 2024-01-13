@@ -35,7 +35,7 @@ bot.handleUserState(TelegramUserState.AddDeviceSetName, async (ctx) => {
   };
 
   await ctx.updateUserState({
-    state: TelegramUserState.AddDeviceSetMac,
+    state: TelegramUserState.AddDeviceSetType,
     addDevicePayload: newPayload,
   });
 
