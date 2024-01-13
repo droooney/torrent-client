@@ -92,3 +92,7 @@ export type BeautifyCallbackDataMapper<ButtonSource extends CallbackButtonSource
     uglifiedData: UglifiedCallbackDataBySource<Source>,
   ) => Omit<BeautifiedCallbackDataBySource<Source>, 'source'>;
 };
+
+export const allInlineKeyboardButtonSources = callbackDataSchema.options.flatMap((type) => {
+  return type.options.map((type) => type._def.shape().$.value);
+});

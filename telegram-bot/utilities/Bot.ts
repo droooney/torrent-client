@@ -10,6 +10,7 @@ import {
   BeautifiedCallbackData,
   BeautifiedCallbackDataBySource,
   CallbackButtonSource,
+  allInlineKeyboardButtonSources,
   callbackDataSchema,
 } from 'telegram-bot/types/keyboard';
 
@@ -73,6 +74,25 @@ class Bot {
     });
   }
 
+  async editMessage(message: Message, response: TextResponse): Promise<Message> {
+    return response.editMessage({
+      message,
+      api: this.api,
+    });
+  }
+
+  getUnhandledCallbackButtonSources(): CallbackButtonSource[] {
+    return allInlineKeyboardButtonSources.filter((source) => !(source in this.callbackDataHandlers));
+  }
+
+  getUnhandledCommands(): CommandType[] {
+    return Object.values(CommandType).filter((command) => !(command in this.commandHandlers));
+  }
+
+  getUnhandledUserStates(): TelegramUserState[] {
+    return Object.values(TelegramUserState).filter((command) => !(command in this.userStateHandlers));
+  }
+
   handleCallbackQuery<Source extends CallbackButtonSource>(
     source: Source | Source[],
     handler: CallbackQueryHandler<BeautifiedCallbackDataBySource<Source>>,
@@ -80,13 +100,6 @@ class Bot {
     ([] as Source[]).concat(source).forEach((source) => {
       // @ts-ignore
       this.callbackDataHandlers[source] = handler;
-    });
-  }
-
-  async editMessage(message: Message, response: TextResponse): Promise<Message> {
-    return response.editMessage({
-      message,
-      api: this.api,
     });
   }
 

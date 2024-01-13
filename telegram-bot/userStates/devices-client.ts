@@ -42,6 +42,10 @@ bot.handleUserState(TelegramUserState.AddDeviceSetName, async (ctx) => {
   return getAddDeviceSetTypeResponse(newPayload);
 });
 
+bot.handleUserState(TelegramUserState.AddDeviceSetType, async (ctx) => {
+  return getAddDeviceSetTypeResponse(getAddDevicePayload(ctx.userData.addDevicePayload));
+});
+
 bot.handleUserState(TelegramUserState.AddDeviceSetMac, async (ctx) => {
   const mac = ctx.message.text;
 
