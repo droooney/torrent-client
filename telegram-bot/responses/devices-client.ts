@@ -129,9 +129,10 @@ export function getAddDeviceSetNameResponse(): ImmediateTextResponse {
 
 export function getAddDeviceSetTypeResponse(addDevicePayload: AddDevicePayload): ImmediateTextResponse {
   return new ImmediateTextResponse({
-    text: Markdown.create`${Markdown.italic('Выберите тип устройства')}
+    text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name'])}
 
-${formatEnteredFields(addDevicePayload, ['name'])}`,
+
+${Markdown.italic('Выберите тип устройства')}`,
     keyboard: [
       [
         ...Object.values(DeviceType).map((type) =>
@@ -157,9 +158,10 @@ ${formatEnteredFields(addDevicePayload, ['name'])}`,
 
 export function getAddDeviceSetMacResponse(addDevicePayload: AddDevicePayload): ImmediateTextResponse {
   return new ImmediateTextResponse({
-    text: Markdown.create`${Markdown.italic('Введите MAC устройства')}
+    text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type'])}
 
-${formatEnteredFields(addDevicePayload, ['name', 'type'])}`,
+
+${Markdown.italic('Введите MAC устройства')}`,
     keyboard: [
       [
         callbackButton('◀️', 'К выбору типа', {
@@ -177,9 +179,10 @@ ${formatEnteredFields(addDevicePayload, ['name', 'type'])}`,
 
 export function getAddDeviceSetAddressResponse(addDevicePayload: AddDevicePayload): ImmediateTextResponse {
   return new ImmediateTextResponse({
-    text: Markdown.create`${Markdown.italic('Введите адрес устройства')}
+    text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type', 'mac'])}
 
-${formatEnteredFields(addDevicePayload, ['name', 'type', 'mac'])}`,
+
+${Markdown.italic('Введите адрес устройства')}`,
     keyboard: [
       [
         callbackButton('◀️', 'К вводу MAC', {

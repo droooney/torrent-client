@@ -54,6 +54,11 @@ bot.handleUserState(TelegramUserState.AddDeviceSetMac, async (ctx) => {
       text: Markdown.create`Введите валидный MAC-адрес (пример: ${Markdown.fixedWidth('12:23:56:9f:aa:bb')})`,
       keyboard: [
         [
+          callbackButton('◀️', 'К выбору типа', {
+            source: DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_TYPE,
+          }),
+        ],
+        [
           callbackButton('◀️', 'К устройствам', {
             source: DevicesClientCallbackButtonSource.BACK_TO_STATUS,
           }),
@@ -81,6 +86,11 @@ bot.handleUserState(TelegramUserState.AddDeviceSetAddress, async (ctx) => {
   if (!address) {
     throw new TelegramResponseError(ErrorCode.WRONG_FORMAT, 'Адрес устройства должно содержать как минимум 1 символ', {
       keyboard: [
+        [
+          callbackButton('◀️', 'К вводу MAC', {
+            source: DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_MAC,
+          }),
+        ],
         [
           callbackButton('◀️', 'К устройствам', {
             source: DevicesClientCallbackButtonSource.BACK_TO_STATUS,
