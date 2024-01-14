@@ -1,5 +1,6 @@
 import { Webhooks } from '@octokit/webhooks';
 import { PushEvent } from '@octokit/webhooks-types';
+import { blue, green } from 'colors/safe';
 import simpleGit from 'simple-git';
 
 import { prepareErrorForLogging } from 'utilities/error';
@@ -39,7 +40,11 @@ export default class GithubClient {
     const hasPackageLockChanged = diff.files.some(({ file }) => file === 'package-lock.json');
 
     if (hasPackageLockChanged) {
+      console.log(blue('Installing new modules...'));
+
       await exec('npm ci');
+
+      console.log(green('New modules installed...'));
     }
 
     // TODO: notify about restart

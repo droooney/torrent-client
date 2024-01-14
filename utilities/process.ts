@@ -22,23 +22,16 @@ export async function exec(command: string, options?: ExecOptions): Promise<stri
         ...options,
       },
       (error, stdout, stderr) => {
-        if (error || stderr) {
-          return reject(
-            new CustomError(
-              ErrorCode.COMMAND_ERROR,
-              'Ошибка выполнения команды',
-              error
-                ? {
-                    cause: error,
-                  }
-                : {
-                    message: `Ошибка выполнения команды ${JSON.stringify(command)}: ${stderr}`,
-                  },
-            ),
-          );
+        if (!error) {
+          return resolve(stdout);
         }
 
-        resolve(stdout);
+        reject(
+          new CustomError(ErrorCode.COMMAND_ERROR, 'Ошибка выполнения команды', {
+            cause: error,
+            message: `Ошибка выполнения команды ${JSON.stringify(command)}: ${stderr}`,
+          }),
+        );
       },
     );
   });
