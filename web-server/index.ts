@@ -1,4 +1,6 @@
+import { createNodeMiddleware } from '@octokit/webhooks';
 import { blue, green } from 'colors/safe';
+import githubClient from 'github-client/client';
 import { Middleware } from 'koa';
 import connect from 'koa-connect';
 import webpack from 'webpack';
@@ -29,6 +31,8 @@ if (process.env.NODE_ENV !== 'production') {
     ),
   );
 }
+
+app.use(connect(createNodeMiddleware(githubClient.webhooks)));
 
 app.use(api.routes() as Middleware);
 app.use(api.allowedMethods() as Middleware);

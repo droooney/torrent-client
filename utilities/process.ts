@@ -1,4 +1,4 @@
-import cp from 'node:child_process';
+import cp, { ExecOptions } from 'node:child_process';
 
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { prepareErrorForLogging } from 'utilities/error';
@@ -13,26 +13,33 @@ export function runMain(main: () => unknown): void {
   });
 }
 
-export async function exec(command: string): Promise<string> {
+export async function exec(command: string, options?: ExecOptions): Promise<string> {
   return new Promise((resolve, reject) => {
-    cp.exec(command, (error, stdout, stderr) => {
-      if (error || stderr) {
-        return reject(
-          new CustomError(
-            ErrorCode.COMMAND_ERROR,
-            'Ошибка выполнения команды',
-            error
-              ? {
-                  cause: error,
-                }
-              : {
-                  message: `Ошибка выполнения команды ${JSON.stringify(command)}: ${stderr}`,
-                },
-          ),
-        );
-      }
+    cp.exec(
+      command,
+      {
+        cwd: process.cwd(),
+        ...options,
+      },
+      (error, stdout, stderr) => {
+        if (error || stderr) {
+          return reject(
+            new CustomError(
+              ErrorCode.COMMAND_ERROR,
+              'Ошибка выполнения команды',
+              error
+                ? {
+                    cause: error,
+                  }
+                : {
+                    message: `Ошибка выполнения команды ${JSON.stringify(command)}: ${stderr}`,
+                  },
+            ),
+          );
+        }
 
-      resolve(stdout);
-    });
+        resolve(stdout);
+      },
+    );
   });
 }

@@ -9,6 +9,9 @@ assets-storage/torrents/*
 *.service
 !*.example.service
 
+*.conf
+!*.example.conf
+
 *.env
 !.example.env
 !.secret.example.env
