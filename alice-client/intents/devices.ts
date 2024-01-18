@@ -1,10 +1,10 @@
 import aliceClient from 'alice-client/client';
 
-import { CommandType } from 'alice-client/constants/commands';
+import { IntentType } from 'alice-client/constants/intents';
 
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
-aliceClient.handleCommand(CommandType.DEVICE_TURN_ON, async (ctx) => {
+aliceClient.handleIntent(IntentType.DEVICE_TURN_ON, async (ctx) => {
   const { device } = ctx.slots;
 
   if (device?.type !== 'YANDEX.STRING') {

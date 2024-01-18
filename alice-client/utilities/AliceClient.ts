@@ -1,7 +1,6 @@
-import omit from 'lodash/omit';
 import { Alice, IApiResponse, Reply } from 'yandex-dialogs-sdk';
 
-import { CommandType } from 'alice-client/constants/commands';
+import { IntentType } from 'alice-client/constants/intents';
 
 import { AnyApiEntity } from 'yandex-dialogs-sdk/dist/api/nlu';
 import { IApiRequest } from 'yandex-dialogs-sdk/dist/api/request';
@@ -20,32 +19,30 @@ export type CommandHandler = (ctx: CommandContext) => MaybePromise<string>;
 export default class AliceClient {
   private readonly alice = new Alice();
 
-  private readonly commandHandlers: Partial<Record<CommandType, CommandHandler>> = {};
+  private readonly intentHandlers: Partial<Record<IntentType, CommandHandler>> = {};
 
   constructor() {
     this.alice.command(/^.*$/, async (context) => {
       try {
-        for (const command in this.commandHandlers) {
-          if (!(command in this.commandHandlers)) {
+        for (const intent in this.intentHandlers) {
+          if (!(intent in this.intentHandlers)) {
             continue;
           }
 
-          const handler = this.commandHandlers[command as CommandType];
+          const handler = this.intentHandlers[intent as IntentType];
 
           if (!handler) {
             continue;
           }
 
-          const [namespace, action] = command.split('.');
+          const slots = context.nlu?.intents?.[intent]?.slots;
 
-          const slots = context.nlu?.intents?.[namespace]?.slots;
-
-          if (!slots?.[action]) {
+          if (!slots) {
             continue;
           }
 
           const ctx: CommandContext = {
-            slots: omit(slots, action),
+            slots,
           };
 
           return Reply.text(await handler(ctx));
@@ -58,12 +55,12 @@ export default class AliceClient {
     });
   }
 
-  getUnhandledCommands(): CommandType[] {
-    return Object.values(CommandType).filter((command) => !(command in this.commandHandlers));
+  getUnhandledIntents(): IntentType[] {
+    return Object.values(IntentType).filter((intent) => !(intent in this.intentHandlers));
   }
 
-  handleCommand(command: CommandType, handler: CommandHandler): void {
-    this.commandHandlers[command] = handler;
+  handleIntent(intentType: IntentType, handler: CommandHandler): void {
+    this.intentHandlers[intentType] = handler;
   }
 
   async handleRequest(request: IApiRequest): Promise<IApiResponse> {

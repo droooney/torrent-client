@@ -1,0 +1,7 @@
+root:
+  %lemma
+  выключить $Device
+
+slots:
+  device:
+    source: $Device

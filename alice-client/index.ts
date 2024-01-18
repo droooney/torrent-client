@@ -1,10 +1,10 @@
 import aliceClient from 'alice-client/client';
 import { yellow } from 'colors/safe';
 
-import './commands';
+import './intents';
 
-const unhandledCommands = aliceClient.getUnhandledCommands();
+const unhandledIntents = aliceClient.getUnhandledIntents();
 
-if (unhandledCommands.length > 0) {
-  console.log(yellow(`Необработанные команды: ${unhandledCommands.join(', ')}`));
+if (unhandledIntents.length > 0) {
+  console.log(yellow(`Необработанные интенты: ${unhandledIntents.join(', ')}`));
 }
