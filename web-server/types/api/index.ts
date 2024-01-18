@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import github from 'web-server/types/api/github';
 import service from 'web-server/types/api/service';
 
 export type Api = typeof api;
@@ -35,6 +36,7 @@ export type ApiMethodResponse<Type extends ApiType, MethodType extends ApiMethod
 export const API_ROOT = '/api';
 
 const api = {
+  github,
   service,
 };
 
