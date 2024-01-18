@@ -4,7 +4,7 @@ Requires=postgresql.service
 Requires=network-online.target
 
 [Service]
-ExecStart=+/bin/bash -c "./service/start-service.sh"
+ExecStart=/bin/bash -c "./service/start-service.sh"
 Type=simple
 Restart=always
 WorkingDirectory=/home/<username>/projects/smart-home
