@@ -7,7 +7,7 @@ import { prepareErrorForLogging } from 'utilities/error';
 import { exec } from 'utilities/process';
 
 export default class GithubClient {
-  private git = simpleGit({
+  private readonly git = simpleGit({
     baseDir: process.cwd(),
   });
   readonly webhooks = new Webhooks({
@@ -17,14 +17,14 @@ export default class GithubClient {
   constructor() {
     this.webhooks.on('push', async ({ payload }) => {
       try {
-        await this.processWebhookData(payload);
+        await this.processPushEvent(payload);
       } catch (err) {
         console.log(prepareErrorForLogging(err));
       }
     });
   }
 
-  private async processWebhookData(pushEvent: PushEvent): Promise<void> {
+  private async processPushEvent(pushEvent: PushEvent): Promise<void> {
     const currentBranch = await this.git.revparse(['--abbrev-ref', 'HEAD']);
     const isCurrent = pushEvent.ref === `refs/heads/${currentBranch}`;
 
