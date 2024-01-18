@@ -1,0 +1,21 @@
+root:
+  $TurnOnCommand $Device
+  # $TurnOffCommand $Device
+
+slots:
+  TurnOn:
+    source: $TurnOnCommand
+  TurnOff:
+    source: $TurnOffCommand
+
+  device:
+    source: $Device
+
+$TurnOnCommand:
+  включи | включить
+
+$TurnOffCommand:
+  выключи | выключить
+
+$Device:
+  .*

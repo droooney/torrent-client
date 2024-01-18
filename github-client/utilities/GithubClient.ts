@@ -3,6 +3,8 @@ import { PushEvent } from '@octokit/webhooks-types';
 import { blue, green } from 'colors/safe';
 import simpleGit from 'simple-git';
 
+import type { EmitterWebhookEventWithStringPayloadAndSignature } from '@octokit/webhooks/dist-types/types';
+
 import { prepareErrorForLogging } from 'utilities/error';
 import { exec } from 'utilities/process';
 
@@ -10,7 +12,7 @@ export default class GithubClient {
   private readonly git = simpleGit({
     baseDir: process.cwd(),
   });
-  readonly webhooks = new Webhooks({
+  private readonly webhooks = new Webhooks({
     secret: process.env.WEBHOOK_SECRET ?? '',
   });
 
@@ -22,6 +24,10 @@ export default class GithubClient {
         console.log(prepareErrorForLogging(err));
       }
     });
+  }
+
+  async handleEvent(options: EmitterWebhookEventWithStringPayloadAndSignature): Promise<void> {
+    await this.webhooks.verifyAndReceive(options);
   }
 
   private async processPushEvent(pushEvent: PushEvent): Promise<void> {
