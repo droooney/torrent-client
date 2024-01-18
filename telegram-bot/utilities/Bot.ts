@@ -66,6 +66,10 @@ class Bot {
       },
     });
     this.usernameWhitelist = options.usernameWhitelist;
+
+    this.api.on('polling_error', (err) => {
+      console.log(prepareErrorForLogging(err));
+    });
   }
 
   async answerCallbackQuery(queryId: string, text: string): Promise<void> {
@@ -200,15 +204,15 @@ class Bot {
     });
 
     this.api.on('callback_query', async (query) => {
-      const { id: queryId, from: user, message, data } = query;
-
-      if (!user || !message || !this.isUserAllowed(user)) {
-        return;
-      }
-
-      const userId = user.id;
-
       try {
+        const { from: user, message, data } = query;
+
+        if (!user || !message || !this.isUserAllowed(user)) {
+          return;
+        }
+
+        const userId = user.id;
+
         if (!data) {
           return;
         }
@@ -268,7 +272,7 @@ class Bot {
         console.log(prepareErrorForLogging(err));
 
         try {
-          await this.answerCallbackQuery(queryId, prepareErrorForHuman(err));
+          await this.answerCallbackQuery(query.id, prepareErrorForHuman(err));
         } catch (err) {
           console.log(prepareErrorForLogging(err));
         }

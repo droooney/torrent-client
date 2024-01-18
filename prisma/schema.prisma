@@ -108,8 +108,8 @@ model Device {
   id        Int        @id @default(autoincrement())
   name      String
   type      DeviceType
-  mac       String
-  address   String
+  mac       String     @unique
+  address   String     @unique
 
   createdAt DateTime   @map("created_at") @default(now())
 }

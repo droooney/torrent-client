@@ -34,9 +34,17 @@ export default class GithubClient {
       return;
     }
 
+    const hashBefore = await this.git.revparse('HEAD');
+
     await this.git.pull();
 
-    const diff = await this.git.diffSummary([`${pushEvent.before}..${pushEvent.after}`]);
+    const hashAfter = await this.git.revparse('HEAD');
+
+    if (hashBefore === hashAfter) {
+      return;
+    }
+
+    const diff = await this.git.diffSummary([`${hashBefore}..${hashAfter}`]);
     const hasPackageLockChanged = diff.files.some(({ file }) => file === 'package-lock.json');
 
     if (hasPackageLockChanged) {

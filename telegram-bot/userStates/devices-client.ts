@@ -47,7 +47,7 @@ bot.handleUserState(TelegramUserState.AddDeviceSetType, async (ctx) => {
 });
 
 bot.handleUserState(TelegramUserState.AddDeviceSetMac, async (ctx) => {
-  const mac = ctx.message.text;
+  const mac = ctx.message.text?.toUpperCase();
 
   if (!mac || !isMac(mac)) {
     return new ImmediateTextResponse({
