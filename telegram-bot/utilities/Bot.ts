@@ -72,6 +72,7 @@ class Bot {
     });
   }
 
+  // TODO: research text limit
   async answerCallbackQuery(queryId: string, text: string): Promise<void> {
     await this.api.answerCallbackQuery(queryId, {
       text,

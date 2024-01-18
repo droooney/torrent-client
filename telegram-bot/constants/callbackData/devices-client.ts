@@ -31,6 +31,9 @@ export const devicesClientUglifyCallbackDataMapper: UglifyCallbackDataMapper<Dev
   [DevicesClientCallbackButtonSource.DEVICE_DELETE_CONFIRM]: ({ deviceId }) => ({
     d: deviceId,
   }),
+  [DevicesClientCallbackButtonSource.DEVICE_TURN_ON]: ({ deviceId }) => ({
+    d: deviceId,
+  }),
 };
 
 export const devicesClientBeautifyCallbackDataMapper: BeautifyCallbackDataMapper<DevicesClientCallbackButtonSource> = {
@@ -53,6 +56,9 @@ export const devicesClientBeautifyCallbackDataMapper: BeautifyCallbackDataMapper
     deviceId: d,
   }),
   [DevicesClientCallbackButtonSource.DEVICE_DELETE_CONFIRM]: ({ d }) => ({
+    deviceId: d,
+  }),
+  [DevicesClientCallbackButtonSource.DEVICE_TURN_ON]: ({ d }) => ({
     deviceId: d,
   }),
 };

@@ -20,17 +20,17 @@ const PORT = Number(process.env.PORT);
 app.use(serve('/public'));
 app.use(serve('/build'));
 
-if (process.env.NODE_ENV !== 'production') {
-  const compiler = webpack(webpackConfig);
-
-  app.use(
-    connect(
-      webpackDevMiddleware(compiler, {
-        writeToDisk: true,
-      }),
-    ),
-  );
-}
+// if (process.env.NODE_ENV !== 'production') {
+//   const compiler = webpack(webpackConfig);
+//
+//   app.use(
+//     connect(
+//       webpackDevMiddleware(compiler, {
+//         writeToDisk: true,
+//       }),
+//     ),
+//   );
+// }
 
 app.use(connect(createNodeMiddleware(githubClient.webhooks)));
 

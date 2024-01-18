@@ -4,6 +4,9 @@ import prisma from 'db/prisma';
 
 import { AddDevicePayload } from 'devices-client/types/device';
 
+import { wakeOnLan } from 'devices-client/utilities/wol';
+import CustomError, { ErrorCode } from 'utilities/CustomError';
+
 export default class DevicesClient {
   static readonly defaultDevicePayload: AddDevicePayload = {
     type: DeviceType.Tv,
@@ -23,6 +26,27 @@ export default class DevicesClient {
       where: {
         id: deviceId,
       },
+    });
+  }
+
+  async turnOnDevice(deviceId: number): Promise<void> {
+    await this.wakeDevice(deviceId);
+  }
+
+  private async wakeDevice(deviceId: number): Promise<void> {
+    const device = await prisma.device.findUnique({
+      where: {
+        id: deviceId,
+      },
+    });
+
+    if (!device) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
+    }
+
+    await wakeOnLan({
+      mac: device.mac,
+      address: device.address,
     });
   }
 }

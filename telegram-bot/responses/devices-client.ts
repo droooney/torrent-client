@@ -233,6 +233,12 @@ export async function getDeviceResponse(
         ),
       ],
       [
+        callbackButton('🟢', 'Включить', {
+          source: DevicesClientCallbackButtonSource.DEVICE_TURN_ON,
+          deviceId,
+        }),
+      ],
+      [
         callbackButton('◀️', 'К списку', {
           source: DevicesClientCallbackButtonSource.BACK_TO_DEVICES_LIST,
         }),

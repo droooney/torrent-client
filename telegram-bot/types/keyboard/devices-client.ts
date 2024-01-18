@@ -24,6 +24,7 @@ export enum DevicesClientCallbackButtonSource {
   DEVICE_REFRESH = 'd7',
   DEVICE_DELETE = 'd8',
   DEVICE_DELETE_CONFIRM = 'd9',
+  DEVICE_TURN_ON = 'd15',
 }
 
 export const uglifiedDeviceTypeSchema = z.literal(0);
@@ -97,6 +98,11 @@ export const devicesClientCallbackDataSchema = z.union([
     $: z.literal(DevicesClientCallbackButtonSource.DEVICE_DELETE_CONFIRM),
     d: z.number(),
   }),
+
+  z.object({
+    $: z.literal(DevicesClientCallbackButtonSource.DEVICE_TURN_ON),
+    d: z.number(),
+  }),
 ]);
 
 export type DevicesClientBeautifiedCallbackData =
@@ -150,5 +156,9 @@ export type DevicesClientBeautifiedCallbackData =
     }
   | {
       source: DevicesClientCallbackButtonSource.DEVICE_DELETE_CONFIRM;
+      deviceId: number;
+    }
+  | {
+      source: DevicesClientCallbackButtonSource.DEVICE_TURN_ON;
       deviceId: number;
     };

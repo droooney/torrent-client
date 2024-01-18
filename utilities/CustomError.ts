@@ -8,6 +8,7 @@ export enum ErrorCode {
   UNSUPPORTED = 'UNSUPPORTED',
   NOT_FINISHED = 'NOT_FINISHED',
   COMMAND_ERROR = 'COMMAND_ERROR',
+  NETWORK_ERROR = 'NETWORK_ERROR',
 }
 
 export interface CustomErrorOptions extends ErrorOptions {

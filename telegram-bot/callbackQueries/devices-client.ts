@@ -104,3 +104,11 @@ bot.handleCallbackQuery(DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET
 
   return getAddDeviceSetMacResponse(getAddDevicePayload(ctx.userData.addDevicePayload));
 });
+
+bot.handleCallbackQuery(DevicesClientCallbackButtonSource.DEVICE_TURN_ON, async (ctx) => {
+  await devicesClient.turnOnDevice(ctx.data.deviceId);
+
+  return new NotificationResponse({
+    text: 'Устройство включено',
+  });
+});
