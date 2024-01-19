@@ -1,0 +1,28 @@
+root:
+  %lemma
+  скачать $Query
+
+  %lemma
+  скачать $Query $UltraHd
+
+  %lemma
+  скачать $Query $FullHd
+
+slots:
+  query:
+    source: $Query
+  ultraHd:
+    source: $UltraHd
+  fullHd:
+    source: $FullHd
+
+$Query:
+  .*
+
+$UltraHd:
+  %lemma
+  (в)? (4К | 4K | ultra hd | ультра эйчди)
+
+$FullHd:
+  %lemma
+  (в)? (full hd | фулл эйчди)

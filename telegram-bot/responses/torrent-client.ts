@@ -1,6 +1,7 @@
 import { Torrent, TorrentFile, TorrentFileState, TorrentState } from '@prisma/client';
 import chunk from 'lodash/chunk';
 import sortBy from 'lodash/sortBy';
+import rutrackerClient from 'rutracker-client/client';
 import torrentClient from 'torrent-client/client';
 import { Torrent as ClientTorrent } from 'webtorrent';
 
@@ -11,7 +12,6 @@ import { RootCallbackButtonSource } from 'telegram-bot/types/keyboard/root';
 import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/torrent-client';
 
 import Markdown from 'telegram-bot/utilities/Markdown';
-import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import {
   addCallbackButton,
   backCallbackButton,

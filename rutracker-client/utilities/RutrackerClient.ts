@@ -65,4 +65,4 @@ class RutrackerClient {
   }
 }
 
-export default new RutrackerClient();
+export default RutrackerClient;

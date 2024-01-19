@@ -1,11 +1,11 @@
 import { TelegramUserState } from '@prisma/client';
+import rutrackerClient from 'rutracker-client/client';
 import torrentClient from 'torrent-client/client';
 
 import prisma from 'db/prisma';
 
 import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/torrent-client';
 
-import rutrackerClient from 'telegram-bot/utilities/RutrackerClient';
 import { backCallbackButton } from 'telegram-bot/utilities/keyboard';
 import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import NotificationResponse from 'telegram-bot/utilities/response/NotificationResponse';

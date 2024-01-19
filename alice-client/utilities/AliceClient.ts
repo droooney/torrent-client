@@ -1,4 +1,5 @@
 import { Alice, IApiResponse, Reply } from 'yandex-dialogs-sdk';
+import { TextReplyDeclaration } from 'yandex-dialogs-sdk/dist/reply/textReplyBuilder';
 
 import { IntentType } from 'alice-client/constants/intents';
 
@@ -14,7 +15,7 @@ export interface CommandContext {
   slots: Partial<Record<string, AnyApiEntity>>;
 }
 
-export type CommandHandler = (ctx: CommandContext) => MaybePromise<string>;
+export type CommandHandler = (ctx: CommandContext) => MaybePromise<TextReplyDeclaration>;
 
 export default class AliceClient {
   private readonly alice = new Alice();

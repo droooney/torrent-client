@@ -13,6 +13,14 @@ export function runMain(main: () => unknown): void {
   });
 }
 
+export function runTask(task: () => unknown): void {
+  (async () => {
+    await task();
+  })().catch((err) => {
+    console.log(prepareErrorForLogging(err));
+  });
+}
+
 export async function exec(command: string, options?: ExecOptions): Promise<string> {
   return new Promise((resolve, reject) => {
     cp.exec(
