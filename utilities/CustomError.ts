@@ -9,7 +9,6 @@ export enum ErrorCode {
   NOT_FINISHED = 'NOT_FINISHED',
   COMMAND_ERROR = 'COMMAND_ERROR',
   NETWORK_ERROR = 'NETWORK_ERROR',
-  MISSING = 'MISSING',
 }
 
 export interface CustomErrorOptions extends ErrorOptions {

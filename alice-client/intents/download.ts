@@ -14,7 +14,7 @@ aliceClient.handleIntent(IntentType.DOWNLOAD, async (ctx) => {
   const { query, ultraHd, fullHd } = ctx.slots;
 
   if (query?.type !== 'YANDEX.STRING') {
-    throw new CustomError(ErrorCode.MISSING, 'Отсутствует запрос');
+    throw new CustomError(ErrorCode.WRONG_FORMAT, 'Запрос неверного формата');
   }
 
   const results = await Promise.race([
