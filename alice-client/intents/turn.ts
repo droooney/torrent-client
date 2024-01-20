@@ -2,6 +2,7 @@ import aliceClient from 'alice-client/client';
 
 import { IntentType } from 'alice-client/constants/intents';
 
+import VoiceResponse from 'alice-client/utilities/VoiceResponse';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 aliceClient.handleIntent(IntentType.TURN_ON, async (ctx) => {
@@ -13,5 +14,7 @@ aliceClient.handleIntent(IntentType.TURN_ON, async (ctx) => {
 
   console.log(device);
 
-  return `Включаю ${device.value}`;
+  return new VoiceResponse({
+    text: `Включаю ${device.value}`,
+  });
 });

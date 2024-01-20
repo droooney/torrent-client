@@ -1,5 +1,4 @@
-import { Alice, IApiResponse, Reply } from 'yandex-dialogs-sdk';
-import { TextReplyDeclaration } from 'yandex-dialogs-sdk/dist/reply/textReplyBuilder';
+import { Alice, IApiResponse, IContext } from 'yandex-dialogs-sdk';
 
 import { IntentType } from 'alice-client/constants/intents';
 
@@ -8,6 +7,7 @@ import { IApiRequest } from 'yandex-dialogs-sdk/dist/api/request';
 
 import { MaybePromise } from 'types/common';
 
+import VoiceResponse from 'alice-client/utilities/VoiceResponse';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { prepareErrorForHuman } from 'utilities/error';
 
@@ -15,7 +15,7 @@ export interface CommandContext {
   slots: Partial<Record<string, AnyApiEntity>>;
 }
 
-export type CommandHandler = (ctx: CommandContext) => MaybePromise<TextReplyDeclaration>;
+export type CommandHandler = (ctx: CommandContext) => MaybePromise<VoiceResponse>;
 
 export default class AliceClient {
   private readonly alice = new Alice();
@@ -25,35 +25,54 @@ export default class AliceClient {
   constructor() {
     this.alice.command(/^.*$/, async (context) => {
       try {
-        for (const intent in this.intentHandlers) {
-          if (!(intent in this.intentHandlers)) {
-            continue;
-          }
+        const response = await this.getContextResponse(context);
 
-          const handler = this.intentHandlers[intent as IntentType];
-
-          if (!handler) {
-            continue;
-          }
-
-          const slots = context.nlu?.intents?.[intent]?.slots;
-
-          if (!slots) {
-            continue;
-          }
-
-          const ctx: CommandContext = {
-            slots,
-          };
-
-          return Reply.text(await handler(ctx));
+        if (!response) {
+          throw new CustomError(ErrorCode.UNSUPPORTED, 'Команда не распознана');
         }
 
-        throw new CustomError(ErrorCode.UNSUPPORTED, 'Команда не распознана');
+        return response.toApiResponse();
       } catch (err) {
-        return Reply.text(prepareErrorForHuman(err));
+        return new VoiceResponse({
+          text: prepareErrorForHuman(err),
+        }).toApiResponse();
       }
     });
+  }
+
+  private async getContextResponse(context: IContext): Promise<VoiceResponse | null> {
+    if (context.originalUtterance === '') {
+      // TODO: help
+      return new VoiceResponse({
+        text: '',
+      });
+    }
+
+    for (const intent in this.intentHandlers) {
+      if (!(intent in this.intentHandlers)) {
+        continue;
+      }
+
+      const handler = this.intentHandlers[intent as IntentType];
+
+      if (!handler) {
+        continue;
+      }
+
+      const slots = context.nlu?.intents?.[intent]?.slots;
+
+      if (!slots) {
+        continue;
+      }
+
+      const ctx: CommandContext = {
+        slots,
+      };
+
+      return handler(ctx);
+    }
+
+    return null;
   }
 
   getUnhandledIntents(): IntentType[] {

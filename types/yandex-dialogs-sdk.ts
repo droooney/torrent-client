@@ -1,7 +1,6 @@
 import { IApiEntity, IApiEntityBase, Intent } from 'yandex-dialogs-sdk/dist/api/nlu';
 
 declare module 'yandex-dialogs-sdk/dist/api/nlu' {
-  // @ts-ignore
   export type AnyApiEntity = IApiEntity | IApiEntityYandexString;
 
   // @ts-ignore

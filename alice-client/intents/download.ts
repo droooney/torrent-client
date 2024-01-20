@@ -4,11 +4,13 @@ import rutrackerClient from 'rutracker-client/client';
 import { IntentType } from 'alice-client/constants/intents';
 import { SECOND } from 'constants/date';
 
+import VoiceResponse from 'alice-client/utilities/VoiceResponse';
+import VoicedText from 'alice-client/utilities/VoicedText';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { runTask } from 'utilities/process';
-import { delay } from 'utilities/promise';
+import { timed } from 'utilities/promise';
 
-const SEARCH_RUTRACKER_TIMEOUT = 3 * SECOND;
+const SEARCH_RUTRACKER_TIMEOUT = 4 * SECOND;
 
 aliceClient.handleIntent(IntentType.DOWNLOAD, async (ctx) => {
   const { query, ultraHd, fullHd } = ctx.slots;
@@ -17,24 +19,29 @@ aliceClient.handleIntent(IntentType.DOWNLOAD, async (ctx) => {
     throw new CustomError(ErrorCode.WRONG_FORMAT, 'Неверный формат запроса');
   }
 
-  const results = await Promise.race([
+  const results = await timed(SEARCH_RUTRACKER_TIMEOUT, () =>
     rutrackerClient.search(`${query.value}${ultraHd ? ' 2160p' : fullHd ? ' 1080p' : ''}`),
-    delay(SEARCH_RUTRACKER_TIMEOUT),
-  ]);
+  );
 
   if (!results) {
-    return 'Поиск занял слишком долгое время, попробуйте еще раз';
+    throw new CustomError(ErrorCode.TIMEOUT, 'Поиск занял слишком долгое время, попробуйте еще раз');
   }
 
   const firstResult = results.at(0);
 
   if (!firstResult) {
-    return 'Результатов не найдено';
+    return new VoiceResponse({
+      text: 'Результатов не найдено',
+    });
   }
 
   runTask(async () => {
     await rutrackerClient.addTorrent(firstResult.id);
   });
 
-  return `Скачиваю ${query.value}${ultraHd ? ' в ультра эйчди' : ultraHd ? ' в фулл эйчди' : ''}`;
+  return new VoiceResponse({
+    text: VoicedText.create`Скачиваю ${query.value}${
+      ultraHd ? VoicedText.tts(' в 4K', ' в 4 к+а') : fullHd ? VoicedText.tts(' в FullHD', ' в фулл эйчд+и') : ''
+    }`,
+  });
 });
