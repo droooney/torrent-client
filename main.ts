@@ -1,5 +1,6 @@
 import 'utilities/importEnv';
 
+import 'alice-client';
 import 'telegram-bot';
 import 'web-server';
 

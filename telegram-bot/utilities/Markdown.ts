@@ -10,15 +10,18 @@ class Markdown {
   }
 
   private static compile(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): string {
-    return entities.reduce<string>((text, entity, index) => {
-      const entityString = Markdown.isNotEmptyAllowedEntity(entity)
-        ? entity instanceof Markdown
-          ? entity.toString()
-          : Markdown.escape(String(entity))
-        : '';
+    return entities.reduce<string>(
+      (text, entity, index) => {
+        const entityString = Markdown.isNotEmptyAllowedEntity(entity)
+          ? entity instanceof Markdown
+            ? entity.toString()
+            : Markdown.escape(String(entity))
+          : '';
 
-      return `${text}${entityString}${Markdown.escape(strings[index + 1])}`;
-    }, Markdown.escape(strings[0]));
+        return `${text}${entityString}${Markdown.escape(strings.at(index + 1) ?? '')}`;
+      },
+      Markdown.escape(strings.at(0) ?? ''),
+    );
   }
 
   static create(strings: TemplateStringsArray, ...entities: MarkdownAllowedEntity[]): Markdown {

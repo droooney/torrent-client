@@ -79,6 +79,7 @@
     "webpack": "^5.89.0",
     "webpack-dev-middleware": "^6.1.1",
     "webtorrent": "^2.1.29",
+    "yandex-dialogs-sdk": "^2.3.0",
     "zod": "^3.22.4"
   }
 }

@@ -13,6 +13,7 @@ import {
   allInlineKeyboardButtonSources,
   callbackDataSchema,
 } from 'telegram-bot/types/keyboard';
+import { MaybePromise } from 'types/common';
 
 import { beautifyCallbackData } from 'telegram-bot/utilities/keyboard';
 import { CallbackQueryResponse, MessageResponse } from 'telegram-bot/utilities/response/Response';
@@ -44,11 +45,11 @@ export interface CallbackQueryHandlerContext<CallbackData extends BeautifiedCall
   ): Promise<TelegramUserData>;
 }
 
-export type TextHandler = (ctx: TextHandlerContext) => Promise<MessageResponse | null | undefined | void>;
+export type TextHandler = (ctx: TextHandlerContext) => MaybePromise<MessageResponse | null | undefined | void>;
 
 export type CallbackQueryHandler<CallbackData extends BeautifiedCallbackData> = (
   ctx: CallbackQueryHandlerContext<CallbackData>,
-) => Promise<CallbackQueryResponse | null | undefined | void>;
+) => MaybePromise<CallbackQueryResponse | null | undefined | void>;
 
 class Bot {
   private readonly api: TelegramBotApi;

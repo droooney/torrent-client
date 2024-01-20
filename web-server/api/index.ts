@@ -1,6 +1,7 @@
 import Router from '@koa/router';
 import bodyParser from 'koa-bodyparser';
 
+import aliceRouter from 'web-server/api/alice';
 import githubRouter from 'web-server/api/github';
 import serviceRouter from 'web-server/api/service';
 
@@ -13,7 +14,7 @@ const apiRouter = new Router<State, Context>({
 
 apiRouter.use(bodyParser());
 
-[githubRouter, serviceRouter].forEach((router) => {
+[aliceRouter, githubRouter, serviceRouter].forEach((router) => {
   apiRouter.use(`/${router.apiType}`, router.koaRouter.routes(), router.koaRouter.allowedMethods());
 });
 

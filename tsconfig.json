@@ -13,10 +13,12 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
+      "alice-client/*": ["./alice-client/*"],
       "constants/*": ["./constants/*"],
       "db/*": ["./prisma/*"],
       "devices-client/*": ["./devices-client/*"],
       "github-client/*": ["./github-client/*"],
+      "rutracker-client/*": ["./rutracker-client/*"],
       "telegram-bot/*": ["./telegram-bot/*"],
       "system-client/*": ["./system-client/*"],
       "torrent-client/*": ["./torrent-client/*"],

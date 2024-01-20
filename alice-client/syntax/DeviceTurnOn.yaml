@@ -1,0 +1,7 @@
+root:
+  %lemma
+  включить $Device
+
+slots:
+  device:
+    source: $Device
