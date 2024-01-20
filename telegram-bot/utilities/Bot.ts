@@ -138,15 +138,15 @@ class Bot {
           return;
         }
 
-        const userId = user.id;
+        const telegramUserId = user.id;
 
         const userData = await prisma.telegramUserData.upsert({
           where: {
-            userId,
+            telegramUserId,
           },
           update: {},
           create: {
-            userId,
+            telegramUserId,
             state: 'First',
           },
         });
@@ -164,7 +164,7 @@ class Bot {
           updateUserState: async (data) => {
             return prisma.telegramUserData.update({
               where: {
-                userId,
+                telegramUserId,
               },
               data,
             });
@@ -213,7 +213,7 @@ class Bot {
           return;
         }
 
-        const userId = user.id;
+        const telegramUserId = user.id;
 
         if (!data) {
           return;
@@ -223,7 +223,7 @@ class Bot {
 
         const userData = await prisma.telegramUserData.findUnique({
           where: {
-            userId,
+            telegramUserId,
           },
         });
 
@@ -246,7 +246,7 @@ class Bot {
           updateUserState: async (data) => {
             return prisma.telegramUserData.update({
               where: {
-                userId,
+                telegramUserId,
               },
               data,
             });

@@ -1,6 +1,7 @@
-import { Alice, IApiResponse, IContext } from 'yandex-dialogs-sdk';
+import { Alice, IApiResponse, IContext, InMemorySessionStorage } from 'yandex-dialogs-sdk';
 
 import { IntentType } from 'alice-client/constants/intents';
+import { DAY } from 'constants/date';
 
 import { AnyApiEntity } from 'yandex-dialogs-sdk/dist/api/nlu';
 import { IApiRequest } from 'yandex-dialogs-sdk/dist/api/request';
@@ -18,7 +19,11 @@ export interface CommandContext {
 export type CommandHandler = (ctx: CommandContext) => MaybePromise<VoiceResponse>;
 
 export default class AliceClient {
-  private readonly alice = new Alice();
+  private readonly alice = new Alice({
+    sessionStorage: new InMemorySessionStorage({
+      ttl: DAY,
+    }),
+  });
 
   private readonly intentHandlers: Partial<Record<IntentType, CommandHandler>> = {};
 
