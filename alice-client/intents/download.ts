@@ -41,7 +41,11 @@ aliceClient.handleIntent(IntentType.DOWNLOAD, async (ctx) => {
 
   return new VoiceResponse({
     text: VoicedText.create`Скачиваю ${query.value}${
-      ultraHd ? VoicedText.tts(' в 4K', ' в 4 к+а') : fullHd ? VoicedText.tts(' в FullHD', ' в фулл эйчд+и') : ''
+      ultraHd
+        ? VoicedText.textTts(' в 4K', ' в 4 к+а')
+        : fullHd
+          ? VoicedText.textTts(' в FullHD', ' в фулл эйчд+и')
+          : ''
     }`,
   });
 });

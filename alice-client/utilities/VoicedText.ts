@@ -36,7 +36,7 @@ export default class VoicedText {
     return entity !== false && entity != null && entity !== '';
   }
 
-  static tts(text: string, tts: string): VoicedText {
+  static textTts(text: string, tts: string): VoicedText {
     return new VoicedText(text, tts);
   }
 
