@@ -91,7 +91,7 @@ enum TelegramUserState {
 model TelegramUserData {
   @@map("telegram_user_data")
 
-  telegrasUserId   Int               @map("telegram_user_id") @unique()
+  telegramUserId   Int               @map("telegram_user_id") @unique()
   state            TelegramUserState
   addDevicePayload Json?             @map("add_device_payload")
 }
