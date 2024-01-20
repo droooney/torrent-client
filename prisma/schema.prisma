@@ -106,7 +106,7 @@ model Device {
   @@map("device")
 
   id        Int        @id @default(autoincrement())
-  name      String
+  name      String     @unique
   type      DeviceType
   mac       String     @unique
   address   String     @unique

@@ -29,6 +29,30 @@ export default class DevicesClient {
     });
   }
 
+  async isAddressAllowed(address: string): Promise<boolean> {
+    return !(await prisma.device.findFirst({
+      where: {
+        address,
+      },
+    }));
+  }
+
+  async isMacAllowed(mac: string): Promise<boolean> {
+    return !(await prisma.device.findFirst({
+      where: {
+        mac,
+      },
+    }));
+  }
+
+  async isNameAllowed(name: string): Promise<boolean> {
+    return !(await prisma.device.findFirst({
+      where: {
+        name,
+      },
+    }));
+  }
+
   async turnOnDevice(deviceId: number): Promise<void> {
     await this.wakeDevice(deviceId);
   }
