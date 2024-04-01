@@ -1,4 +1,5 @@
 import { Device, DeviceType } from '@prisma/client';
+import findKey from 'lodash/findKey';
 
 import prisma from 'db/prisma';
 
@@ -6,6 +7,10 @@ import { AddDevicePayload } from 'devices-client/types/device';
 
 import { wakeOnLan } from 'devices-client/utilities/wol';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
+
+const DEVICE_STRING: Record<DeviceType, string[]> = {
+  [DeviceType.Tv]: ['телевизор', 'телек', 'телик'],
+};
 
 export default class DevicesClient {
   static readonly defaultDevicePayload: AddDevicePayload = {
@@ -55,6 +60,31 @@ export default class DevicesClient {
 
   async turnOnDevice(deviceId: number): Promise<void> {
     await this.wakeDevice(deviceId);
+  }
+
+  async findDevice(query: string): Promise<Device | null> {
+    const deviceType = findKey(DEVICE_STRING, (strings) => strings.includes(query)) as DeviceType | undefined;
+
+    return prisma.device.findFirst({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: query,
+            },
+          },
+          ...(deviceType
+            ? [
+                {
+                  type: {
+                    in: [deviceType],
+                  },
+                },
+              ]
+            : []),
+        ],
+      },
+    });
   }
 
   private async wakeDevice(deviceId: number): Promise<void> {

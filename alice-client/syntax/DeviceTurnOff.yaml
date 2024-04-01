@@ -1,7 +1,7 @@
 root:
   %lemma
-  выключить $Device
+  выключить $Target
 
 slots:
-  device:
-    source: $Device
+  target:
+    source: $Target
