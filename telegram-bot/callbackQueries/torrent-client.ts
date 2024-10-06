@@ -4,68 +4,66 @@ import torrentClient from 'torrent-client/client';
 
 import prisma from 'db/prisma';
 
-import { TorrentClientCallbackButtonSource } from 'telegram-bot/types/keyboard/torrent-client';
+import { MessageAction } from 'telegram-bot/types/actions';
+import { TorrentClientCallbackButtonType } from 'telegram-bot/types/keyboard/torrent-client';
 
+import MessageWithNotificationAction from 'telegram-bot/utilities/actions/MessageWithNotificationAction';
+import RefreshDataAction from 'telegram-bot/utilities/actions/RefreshDataAction';
 import { backCallbackButton } from 'telegram-bot/utilities/keyboard';
-import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
-import NotificationResponse from 'telegram-bot/utilities/response/NotificationResponse';
-import RefreshNotificationResponse from 'telegram-bot/utilities/response/RefreshNotificationResponse';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
-import bot from 'telegram-bot/bot';
 import {
-  getAddTorrentResponse,
-  getFileResponse,
-  getFilesResponse,
-  getStatusResponse,
-  getTorrentResponse,
-  getTorrentsListResponse,
-} from 'telegram-bot/responses/torrent-client';
+  getAddTorrentAction,
+  getFileAction,
+  getFilesAction,
+  getStatusAction,
+  getTorrentAction,
+  getTorrentsListAction,
+} from 'telegram-bot/actions/torrent-client';
+import { callbackDataProvider, userDataProvider } from 'telegram-bot/bot';
 
-bot.handleCallbackQuery(
+callbackDataProvider.handle(
   [
-    TorrentClientCallbackButtonSource.TORRENTS_LIST_ITEM,
-    TorrentClientCallbackButtonSource.NAVIGATE_TO_TORRENT,
-    TorrentClientCallbackButtonSource.TORRENT_DELETE,
-    TorrentClientCallbackButtonSource.FILES_LIST_BACK_TO_TORRENT,
+    TorrentClientCallbackButtonType.TorrentsListItem,
+    TorrentClientCallbackButtonType.NavigateToTorrent,
+    TorrentClientCallbackButtonType.TorrentDelete,
+    TorrentClientCallbackButtonType.FilesListBackToTorrent,
   ],
-  async (ctx) => {
-    return getTorrentResponse(ctx.data.torrentId, ctx.data.source === TorrentClientCallbackButtonSource.TORRENT_DELETE);
+  async ({ data }) => {
+    return getTorrentAction(data.torrentId, data.type === TorrentClientCallbackButtonType.TorrentDelete);
   },
 );
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_REFRESH, async (ctx) => {
-  return new RefreshNotificationResponse(await getTorrentResponse(ctx.data.torrentId));
+callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentRefresh, async ({ data }) => {
+  return new RefreshDataAction(await getTorrentAction(data.torrentId));
 });
 
-bot.handleCallbackQuery(
+callbackDataProvider.handle(
   [
-    TorrentClientCallbackButtonSource.STATUS_SHOW_TORRENTS_LIST,
-    TorrentClientCallbackButtonSource.TORRENTS_LIST_PAGE,
-    TorrentClientCallbackButtonSource.TORRENT_BACK_TO_LIST,
+    TorrentClientCallbackButtonType.StatusShowTorrentsList,
+    TorrentClientCallbackButtonType.TorrentsListPage,
+    TorrentClientCallbackButtonType.TorrentBackToList,
   ],
-  async (ctx) => {
-    return getTorrentsListResponse('page' in ctx.data ? ctx.data.page : 0);
+  async ({ data }) => {
+    return getTorrentsListAction('page' in data ? data.page : 0);
   },
 );
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENTS_LIST_REFRESH, async (ctx) => {
-  return new RefreshNotificationResponse(
-    await (await getTorrentsListResponse(ctx.data.page)).generateImmediateResponse(),
-  );
+callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentsListRefresh, async ({ data }) => {
+  return new RefreshDataAction(await (await getTorrentsListAction(data.page)).generateMessageAction());
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_DELETE_CONFIRM, async (ctx) => {
-  await torrentClient.deleteTorrent(ctx.data.torrentId);
+callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentDeleteConfirm, async ({ data }) => {
+  await torrentClient.deleteTorrent(data.torrentId);
 
-  return new NotificationResponse({
+  return new MessageWithNotificationAction({
     text: 'Торрент успешно удален',
-    updateMessage: await (await getTorrentsListResponse()).generateImmediateResponse(),
+    updateAction: await (await getTorrentsListAction()).generateMessageAction(),
   });
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_PAUSE, async (ctx) => {
-  const { torrentId, pause } = ctx.data;
+callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentPause, async ({ data }) => {
+  const { torrentId, pause } = data;
 
   if (pause) {
     await torrentClient.pauseTorrent(torrentId);
@@ -73,33 +71,33 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_PAUSE, async (
     await torrentClient.unpauseTorrent(torrentId);
   }
 
-  return new NotificationResponse({
+  return new MessageWithNotificationAction({
     text: pause ? 'Торрент поставлен на паузу' : 'Торрент снят с паузы',
-    updateMessage: await getTorrentResponse(torrentId),
+    updateAction: await getTorrentAction(torrentId),
   });
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.TORRENT_SET_CRITICAL, async (ctx) => {
-  const { torrentId, critical } = ctx.data;
+callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentSetCritical, async ({ data }) => {
+  const { torrentId, critical } = data;
 
   await torrentClient.setCriticalTorrent(torrentId, critical);
 
-  return new NotificationResponse({
+  return new MessageWithNotificationAction({
     text: critical ? 'Торрент сделан критичным' : 'Торрент сделан некритичным',
-    updateMessage: await getTorrentResponse(torrentId),
+    updateAction: await getTorrentAction(torrentId),
   });
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.BACK_TO_STATUS, async () => {
-  return getStatusResponse();
+callbackDataProvider.handle(TorrentClientCallbackButtonType.BackToStatus, async () => {
+  return getStatusAction();
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.STATUS_REFRESH, async () => {
-  return new RefreshNotificationResponse(await getStatusResponse());
+callbackDataProvider.handle(TorrentClientCallbackButtonType.StatusRefresh, async () => {
+  return new RefreshDataAction(await getStatusAction());
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.STATUS_PAUSE, async (ctx) => {
-  const { pause } = ctx.data;
+callbackDataProvider.handle(TorrentClientCallbackButtonType.StatusPause, async ({ data }) => {
+  const { pause } = data;
 
   if (pause) {
     await torrentClient.pause();
@@ -107,65 +105,67 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.STATUS_PAUSE, async (c
     await torrentClient.unpause();
   }
 
-  return new NotificationResponse({
+  return new MessageWithNotificationAction({
     text: pause ? 'Клиент поставлен на паузу' : 'Клиент снят с паузы',
-    updateMessage: await getStatusResponse(),
+    updateAction: await getStatusAction(),
   });
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT, async (ctx) => {
-  return getAddTorrentResponse(() => rutrackerClient.addTorrent(ctx.data.torrentId));
+callbackDataProvider.handle(TorrentClientCallbackButtonType.RutrackerSearchAddTorrent, async ({ data }) => {
+  return getAddTorrentAction(() => rutrackerClient.addTorrent(data.torrentId));
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.ADD_TORRENT, async (ctx) => {
-  await ctx.updateUserState({
+callbackDataProvider.handle(TorrentClientCallbackButtonType.AddTorrent, async ({ user }) => {
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.AddTorrent,
   });
 
-  return new ImmediateTextResponse({
-    text: 'Отправьте торрент или magnet-ссылку',
-    keyboard: [
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: 'Отправьте торрент или magnet-ссылку',
+    },
+    replyMarkup: [
       [
         backCallbackButton({
-          source: TorrentClientCallbackButtonSource.BACK_TO_STATUS,
+          type: TorrentClientCallbackButtonType.BackToStatus,
         }),
       ],
     ],
   });
 });
 
-bot.handleCallbackQuery(
+callbackDataProvider.handle(
   [
-    TorrentClientCallbackButtonSource.TORRENT_SHOW_FILES,
-    TorrentClientCallbackButtonSource.FILES_LIST_PAGE,
-    TorrentClientCallbackButtonSource.BACK_TO_FILES_LIST,
+    TorrentClientCallbackButtonType.TorrentShowFiles,
+    TorrentClientCallbackButtonType.FilesListPage,
+    TorrentClientCallbackButtonType.BackToFilesList,
   ],
-  async (ctx) => {
-    return getFilesResponse(ctx.data.torrentId, 'page' in ctx.data ? ctx.data.page : 0);
+  async ({ data }) => {
+    return getFilesAction(data.torrentId, 'page' in data ? data.page : 0);
   },
 );
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.FILES_LIST_REFRESH, async (ctx) => {
-  return new RefreshNotificationResponse(
-    await (await getFilesResponse(ctx.data.torrentId, ctx.data.page)).generateImmediateResponse(),
-  );
+callbackDataProvider.handle(TorrentClientCallbackButtonType.FilesListRefresh, async ({ data }) => {
+  return new RefreshDataAction(await (await getFilesAction(data.torrentId, data.page)).generateMessageAction());
 });
 
-bot.handleCallbackQuery(
-  [TorrentClientCallbackButtonSource.NAVIGATE_TO_FILE, TorrentClientCallbackButtonSource.DELETE_FILE],
-  async (ctx) => {
-    return getFileResponse(ctx.data.fileId, ctx.data.source === TorrentClientCallbackButtonSource.DELETE_FILE);
+callbackDataProvider.handle(
+  [TorrentClientCallbackButtonType.NavigateToFile, TorrentClientCallbackButtonType.DeleteFile],
+  async ({ data }) => {
+    return getFileAction(data.fileId, data.type === TorrentClientCallbackButtonType.DeleteFile);
   },
 );
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.FILE_REFRESH, async (ctx) => {
-  return new RefreshNotificationResponse(await getFileResponse(ctx.data.fileId));
+callbackDataProvider.handle(TorrentClientCallbackButtonType.FileRefresh, async ({ data }) => {
+  return new RefreshDataAction(await getFileAction(data.fileId));
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM, async (ctx) => {
+callbackDataProvider.handle(TorrentClientCallbackButtonType.DeleteFileConfirm, async ({ data }) => {
   const file = await prisma.torrentFile.findUnique({
     where: {
-      id: ctx.data.fileId,
+      id: data.fileId,
     },
   });
 
@@ -173,7 +173,7 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM, a
     throw new CustomError(ErrorCode.NOT_FOUND, 'Файл не найден');
   }
 
-  await torrentClient.deleteFile(ctx.data.fileId);
+  await torrentClient.deleteFile(data.fileId);
 
   const torrent = await prisma.torrent.findUnique({
     where: {
@@ -185,23 +185,27 @@ bot.handleCallbackQuery(TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM, a
     throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
   }
 
-  return new NotificationResponse({
+  return new MessageWithNotificationAction({
     text: 'Файл успешно удален',
-    updateMessage: await (await getFilesResponse(torrent.infoHash)).generateImmediateResponse(),
+    updateAction: await (await getFilesAction(torrent.infoHash)).generateMessageAction(),
   });
 });
 
-bot.handleCallbackQuery(TorrentClientCallbackButtonSource.RUTRACKER_SEARCH, async (ctx) => {
-  await ctx.updateUserState({
+callbackDataProvider.handle(TorrentClientCallbackButtonType.RutrackerSearch, async ({ user }) => {
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.SearchRutracker,
   });
 
-  return new ImmediateTextResponse({
-    text: 'Введите название для поиска на rutracker',
-    keyboard: [
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: 'Введите название для поиска на rutracker',
+    },
+    replyMarkup: [
       [
         backCallbackButton({
-          source: TorrentClientCallbackButtonSource.BACK_TO_STATUS,
+          type: TorrentClientCallbackButtonType.BackToStatus,
         }),
       ],
     ],

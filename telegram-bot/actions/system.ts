@@ -1,17 +1,17 @@
+import { Markdown } from '@tg-sensei/bot';
 import systemClient from 'system-client/client';
 
-import { RootCallbackButtonSource } from 'telegram-bot/types/keyboard/root';
-import { SystemCallbackButtonSource } from 'telegram-bot/types/keyboard/system';
+import { MessageAction } from 'telegram-bot/types/actions';
+import { RootCallbackButtonType } from 'telegram-bot/types/keyboard/root';
+import { SystemCallbackButtonType } from 'telegram-bot/types/keyboard/system';
 
-import Markdown from 'telegram-bot/utilities/Markdown';
 import { backCallbackButton, refreshCallbackButton } from 'telegram-bot/utilities/keyboard';
-import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
 import { formatDuration } from 'utilities/date';
 import { formatPercent } from 'utilities/number';
 import { formatSize } from 'utilities/size';
 import { formatTemperature } from 'utilities/temperature';
 
-export async function getStatusResponse(): Promise<ImmediateTextResponse> {
+export async function getStatusAction(): Promise<MessageAction> {
   const [cpuUsage] = await Promise.all([systemClient.getCpuUsage()]);
 
   const osTotalMemory = systemClient.getOsTotalMemory();
@@ -41,17 +41,20 @@ export async function getStatusResponse(): Promise<ImmediateTextResponse> {
 🛠 ${Markdown.bold('Использование RAM')}: ${formatSize(systemClient.getProcessUsedMemory())}
 🕖 ${Markdown.bold('Время работы')}: ${formatDuration(systemClient.getProcessUptime())}`;
 
-  return new ImmediateTextResponse({
-    text,
-    keyboard: [
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text,
+    },
+    replyMarkup: [
       [
         refreshCallbackButton({
-          source: SystemCallbackButtonSource.REFRESH_STATUS,
+          type: SystemCallbackButtonType.RefreshStatus,
         }),
       ],
       [
         backCallbackButton({
-          source: RootCallbackButtonSource.BACK_TO_ROOT,
+          type: RootCallbackButtonType.BackToRoot,
         }),
       ],
     ],

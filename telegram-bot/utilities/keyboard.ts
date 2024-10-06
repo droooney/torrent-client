@@ -1,115 +1,35 @@
-/* eslint-disable camelcase */
+import { CallbackData, CallbackInlineKeyboardButton } from 'telegram-bot/types/keyboard';
 
-import { InlineKeyboardMarkup } from 'node-telegram-bot-api';
-
-import { beautifyCallbackDataMapper, uglifyCallbackDataMapper } from 'telegram-bot/constants/callbackData';
-
-import {
-  BeautifiedCallbackData,
-  CallbackInlineKeyboardButton,
-  InlineKeyboard,
-  UglifiedCallbackData,
-} from 'telegram-bot/types/keyboard';
-
-import CustomError, { ErrorCode } from 'utilities/CustomError';
-import { isTruthy } from 'utilities/is';
-
-const BUTTON_TEXT_LIMIT = 120;
-
-export function callbackButton(
-  icon: string,
-  text: string,
-  callbackData: BeautifiedCallbackData,
-): CallbackInlineKeyboardButton {
+export function callbackButton(icon: string, text: string, callbackData: CallbackData): CallbackInlineKeyboardButton {
   return {
-    type: 'callback',
-    icon,
-    text,
+    type: 'callbackData',
+    text: [icon, text].filter(Boolean).join(' '),
     callbackData,
   };
 }
 
-export function backCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
+export function backCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {
   return callbackButton('◀️', 'Назад', callbackData);
 }
 
-export function refreshCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
+export function refreshCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {
   return callbackButton('🔄', 'Обновить', callbackData);
 }
 
 export function deleteCallbackButton(
   withDeleteConfirm: boolean,
-  confirmCallbackData: BeautifiedCallbackData,
-  deleteCallbackData: BeautifiedCallbackData,
+  confirmCallbackData: CallbackData,
+  deleteCallbackData: CallbackData,
 ): CallbackInlineKeyboardButton {
   return withDeleteConfirm
     ? callbackButton('🗑', 'Точно удалить?', confirmCallbackData)
     : callbackButton('🗑', 'Удалить', deleteCallbackData);
 }
 
-export function addCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
+export function addCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {
   return callbackButton('➕', 'Добавить', callbackData);
 }
 
-export function listCallbackButton(callbackData: BeautifiedCallbackData): CallbackInlineKeyboardButton {
+export function listCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {
   return callbackButton('📜', 'Список', callbackData);
-}
-
-export function prepareInlineKeyboard(keyboard: InlineKeyboard): InlineKeyboardMarkup {
-  return {
-    inline_keyboard: keyboard
-      .filter(isTruthy)
-      .map((row) =>
-        row.filter(isTruthy).map((button) => {
-          const fullButtonText = [button.icon, button.text].filter(Boolean).join(' ');
-
-          if (!fullButtonText) {
-            throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка добавления клавиатуры');
-          }
-
-          const buttonText =
-            fullButtonText.length > BUTTON_TEXT_LIMIT
-              ? `${fullButtonText.slice(0, BUTTON_TEXT_LIMIT - 1)}…`
-              : fullButtonText;
-
-          if (button.type === 'url') {
-            return {
-              text: buttonText,
-              url: button.url,
-            };
-          }
-
-          const callbackData: UglifiedCallbackData = uglifyCallbackData(button.callbackData);
-          const callbackDataString = JSON.stringify(callbackData);
-
-          if (callbackDataString.length > 64) {
-            throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка добавления клавиатуры', {
-              message: `Callback data too long (${callbackDataString})`,
-            });
-          }
-
-          return {
-            text: buttonText,
-            callback_data: callbackDataString,
-          };
-        }),
-      )
-      .filter((row) => row.length > 0),
-  };
-}
-
-export function uglifyCallbackData(data: BeautifiedCallbackData): UglifiedCallbackData {
-  return {
-    $: data.source,
-    // @ts-ignore
-    ...uglifyCallbackDataMapper[data.source]?.(data),
-  };
-}
-
-export function beautifyCallbackData(data: UglifiedCallbackData): BeautifiedCallbackData {
-  return {
-    source: data.$,
-    // @ts-ignore
-    ...beautifyCallbackDataMapper[data.$]?.(data),
-  };
 }

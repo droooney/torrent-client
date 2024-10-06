@@ -1,40 +1,26 @@
 import { z } from 'zod';
 
-export enum RootCallbackButtonSource {
-  BACK_TO_ROOT = 'r0',
-  OPEN_SYSTEM = 'r1',
-  OPEN_DEVICES = 'r3',
-  OPEN_TORRENT_CLIENT = 'r2',
+export enum RootCallbackButtonType {
+  BackToRoot = 'r0',
+  OpenSystem = 'r1',
+  OpenDevices = 'r3',
+  OpenTorrentClient = 'r2',
 }
 
 export const rootCallbackDataSchema = z.union([
   z.object({
-    $: z.literal(RootCallbackButtonSource.BACK_TO_ROOT),
+    type: z.literal(RootCallbackButtonType.BackToRoot),
   }),
 
   z.object({
-    $: z.literal(RootCallbackButtonSource.OPEN_SYSTEM),
+    type: z.literal(RootCallbackButtonType.OpenSystem),
   }),
 
   z.object({
-    $: z.literal(RootCallbackButtonSource.OPEN_DEVICES),
+    type: z.literal(RootCallbackButtonType.OpenDevices),
   }),
 
   z.object({
-    $: z.literal(RootCallbackButtonSource.OPEN_TORRENT_CLIENT),
+    type: z.literal(RootCallbackButtonType.OpenTorrentClient),
   }),
 ]);
-
-export type RootBeautifiedCallbackData =
-  | {
-      source: RootCallbackButtonSource.BACK_TO_ROOT;
-    }
-  | {
-      source: RootCallbackButtonSource.OPEN_SYSTEM;
-    }
-  | {
-      source: RootCallbackButtonSource.OPEN_DEVICES;
-    }
-  | {
-      source: RootCallbackButtonSource.OPEN_TORRENT_CLIENT;
-    };

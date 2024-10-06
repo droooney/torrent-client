@@ -86,12 +86,7 @@
       }
     ],
     "block-scoped-var": ["error"],
-    "camelcase": [
-      "error",
-      {
-        "properties": "always"
-      }
-    ],
+    "camelcase": "off",
     "comma-dangle": [
       "error",
       {

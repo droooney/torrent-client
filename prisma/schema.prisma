@@ -96,6 +96,13 @@ model TelegramUserData {
   addDevicePayload Json?             @map("add_device_payload")
 }
 
+model TelegramCallbackData {
+  dataId String @map("data_id") @unique
+  data   Json
+
+  createdAt DateTime   @map("created_at") @default(now())
+}
+
 enum DeviceType {
   @@map("device_type")
 

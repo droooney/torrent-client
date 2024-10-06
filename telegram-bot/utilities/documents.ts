@@ -1,18 +1,35 @@
+import path from 'node:path';
+
 import { Torrent } from '@prisma/client';
 import fs from 'fs-extra';
-import { Document } from 'node-telegram-bot-api';
 import torrentClient from 'torrent-client/client';
 
-import { TextHandlerContext } from 'telegram-bot/utilities/Bot';
+import { DOWNLOADS_DIRECTORY } from 'constants/paths';
+
+import { Document, Message } from 'typescript-telegram-bot-api/dist/types';
+
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { prepareErrorForLogging } from 'utilities/error';
+
+import bot from 'telegram-bot/bot';
+
+export async function downloadDocument(fileId: string): Promise<string> {
+  const filePath = path.resolve(DOWNLOADS_DIRECTORY, fileId);
+
+  await bot.downloadFile({
+    fileId,
+    path: filePath,
+  });
+
+  return filePath;
+}
 
 export function isTorrentDocument(document: Document | undefined): document is Document {
   return document?.mime_type === 'application/x-bittorrent';
 }
 
-export async function tryLoadDocument(ctx: TextHandlerContext): Promise<Torrent | null> {
-  const { document } = ctx.message;
+export async function tryLoadTorrentDocument(message: Message): Promise<Torrent | null> {
+  const { document } = message;
 
   if (!isTorrentDocument(document)) {
     return null;
@@ -21,7 +38,7 @@ export async function tryLoadDocument(ctx: TextHandlerContext): Promise<Torrent 
   let filePath: string | null;
 
   try {
-    filePath = await ctx.downloadDocument();
+    filePath = await downloadDocument(document.file_id);
   } catch (err) {
     throw new CustomError(ErrorCode.DOWNLOAD_ERROR, 'Ошибка загрузки файла', { cause: err });
   }

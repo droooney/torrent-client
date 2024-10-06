@@ -12,8 +12,8 @@ import { timed } from 'utilities/promise';
 
 const SEARCH_RUTRACKER_TIMEOUT = 4 * SECOND;
 
-aliceClient.handleIntent(IntentType.DOWNLOAD, async (ctx) => {
-  const { query, ultraHd, fullHd } = ctx.slots;
+aliceClient.handleIntent(IntentType.DOWNLOAD, async ({ slots }) => {
+  const { query, ultraHd, fullHd } = slots;
 
   if (query?.type !== 'YANDEX.STRING') {
     throw new CustomError(ErrorCode.WRONG_FORMAT, 'Неверный формат запроса');

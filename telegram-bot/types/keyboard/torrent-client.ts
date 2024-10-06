@@ -1,279 +1,173 @@
 import { z } from 'zod';
 
-import { binarySchema } from 'telegram-bot/types/zod';
-
-export enum TorrentClientCallbackButtonSource {
+export enum TorrentClientCallbackButtonType {
   // Status
-  BACK_TO_STATUS = 't0',
-  STATUS_REFRESH = 't1',
-  STATUS_PAUSE = 't2',
-  STATUS_SHOW_TORRENTS_LIST = 't3',
+  BackToStatus = 't0',
+  StatusRefresh = 't1',
+  StatusPause = 't2',
+  StatusShowTorrentsList = 't3',
 
   // Torrent list
-  TORRENTS_LIST_ITEM = 't4',
-  TORRENTS_LIST_PAGE = 't5',
-  TORRENTS_LIST_REFRESH = 't6',
+  TorrentsListItem = 't4',
+  TorrentsListPage = 't5',
+  TorrentsListRefresh = 't6',
 
   // Torrent
-  TORRENT_REFRESH = 't7',
-  TORRENT_DELETE = 't8',
-  TORRENT_DELETE_CONFIRM = 't9',
-  TORRENT_PAUSE = 't10',
-  TORRENT_SET_CRITICAL = 't11',
-  TORRENT_BACK_TO_LIST = 't12',
-  TORRENT_SHOW_FILES = 't13',
+  TorrentRefresh = 't7',
+  TorrentDelete = 't8',
+  TorrentDeleteConfirm = 't9',
+  TorrentPause = 't10',
+  TorrentSetCritical = 't11',
+  TorrentBackToList = 't12',
+  TorrentShowFiles = 't13',
 
   // File list
-  FILES_LIST_PAGE = 't14',
-  FILES_LIST_REFRESH = 't15',
-  FILES_LIST_BACK_TO_TORRENT = 't16',
-  NAVIGATE_TO_FILE = 't17',
+  FilesListPage = 't14',
+  FilesListRefresh = 't15',
+  FilesListBackToTorrent = 't16',
+  NavigateToFile = 't17',
 
   // File
-  FILE_REFRESH = 't18',
-  DELETE_FILE = 't19',
-  DELETE_FILE_CONFIRM = 't20',
-  BACK_TO_FILES_LIST = 't21',
+  FileRefresh = 't18',
+  DeleteFile = 't19',
+  DeleteFileConfirm = 't20',
+  BackToFilesList = 't21',
 
   // Misc
-  ADD_TORRENT = 't22',
-  NAVIGATE_TO_TORRENT = 't23',
+  AddTorrent = 't22',
+  NavigateToTorrent = 't23',
 
   // Rutracker
-  RUTRACKER_SEARCH = 't25',
-  RUTRACKER_SEARCH_ADD_TORRENT = 't24',
+  RutrackerSearch = 't25',
+  RutrackerSearchAddTorrent = 't24',
 }
 
 export const torrentClientCallbackDataSchema = z.union([
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.BACK_TO_STATUS),
+    type: z.literal(TorrentClientCallbackButtonType.BackToStatus),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.STATUS_REFRESH),
+    type: z.literal(TorrentClientCallbackButtonType.StatusRefresh),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.STATUS_PAUSE),
-    p: binarySchema,
+    type: z.literal(TorrentClientCallbackButtonType.StatusPause),
+    pause: z.boolean(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.STATUS_SHOW_TORRENTS_LIST),
+    type: z.literal(TorrentClientCallbackButtonType.StatusShowTorrentsList),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENTS_LIST_ITEM),
-    t: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.TorrentsListItem),
+    torrentId: z.string(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENTS_LIST_PAGE),
-    p: z.number(),
+    type: z.literal(TorrentClientCallbackButtonType.TorrentsListPage),
+    page: z.number(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENTS_LIST_REFRESH),
-    p: z.number(),
+    type: z.literal(TorrentClientCallbackButtonType.TorrentsListRefresh),
+    page: z.number(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENT_REFRESH),
-    t: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.TorrentRefresh),
+    torrentId: z.string(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENT_DELETE),
-    t: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.TorrentDelete),
+    torrentId: z.string(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENT_DELETE_CONFIRM),
-    t: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.TorrentDeleteConfirm),
+    torrentId: z.string(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENT_PAUSE),
-    t: z.string(),
-    p: binarySchema,
+    type: z.literal(TorrentClientCallbackButtonType.TorrentPause),
+    torrentId: z.string(),
+    pause: z.boolean(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENT_SET_CRITICAL),
-    t: z.string(),
-    c: binarySchema,
+    type: z.literal(TorrentClientCallbackButtonType.TorrentSetCritical),
+    torrentId: z.string(),
+    critical: z.boolean(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENT_BACK_TO_LIST),
+    type: z.literal(TorrentClientCallbackButtonType.TorrentBackToList),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.TORRENT_SHOW_FILES),
-    t: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.TorrentShowFiles),
+    torrentId: z.string(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.FILES_LIST_PAGE),
-    t: z.string(),
-    p: z.number(),
+    type: z.literal(TorrentClientCallbackButtonType.FilesListPage),
+    torrentId: z.string(),
+    page: z.number(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.FILES_LIST_REFRESH),
-    t: z.string(),
-    p: z.number(),
+    type: z.literal(TorrentClientCallbackButtonType.FilesListRefresh),
+    torrentId: z.string(),
+    page: z.number(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.FILES_LIST_BACK_TO_TORRENT),
-    t: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.FilesListBackToTorrent),
+    torrentId: z.string(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.NAVIGATE_TO_FILE),
-    f: z.number(),
+    type: z.literal(TorrentClientCallbackButtonType.NavigateToFile),
+    fileId: z.number(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.FILE_REFRESH),
-    f: z.number(),
+    type: z.literal(TorrentClientCallbackButtonType.FileRefresh),
+    fileId: z.number(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.DELETE_FILE),
-    f: z.number(),
+    type: z.literal(TorrentClientCallbackButtonType.DeleteFile),
+    fileId: z.number(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM),
-    f: z.number(),
+    type: z.literal(TorrentClientCallbackButtonType.DeleteFileConfirm),
+    fileId: z.number(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.BACK_TO_FILES_LIST),
-    t: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.BackToFilesList),
+    torrentId: z.string(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.ADD_TORRENT),
+    type: z.literal(TorrentClientCallbackButtonType.AddTorrent),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.NAVIGATE_TO_TORRENT),
-    t: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.NavigateToTorrent),
+    torrentId: z.string(),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.RUTRACKER_SEARCH),
+    type: z.literal(TorrentClientCallbackButtonType.RutrackerSearch),
   }),
 
   z.object({
-    $: z.literal(TorrentClientCallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT),
-    t: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.RutrackerSearchAddTorrent),
+    torrentId: z.string(),
   }),
 ]);
-
-export type TorrentClientBeautifiedCallbackData =
-  | {
-      source: TorrentClientCallbackButtonSource.BACK_TO_STATUS;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.STATUS_REFRESH;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.STATUS_PAUSE;
-      pause: boolean;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.STATUS_SHOW_TORRENTS_LIST;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENTS_LIST_ITEM;
-      torrentId: string;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENTS_LIST_PAGE;
-      page: number;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENTS_LIST_REFRESH;
-      page: number;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENT_REFRESH;
-      torrentId: string;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENT_DELETE;
-      torrentId: string;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENT_DELETE_CONFIRM;
-      torrentId: string;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENT_PAUSE;
-      torrentId: string;
-      pause: boolean;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENT_SET_CRITICAL;
-      torrentId: string;
-      critical: boolean;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENT_BACK_TO_LIST;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.TORRENT_SHOW_FILES;
-      torrentId: string;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.FILES_LIST_PAGE;
-      torrentId: string;
-      page: number;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.FILES_LIST_REFRESH;
-      torrentId: string;
-      page: number;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.FILES_LIST_BACK_TO_TORRENT;
-      torrentId: string;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.NAVIGATE_TO_FILE;
-      fileId: number;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.FILE_REFRESH;
-      fileId: number;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.DELETE_FILE;
-      fileId: number;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.DELETE_FILE_CONFIRM;
-      fileId: number;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.BACK_TO_FILES_LIST;
-      torrentId: string;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.ADD_TORRENT;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.NAVIGATE_TO_TORRENT;
-      torrentId: string;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.RUTRACKER_SEARCH;
-    }
-  | {
-      source: TorrentClientCallbackButtonSource.RUTRACKER_SEARCH_ADD_TORRENT;
-      torrentId: string;
-    };

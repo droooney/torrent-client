@@ -1,10 +1,10 @@
-import { SystemCallbackButtonSource } from 'telegram-bot/types/keyboard/system';
+import { SystemCallbackButtonType } from 'telegram-bot/types/keyboard/system';
 
-import RefreshNotificationResponse from 'telegram-bot/utilities/response/RefreshNotificationResponse';
+import RefreshDataAction from 'telegram-bot/utilities/actions/RefreshDataAction';
 
-import bot from 'telegram-bot/bot';
-import { getStatusResponse } from 'telegram-bot/responses/system';
+import { getStatusAction } from 'telegram-bot/actions/system';
+import { callbackDataProvider } from 'telegram-bot/bot';
 
-bot.handleCallbackQuery(SystemCallbackButtonSource.REFRESH_STATUS, async () => {
-  return new RefreshNotificationResponse(await getStatusResponse());
+callbackDataProvider.handle(SystemCallbackButtonType.RefreshStatus, async () => {
+  return new RefreshDataAction(await getStatusAction());
 });

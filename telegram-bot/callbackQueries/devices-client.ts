@@ -1,114 +1,119 @@
 import { TelegramUserState } from '@prisma/client';
 import devicesClient from 'devices-client/client';
 
-import { DevicesClientCallbackButtonSource } from 'telegram-bot/types/keyboard/devices-client';
+import { NotificationAction } from 'telegram-bot/types/actions';
+import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
 import DevicesClient from 'devices-client/utilities/DevicesClient';
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
-import NotificationResponse from 'telegram-bot/utilities/response/NotificationResponse';
-import RefreshNotificationResponse from 'telegram-bot/utilities/response/RefreshNotificationResponse';
+import MessageWithNotificationAction from 'telegram-bot/utilities/actions/MessageWithNotificationAction';
+import RefreshDataAction from 'telegram-bot/utilities/actions/RefreshDataAction';
 
-import bot from 'telegram-bot/bot';
 import {
-  getAddDeviceSetMacResponse,
-  getAddDeviceSetNameResponse,
-  getAddDeviceSetTypeResponse,
-  getDeviceResponse,
-  getDevicesListResponse,
-  getStatusResponse,
-} from 'telegram-bot/responses/devices-client';
+  getAddDeviceSetMacAction,
+  getAddDeviceSetNameAction,
+  getAddDeviceSetTypeAction,
+  getDeviceAction,
+  getDevicesListAction,
+  getStatusAction,
+} from 'telegram-bot/actions/devices-client';
+import { callbackDataProvider, userDataProvider } from 'telegram-bot/bot';
 
-bot.handleCallbackQuery(DevicesClientCallbackButtonSource.BACK_TO_STATUS, async () => {
-  return getStatusResponse();
+callbackDataProvider.handle(DevicesClientCallbackButtonType.BackToStatus, async () => {
+  return getStatusAction();
 });
 
-bot.handleCallbackQuery(DevicesClientCallbackButtonSource.REFRESH_STATUS, async () => {
-  return new RefreshNotificationResponse(await getStatusResponse());
+callbackDataProvider.handle(DevicesClientCallbackButtonType.RefreshStatus, async () => {
+  return new RefreshDataAction(await getStatusAction());
 });
 
-bot.handleCallbackQuery(
+callbackDataProvider.handle(
   [
-    DevicesClientCallbackButtonSource.STATUS_SHOW_DEVICES_LIST,
-    DevicesClientCallbackButtonSource.DEVICES_LIST_PAGE,
-    DevicesClientCallbackButtonSource.BACK_TO_DEVICES_LIST,
+    DevicesClientCallbackButtonType.StatusShowDevicesList,
+    DevicesClientCallbackButtonType.DevicesListPage,
+    DevicesClientCallbackButtonType.BackToDevicesList,
   ],
-  async (ctx) => {
-    return getDevicesListResponse('page' in ctx.data ? ctx.data.page : 0);
+  async ({ data }) => {
+    return getDevicesListAction('page' in data ? data.page : 0);
   },
 );
 
-bot.handleCallbackQuery(DevicesClientCallbackButtonSource.DEVICES_LIST_REFRESH, async (ctx) => {
-  return new RefreshNotificationResponse(
-    await (await getDevicesListResponse('page' in ctx.data ? ctx.data.page : 0)).generateImmediateResponse(),
+callbackDataProvider.handle(DevicesClientCallbackButtonType.DevicesListRefresh, async ({ data }) => {
+  return new RefreshDataAction(
+    await (await getDevicesListAction('page' in data ? data.page : 0)).generateMessageAction(),
   );
 });
 
-bot.handleCallbackQuery(
-  [DevicesClientCallbackButtonSource.NAVIGATE_TO_DEVICE, DevicesClientCallbackButtonSource.DEVICE_DELETE],
-  async (ctx) => {
-    return getDeviceResponse(ctx.data.deviceId, ctx.data.source === DevicesClientCallbackButtonSource.DEVICE_DELETE);
+callbackDataProvider.handle(
+  [DevicesClientCallbackButtonType.NavigateToDevice, DevicesClientCallbackButtonType.DeviceDelete],
+  async ({ data }) => {
+    return getDeviceAction(data.deviceId, data.type === DevicesClientCallbackButtonType.DeviceDelete);
   },
 );
 
-bot.handleCallbackQuery(DevicesClientCallbackButtonSource.DEVICE_REFRESH, async (ctx) => {
-  return new RefreshNotificationResponse(await getDeviceResponse(ctx.data.deviceId));
+callbackDataProvider.handle(DevicesClientCallbackButtonType.DeviceRefresh, async ({ data }) => {
+  return new RefreshDataAction(await getDeviceAction(data.deviceId));
 });
 
-bot.handleCallbackQuery(DevicesClientCallbackButtonSource.DEVICE_DELETE_CONFIRM, async (ctx) => {
-  await devicesClient.deleteDevice(ctx.data.deviceId);
+callbackDataProvider.handle(DevicesClientCallbackButtonType.DeviceDeleteConfirm, async ({ data }) => {
+  await devicesClient.deleteDevice(data.deviceId);
 
-  return new NotificationResponse({
+  return new MessageWithNotificationAction({
     text: 'Устройство успешно удалено',
-    updateMessage: await (await getDevicesListResponse()).generateImmediateResponse(),
+    updateAction: await (await getDevicesListAction()).generateMessageAction(),
   });
 });
 
-bot.handleCallbackQuery(
-  [DevicesClientCallbackButtonSource.ADD_DEVICE, DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_NAME],
-  async (ctx) => {
-    await ctx.updateUserState({
+callbackDataProvider.handle(
+  [DevicesClientCallbackButtonType.AddDevice, DevicesClientCallbackButtonType.AddDeviceBackToSetName],
+  async ({ user }) => {
+    await userDataProvider.setUserData(user.id, {
+      ...user.data,
       state: TelegramUserState.AddDeviceSetName,
       addDevicePayload: DevicesClient.defaultDevicePayload,
     });
 
-    return getAddDeviceSetNameResponse();
+    return getAddDeviceSetNameAction();
   },
 );
 
-bot.handleCallbackQuery(DevicesClientCallbackButtonSource.ADD_DEVICE_SET_TYPE, async (ctx) => {
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetType, async ({ data, user }) => {
   const newPayload = {
-    ...getAddDevicePayload(ctx.userData.addDevicePayload),
-    type: ctx.data.type,
+    ...getAddDevicePayload(user.data.addDevicePayload),
+    type: data.deviceType,
   };
 
-  await ctx.updateUserState({
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.AddDeviceSetMac,
     addDevicePayload: newPayload,
   });
 
-  return getAddDeviceSetMacResponse(newPayload);
+  return getAddDeviceSetMacAction(newPayload);
 });
 
-bot.handleCallbackQuery(DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_TYPE, async (ctx) => {
-  await ctx.updateUserState({
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetType, async ({ user }) => {
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.AddDeviceSetType,
   });
 
-  return getAddDeviceSetTypeResponse(getAddDevicePayload(ctx.userData.addDevicePayload));
+  return getAddDeviceSetTypeAction(getAddDevicePayload(user.data.addDevicePayload));
 });
 
-bot.handleCallbackQuery(DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_MAC, async (ctx) => {
-  await ctx.updateUserState({
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetMac, async ({ user }) => {
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.AddDeviceSetMac,
   });
 
-  return getAddDeviceSetMacResponse(getAddDevicePayload(ctx.userData.addDevicePayload));
+  return getAddDeviceSetMacAction(getAddDevicePayload(user.data.addDevicePayload));
 });
 
-bot.handleCallbackQuery(DevicesClientCallbackButtonSource.DEVICE_TURN_ON, async (ctx) => {
-  await devicesClient.turnOnDevice(ctx.data.deviceId);
+callbackDataProvider.handle(DevicesClientCallbackButtonType.DeviceTurnOn, async ({ data }) => {
+  await devicesClient.turnOnDevice(data.deviceId);
 
-  return new NotificationResponse({
+  return new NotificationAction({
     text: 'Устройство включено',
   });
 });

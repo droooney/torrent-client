@@ -7,8 +7,8 @@ import VoiceResponse from 'alice-client/utilities/VoiceResponse';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { runTask } from 'utilities/process';
 
-aliceClient.handleIntent(IntentType.TURN_ON, async (ctx) => {
-  const { target } = ctx.slots;
+aliceClient.handleIntent(IntentType.TURN_ON, async ({ slots }) => {
+  const { target } = slots;
 
   if (target?.type !== 'YANDEX.STRING') {
     throw new CustomError(ErrorCode.UNSUPPORTED, 'Неизвестное устройство');

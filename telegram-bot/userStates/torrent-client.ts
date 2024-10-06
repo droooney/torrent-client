@@ -1,31 +1,34 @@
 import { TelegramUserState } from '@prisma/client';
 import torrentClient from 'torrent-client/client';
 
-import { tryLoadDocument } from 'telegram-bot/utilities/documents';
-import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
+import { MessageAction } from 'telegram-bot/types/actions';
+
+import { tryLoadTorrentDocument } from 'telegram-bot/utilities/documents';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { formatSpeed, parseSize } from 'utilities/size';
 
-import bot from 'telegram-bot/bot';
-import { getAddTorrentResponse, getSearchRutrackerResponse } from 'telegram-bot/responses/torrent-client';
+import { getAddTorrentAction, getSearchRutrackerAction } from 'telegram-bot/actions/torrent-client';
+import { userDataProvider } from 'telegram-bot/bot';
 
-bot.handleUserState(TelegramUserState.SearchRutracker, async (ctx) => {
-  await ctx.updateUserState({
+userDataProvider.handle(TelegramUserState.SearchRutracker, async ({ message, user }) => {
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.Waiting,
   });
 
-  return getSearchRutrackerResponse(ctx.message.text ?? '');
+  return getSearchRutrackerAction(message.text ?? '');
 });
 
-bot.handleUserState(TelegramUserState.AddTorrent, async (ctx) => {
-  const { text } = ctx.message;
+userDataProvider.handle(TelegramUserState.AddTorrent, async ({ message, user }) => {
+  const { text } = message;
 
-  await ctx.updateUserState({
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.Waiting,
   });
 
-  return getAddTorrentResponse(async () => {
-    let torrent = await tryLoadDocument(ctx);
+  return getAddTorrentAction(async () => {
+    let torrent = await tryLoadTorrentDocument(message);
 
     if (!torrent && text) {
       torrent = await torrentClient.addTorrent({
@@ -38,8 +41,8 @@ bot.handleUserState(TelegramUserState.AddTorrent, async (ctx) => {
   });
 });
 
-bot.handleUserState(TelegramUserState.SetDownloadLimit, async (ctx) => {
-  const { text } = ctx.message;
+userDataProvider.handle(TelegramUserState.SetDownloadLimit, async ({ message, user }) => {
+  const { text } = message;
 
   const downloadLimit = text === '-' ? '-' : parseSize(text ?? '');
 
@@ -47,22 +50,26 @@ bot.handleUserState(TelegramUserState.SetDownloadLimit, async (ctx) => {
     throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка формата данных');
   }
 
-  await ctx.updateUserState({
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.Waiting,
   });
 
   await torrentClient.setDownloadSpeedLimit(downloadLimit === '-' ? null : downloadLimit);
 
-  return new ImmediateTextResponse({
-    text:
-      downloadLimit === '-'
-        ? 'Ограничение загрузки снято'
-        : `Выставлено ограничение загрузки ${formatSpeed(downloadLimit)}`,
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text:
+        downloadLimit === '-'
+          ? 'Ограничение загрузки снято'
+          : `Выставлено ограничение загрузки ${formatSpeed(downloadLimit)}`,
+    },
   });
 });
 
-bot.handleUserState(TelegramUserState.SetUploadLimit, async (ctx) => {
-  const { text } = ctx.message;
+userDataProvider.handle(TelegramUserState.SetUploadLimit, async ({ message, user }) => {
+  const { text } = message;
 
   const uploadLimit = text === '-' ? '-' : parseSize(text ?? '');
 
@@ -70,14 +77,18 @@ bot.handleUserState(TelegramUserState.SetUploadLimit, async (ctx) => {
     throw new CustomError(ErrorCode.WRONG_FORMAT, 'Ошибка формата данных');
   }
 
-  await ctx.updateUserState({
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.Waiting,
   });
 
   await torrentClient.setUploadSpeedLimit(uploadLimit === '-' ? null : uploadLimit);
 
-  return new ImmediateTextResponse({
-    text:
-      uploadLimit === '-' ? 'Ограничение отдачи снято' : `Выставлено ограничение отдачи ${formatSpeed(uploadLimit)}`,
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text:
+        uploadLimit === '-' ? 'Ограничение отдачи снято' : `Выставлено ограничение отдачи ${formatSpeed(uploadLimit)}`,
+    },
   });
 });

@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-
 import { IApiResponseBody, Reply } from 'yandex-dialogs-sdk';
 
 import VoicedText from 'alice-client/utilities/VoicedText';

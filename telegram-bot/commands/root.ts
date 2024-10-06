@@ -1,14 +1,17 @@
 import { TelegramUserState } from '@prisma/client';
 
-import { CommandType } from 'telegram-bot/constants/commands';
+import { CommandType } from 'telegram-bot/types/commands';
 
-import bot from 'telegram-bot/bot';
-import { getRootResponse } from 'telegram-bot/responses/root';
+import { getRootAction } from 'telegram-bot/actions/root';
+import bot, { userDataProvider } from 'telegram-bot/bot';
 
-bot.handleCommand(CommandType.HELP, async (ctx) => {
-  await ctx.updateUserState({
-    state: TelegramUserState.Waiting,
-  });
+bot.handleCommand(CommandType.Help, async ({ user }) => {
+  if (user) {
+    await userDataProvider.setUserData(user.id, {
+      ...user.data,
+      state: TelegramUserState.Waiting,
+    });
+  }
 
-  return getRootResponse();
+  return getRootAction();
 });

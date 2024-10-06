@@ -1,27 +1,32 @@
+import { InlineKeyboard, InlineKeyboardButton, Markdown } from '@tg-sensei/bot';
 import chunk from 'lodash/chunk';
 import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
-import { Message } from 'node-telegram-bot-api';
 
-import { BeautifiedCallbackData, InlineKeyboard, InlineKeyboardButton } from 'telegram-bot/types/keyboard';
+import {
+  Action,
+  ActionOnCallbackQueryContext,
+  ActionOnMessageContext,
+  MessageAction,
+} from 'telegram-bot/types/actions';
+import { CallbackData } from 'telegram-bot/types/keyboard';
 import { MaybePromise } from 'types/common';
 
-import Markdown from 'telegram-bot/utilities/Markdown';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
-import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
-import TextResponse, { EditMessageContext, SendMessageContext } from 'telegram-bot/utilities/response/TextResponse';
 import { formatIndex } from 'utilities/number';
 
-export interface PaginationTextResponseOptions<Item> {
+export interface PaginationMessageActionOptions<Item> {
   page?: number;
   pageSize?: number;
   itemsPerRow?: number;
   emptyPageText?: string | Markdown;
-  getPageItemsInfo(options: GetPageItemsOptions): MaybePromise<PageItemsInfo<Item>>;
-  getPageButtonCallbackData(page: number): BeautifiedCallbackData;
-  getItemButton(item: Item, indexIcon: string): InlineKeyboardButton;
-  getItemText(item: Item, indexString: string): MaybePromise<string | Markdown>;
-  getKeyboard(paginationButtons: InlineKeyboardButton[][]): MaybePromise<InlineKeyboard>;
+  getPageItemsInfo: (options: GetPageItemsOptions) => MaybePromise<PageItemsInfo<Item>>;
+  getPageButtonCallbackData: (page: number) => CallbackData;
+  getItemButton: (item: Item, indexIcon: string) => InlineKeyboardButton<CallbackData>;
+  getItemText: (item: Item, indexString: string) => MaybePromise<string | Markdown>;
+  getKeyboard: (
+    paginationButtons: InlineKeyboardButton<CallbackData>[][],
+  ) => MaybePromise<InlineKeyboard<CallbackData>>;
 }
 
 export interface PageItemsInfo<Item> {
@@ -38,20 +43,18 @@ const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_ITEMS_PER_ROW = 2;
 const DEFAULT_EMPTY_PAGE_TEXT = 'Страница пуста';
 
-export default class PaginationTextResponse<Item> extends TextResponse {
+export default class PaginationMessageAction<Item> implements Action {
   private readonly page: number;
   private readonly pageSize: number;
   private readonly itemsPerRow: number;
   private readonly emptyPageText: string | Markdown;
-  private readonly getPageItemsInfo: PaginationTextResponseOptions<Item>['getPageItemsInfo'];
-  private readonly getPageButtonCallbackData: PaginationTextResponseOptions<Item>['getPageButtonCallbackData'];
-  private readonly getItemButton: PaginationTextResponseOptions<Item>['getItemButton'];
-  private readonly getItemText: PaginationTextResponseOptions<Item>['getItemText'];
-  private readonly getKeyboard: PaginationTextResponseOptions<Item>['getKeyboard'];
+  private readonly getPageItemsInfo: PaginationMessageActionOptions<Item>['getPageItemsInfo'];
+  private readonly getPageButtonCallbackData: PaginationMessageActionOptions<Item>['getPageButtonCallbackData'];
+  private readonly getItemButton: PaginationMessageActionOptions<Item>['getItemButton'];
+  private readonly getItemText: PaginationMessageActionOptions<Item>['getItemText'];
+  private readonly getKeyboard: PaginationMessageActionOptions<Item>['getKeyboard'];
 
-  constructor(options: PaginationTextResponseOptions<Item>) {
-    super();
-
+  constructor(options: PaginationMessageActionOptions<Item>) {
     this.page = options.page ?? 0;
     this.pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
     this.itemsPerRow = options.itemsPerRow ?? DEFAULT_ITEMS_PER_ROW;
@@ -63,11 +66,7 @@ export default class PaginationTextResponse<Item> extends TextResponse {
     this.getItemText = options.getItemText;
   }
 
-  async editMessage(ctx: EditMessageContext): Promise<Message> {
-    return (await this.generateImmediateResponse()).editMessage(ctx);
-  }
-
-  async generateImmediateResponse(): Promise<ImmediateTextResponse> {
+  async generateMessageAction(): Promise<MessageAction> {
     const { page, pageSize } = this;
 
     const start = page * pageSize;
@@ -100,11 +99,14 @@ export default class PaginationTextResponse<Item> extends TextResponse {
       '\n\n\n',
     );
 
-    return new ImmediateTextResponse({
-      text: itemsText.isEmpty()
-        ? Markdown.join([text, this.emptyPageText], '\n\n')
-        : Markdown.join([text, itemsText], '\n\n\n'),
-      keyboard: await this.getKeyboard([
+    return new MessageAction({
+      content: {
+        type: 'text',
+        text: itemsText.isEmpty()
+          ? Markdown.join([text, this.emptyPageText], '\n\n')
+          : Markdown.join([text, itemsText], '\n\n\n'),
+      },
+      replyMarkup: await this.getKeyboard([
         ...chunk(
           items.map((item, index) => this.getItemButton(item, formatIndex(index))),
           this.itemsPerRow,
@@ -120,7 +122,11 @@ export default class PaginationTextResponse<Item> extends TextResponse {
     });
   }
 
-  async sendMessage(ctx: SendMessageContext): Promise<Message> {
-    return (await this.generateImmediateResponse()).sendMessage(ctx);
+  async onCallbackQuery(ctx: ActionOnCallbackQueryContext): Promise<void> {
+    await (await this.generateMessageAction()).onCallbackQuery(ctx);
+  }
+
+  async onMessage(ctx: ActionOnMessageContext): Promise<void> {
+    await (await this.generateMessageAction()).onMessage(ctx);
   }
 }

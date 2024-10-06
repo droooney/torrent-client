@@ -1,24 +1,16 @@
 import { z } from 'zod';
 
-export enum SystemCallbackButtonSource {
-  REFRESH_STATUS = 's0',
-  RESTART = 's1',
+export enum SystemCallbackButtonType {
+  RefreshStatus = 's0',
+  Restart = 's1',
 }
 
 export const systemCallbackDataSchema = z.union([
   z.object({
-    $: z.literal(SystemCallbackButtonSource.REFRESH_STATUS),
+    type: z.literal(SystemCallbackButtonType.RefreshStatus),
   }),
 
   z.object({
-    $: z.literal(SystemCallbackButtonSource.RESTART),
+    type: z.literal(SystemCallbackButtonType.Restart),
   }),
 ]);
-
-export type SystemBeautifiedCallbackData =
-  | {
-      source: SystemCallbackButtonSource.REFRESH_STATUS;
-    }
-  | {
-      source: SystemCallbackButtonSource.RESTART;
-    };

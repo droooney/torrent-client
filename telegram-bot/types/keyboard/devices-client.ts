@@ -1,164 +1,104 @@
 import { DeviceType } from '@prisma/client';
 import { z } from 'zod';
 
-export enum DevicesClientCallbackButtonSource {
+export enum DevicesClientCallbackButtonType {
   // Status
-  REFRESH_STATUS = 'd0',
-  BACK_TO_STATUS = 'd2',
-  STATUS_SHOW_DEVICES_LIST = 'd10',
+  RefreshStatus = 'd0',
+  BackToStatus = 'd2',
+  StatusShowDevicesList = 'd10',
 
   // Devices list
-  BACK_TO_DEVICES_LIST = 'd14',
-  DEVICES_LIST_REFRESH = 'd13',
-  DEVICES_LIST_PAGE = 'd12',
-  NAVIGATE_TO_DEVICE = 'd11',
+  BackToDevicesList = 'd14',
+  DevicesListRefresh = 'd13',
+  DevicesListPage = 'd12',
+  NavigateToDevice = 'd11',
 
   // Add device
-  ADD_DEVICE = 'd1',
-  ADD_DEVICE_SET_TYPE = 'd3',
-  ADD_DEVICE_BACK_TO_SET_NAME = 'd5',
-  ADD_DEVICE_BACK_TO_SET_TYPE = 'd4',
-  ADD_DEVICE_BACK_TO_SET_MAC = 'd6',
+  AddDevice = 'd1',
+  AddDeviceSetType = 'd3',
+  AddDeviceBackToSetName = 'd5',
+  AddDeviceBackToSetType = 'd4',
+  AddDeviceBackToSetMac = 'd6',
 
   // Device
-  DEVICE_REFRESH = 'd7',
-  DEVICE_DELETE = 'd8',
-  DEVICE_DELETE_CONFIRM = 'd9',
-  DEVICE_TURN_ON = 'd15',
+  DeviceRefresh = 'd7',
+  DeviceDelete = 'd8',
+  DeviceDeleteConfirm = 'd9',
+  DeviceTurnOn = 'd15',
 }
 
-export const uglifiedDeviceTypeSchema = z.literal(0);
-
-export type UglifiedDeviceType = z.infer<typeof uglifiedDeviceTypeSchema>;
+export const deviceTypeSchema = z.enum([DeviceType.Tv]);
 
 export const devicesClientCallbackDataSchema = z.union([
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.REFRESH_STATUS),
+    type: z.literal(DevicesClientCallbackButtonType.RefreshStatus),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.BACK_TO_STATUS),
+    type: z.literal(DevicesClientCallbackButtonType.BackToStatus),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.STATUS_SHOW_DEVICES_LIST),
+    type: z.literal(DevicesClientCallbackButtonType.StatusShowDevicesList),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.BACK_TO_DEVICES_LIST),
+    type: z.literal(DevicesClientCallbackButtonType.BackToDevicesList),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.DEVICES_LIST_REFRESH),
-    p: z.number(),
+    type: z.literal(DevicesClientCallbackButtonType.DevicesListRefresh),
+    page: z.number(),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.DEVICES_LIST_PAGE),
-    p: z.number(),
+    type: z.literal(DevicesClientCallbackButtonType.DevicesListPage),
+    page: z.number(),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.NAVIGATE_TO_DEVICE),
-    d: z.number(),
+    type: z.literal(DevicesClientCallbackButtonType.NavigateToDevice),
+    deviceId: z.number(),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.ADD_DEVICE),
+    type: z.literal(DevicesClientCallbackButtonType.AddDevice),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.ADD_DEVICE_SET_TYPE),
-    t: uglifiedDeviceTypeSchema,
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetType),
+    deviceType: deviceTypeSchema,
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_NAME),
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetName),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_TYPE),
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetType),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_MAC),
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetMac),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.DEVICE_REFRESH),
-    d: z.number(),
+    type: z.literal(DevicesClientCallbackButtonType.DeviceRefresh),
+    deviceId: z.number(),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.DEVICE_DELETE),
-    d: z.number(),
+    type: z.literal(DevicesClientCallbackButtonType.DeviceDelete),
+    deviceId: z.number(),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.DEVICE_DELETE_CONFIRM),
-    d: z.number(),
+    type: z.literal(DevicesClientCallbackButtonType.DeviceDeleteConfirm),
+    deviceId: z.number(),
   }),
 
   z.object({
-    $: z.literal(DevicesClientCallbackButtonSource.DEVICE_TURN_ON),
-    d: z.number(),
+    type: z.literal(DevicesClientCallbackButtonType.DeviceTurnOn),
+    deviceId: z.number(),
   }),
 ]);
-
-export type DevicesClientBeautifiedCallbackData =
-  | {
-      source: DevicesClientCallbackButtonSource.REFRESH_STATUS;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.BACK_TO_STATUS;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.STATUS_SHOW_DEVICES_LIST;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.BACK_TO_DEVICES_LIST;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.DEVICES_LIST_REFRESH;
-      page: number;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.DEVICES_LIST_PAGE;
-      page: number;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.NAVIGATE_TO_DEVICE;
-      deviceId: number;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.ADD_DEVICE;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.ADD_DEVICE_SET_TYPE;
-      type: DeviceType;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_TYPE;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_NAME;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_MAC;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.DEVICE_REFRESH;
-      deviceId: number;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.DEVICE_DELETE;
-      deviceId: number;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.DEVICE_DELETE_CONFIRM;
-      deviceId: number;
-    }
-  | {
-      source: DevicesClientCallbackButtonSource.DEVICE_TURN_ON;
-      deviceId: number;
-    };

@@ -1,23 +1,23 @@
-import { RootCallbackButtonSource } from 'telegram-bot/types/keyboard/root';
+import { RootCallbackButtonType } from 'telegram-bot/types/keyboard/root';
 
-import bot from 'telegram-bot/bot';
-import { getStatusResponse as getDevicesStatusResponse } from 'telegram-bot/responses/devices-client';
-import { getRootResponse } from 'telegram-bot/responses/root';
-import { getStatusResponse as getSystemStatusResponse } from 'telegram-bot/responses/system';
-import { getStatusResponse as getTorrentClientStatusResponse } from 'telegram-bot/responses/torrent-client';
+import { getStatusAction as getDevicesStatusAction } from 'telegram-bot/actions/devices-client';
+import { getRootAction } from 'telegram-bot/actions/root';
+import { getStatusAction as getSystemStatusAction } from 'telegram-bot/actions/system';
+import { getStatusAction as getTorrentClientStatusAction } from 'telegram-bot/actions/torrent-client';
+import { callbackDataProvider } from 'telegram-bot/bot';
 
-bot.handleCallbackQuery(RootCallbackButtonSource.BACK_TO_ROOT, async () => {
-  return getRootResponse();
+callbackDataProvider.handle(RootCallbackButtonType.BackToRoot, async () => {
+  return getRootAction();
 });
 
-bot.handleCallbackQuery(RootCallbackButtonSource.OPEN_SYSTEM, async () => {
-  return getSystemStatusResponse();
+callbackDataProvider.handle(RootCallbackButtonType.OpenSystem, async () => {
+  return getSystemStatusAction();
 });
 
-bot.handleCallbackQuery(RootCallbackButtonSource.OPEN_DEVICES, async () => {
-  return getDevicesStatusResponse();
+callbackDataProvider.handle(RootCallbackButtonType.OpenDevices, async () => {
+  return getDevicesStatusAction();
 });
 
-bot.handleCallbackQuery(RootCallbackButtonSource.OPEN_TORRENT_CLIENT, async () => {
-  return getTorrentClientStatusResponse();
+callbackDataProvider.handle(RootCallbackButtonType.OpenTorrentClient, async () => {
+  return getTorrentClientStatusAction();
 });

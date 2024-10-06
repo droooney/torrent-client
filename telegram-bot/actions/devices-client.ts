@@ -1,13 +1,15 @@
 import { Device, DeviceType } from '@prisma/client';
+import { Markdown } from '@tg-sensei/bot';
 
 import prisma from 'db/prisma';
 import { getPaginationInfo } from 'db/utilities/pagination';
 
 import { AddDevicePayload, AddDevicePayloadField } from 'devices-client/types/device';
-import { DevicesClientCallbackButtonSource } from 'telegram-bot/types/keyboard/devices-client';
-import { RootCallbackButtonSource } from 'telegram-bot/types/keyboard/root';
+import { MessageAction } from 'telegram-bot/types/actions';
+import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
+import { RootCallbackButtonType } from 'telegram-bot/types/keyboard/root';
 
-import Markdown from 'telegram-bot/utilities/Markdown';
+import PaginationMessageAction from 'telegram-bot/utilities/actions/PaginationMessageAction';
 import {
   addCallbackButton,
   backCallbackButton,
@@ -16,8 +18,6 @@ import {
   listCallbackButton,
   refreshCallbackButton,
 } from 'telegram-bot/utilities/keyboard';
-import ImmediateTextResponse from 'telegram-bot/utilities/response/ImmediateTextResponse';
-import PaginationTextResponse from 'telegram-bot/utilities/response/PaginationTextResponse';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 const ADD_DEVICE_FIELDS_INFO: Record<AddDevicePayloadField, { icon: string; name: string }> = {
@@ -47,34 +47,37 @@ const DEVICE_TYPE_NAME_MAP: Record<DeviceType, string> = {
   [DeviceType.Tv]: 'Телевизор',
 };
 
-export async function getStatusResponse(): Promise<ImmediateTextResponse> {
-  return new ImmediateTextResponse({
-    text: Markdown.italic('Нет устройств онлайн'),
-    keyboard: [
+export async function getStatusAction(): Promise<MessageAction> {
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: Markdown.italic('Нет устройств онлайн'),
+    },
+    replyMarkup: [
       [
         refreshCallbackButton({
-          source: DevicesClientCallbackButtonSource.REFRESH_STATUS,
+          type: DevicesClientCallbackButtonType.RefreshStatus,
         }),
         addCallbackButton({
-          source: DevicesClientCallbackButtonSource.ADD_DEVICE,
+          type: DevicesClientCallbackButtonType.AddDevice,
         }),
       ],
       [
         listCallbackButton({
-          source: DevicesClientCallbackButtonSource.STATUS_SHOW_DEVICES_LIST,
+          type: DevicesClientCallbackButtonType.StatusShowDevicesList,
         }),
       ],
       [
         backCallbackButton({
-          source: RootCallbackButtonSource.BACK_TO_ROOT,
+          type: RootCallbackButtonType.BackToRoot,
         }),
       ],
     ],
   });
 }
 
-export async function getDevicesListResponse(page: number = 0): Promise<PaginationTextResponse<Device>> {
-  return new PaginationTextResponse({
+export async function getDevicesListAction(page: number = 0): Promise<PaginationMessageAction<Device>> {
+  return new PaginationMessageAction({
     page,
     emptyPageText: Markdown.italic('Нет устройств'),
     getPageItemsInfo: async (options) =>
@@ -88,120 +91,129 @@ export async function getDevicesListResponse(page: number = 0): Promise<Paginati
         pagination: options,
       }),
     getPageButtonCallbackData: (page) => ({
-      source: DevicesClientCallbackButtonSource.DEVICES_LIST_PAGE,
+      type: DevicesClientCallbackButtonType.DevicesListPage,
       page,
     }),
     getItemButton: (device) =>
       callbackButton(DEVICE_TYPE_ICON_MAP[device.type], device.name, {
-        source: DevicesClientCallbackButtonSource.NAVIGATE_TO_DEVICE,
+        type: DevicesClientCallbackButtonType.NavigateToDevice,
         deviceId: device.id,
       }),
     getItemText: (device) => formatDevice(device),
     getKeyboard: (paginationButtons) => [
       [
         refreshCallbackButton({
-          source: DevicesClientCallbackButtonSource.DEVICES_LIST_REFRESH,
+          type: DevicesClientCallbackButtonType.DevicesListRefresh,
           page,
         }),
       ],
       ...paginationButtons,
       [
         backCallbackButton({
-          source: DevicesClientCallbackButtonSource.BACK_TO_STATUS,
+          type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
     ],
   });
 }
 
-export function getAddDeviceSetNameResponse(): ImmediateTextResponse {
-  return new ImmediateTextResponse({
-    text: Markdown.italic('Введите название устройства'),
-    keyboard: [
+export function getAddDeviceSetNameAction(): MessageAction {
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: Markdown.italic('Введите название устройства'),
+    },
+    replyMarkup: [
       [
         callbackButton('◀️', 'К устройствам', {
-          source: DevicesClientCallbackButtonSource.BACK_TO_STATUS,
+          type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
     ],
   });
 }
 
-export function getAddDeviceSetTypeResponse(addDevicePayload: AddDevicePayload): ImmediateTextResponse {
-  return new ImmediateTextResponse({
-    text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name'])}
+export function getAddDeviceSetTypeAction(addDevicePayload: AddDevicePayload): MessageAction {
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name'])}
 
 
 ${Markdown.italic('Выберите тип устройства')}`,
-    keyboard: [
+    },
+    replyMarkup: [
       [
-        ...Object.values(DeviceType).map((type) =>
-          callbackButton(DEVICE_TYPE_ICON_MAP[type], DEVICE_TYPE_NAME_MAP[type], {
-            source: DevicesClientCallbackButtonSource.ADD_DEVICE_SET_TYPE,
-            type,
+        ...Object.values(DeviceType).map((deviceType) =>
+          callbackButton(DEVICE_TYPE_ICON_MAP[deviceType], DEVICE_TYPE_NAME_MAP[deviceType], {
+            type: DevicesClientCallbackButtonType.AddDeviceSetType,
+            deviceType,
           }),
         ),
       ],
       [
         callbackButton('◀️', 'К выбору названия', {
-          source: DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_NAME,
+          type: DevicesClientCallbackButtonType.AddDeviceBackToSetName,
         }),
       ],
       [
         callbackButton('◀️', 'К устройствам', {
-          source: DevicesClientCallbackButtonSource.BACK_TO_STATUS,
+          type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
     ],
   });
 }
 
-export function getAddDeviceSetMacResponse(addDevicePayload: AddDevicePayload): ImmediateTextResponse {
-  return new ImmediateTextResponse({
-    text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type'])}
+export function getAddDeviceSetMacAction(addDevicePayload: AddDevicePayload): MessageAction {
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type'])}
 
 
 ${Markdown.italic('Введите MAC устройства')}`,
-    keyboard: [
+    },
+    replyMarkup: [
       [
         callbackButton('◀️', 'К выбору типа', {
-          source: DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_TYPE,
+          type: DevicesClientCallbackButtonType.AddDeviceBackToSetType,
         }),
       ],
       [
         callbackButton('◀️', 'К устройствам', {
-          source: DevicesClientCallbackButtonSource.BACK_TO_STATUS,
+          type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
     ],
   });
 }
 
-export function getAddDeviceSetAddressResponse(addDevicePayload: AddDevicePayload): ImmediateTextResponse {
-  return new ImmediateTextResponse({
-    text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type', 'mac'])}
+export function getAddDeviceSetAddressAction(addDevicePayload: AddDevicePayload): MessageAction {
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type', 'mac'])}
 
 
 ${Markdown.italic('Введите адрес устройства')}`,
-    keyboard: [
+    },
+    replyMarkup: [
       [
         callbackButton('◀️', 'К вводу MAC', {
-          source: DevicesClientCallbackButtonSource.ADD_DEVICE_BACK_TO_SET_MAC,
+          type: DevicesClientCallbackButtonType.AddDeviceBackToSetMac,
         }),
       ],
       [
         callbackButton('◀️', 'К устройствам', {
-          source: DevicesClientCallbackButtonSource.BACK_TO_STATUS,
+          type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
     ],
   });
 }
 
-export async function getDeviceResponse(
-  deviceId: number,
-  withDeleteConfirm: boolean = false,
-): Promise<ImmediateTextResponse> {
+export async function getDeviceAction(deviceId: number, withDeleteConfirm: boolean = false): Promise<MessageAction> {
   const device = await prisma.device.findUnique({
     where: {
       id: deviceId,
@@ -212,35 +224,38 @@ export async function getDeviceResponse(
     throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
   }
 
-  return new ImmediateTextResponse({
-    text: formatDeviceFields(device, ['name', 'type', 'mac', 'address']),
-    keyboard: [
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: formatDeviceFields(device, ['name', 'type', 'mac', 'address']),
+    },
+    replyMarkup: [
       [
         refreshCallbackButton({
-          source: DevicesClientCallbackButtonSource.DEVICE_REFRESH,
+          type: DevicesClientCallbackButtonType.DeviceRefresh,
           deviceId,
         }),
         deleteCallbackButton(
           withDeleteConfirm,
           {
-            source: DevicesClientCallbackButtonSource.DEVICE_DELETE_CONFIRM,
+            type: DevicesClientCallbackButtonType.DeviceDeleteConfirm,
             deviceId,
           },
           {
-            source: DevicesClientCallbackButtonSource.DEVICE_DELETE,
+            type: DevicesClientCallbackButtonType.DeviceDelete,
             deviceId,
           },
         ),
       ],
       [
         callbackButton('🟢', 'Включить', {
-          source: DevicesClientCallbackButtonSource.DEVICE_TURN_ON,
+          type: DevicesClientCallbackButtonType.DeviceTurnOn,
           deviceId,
         }),
       ],
       [
         callbackButton('◀️', 'К списку', {
-          source: DevicesClientCallbackButtonSource.BACK_TO_DEVICES_LIST,
+          type: DevicesClientCallbackButtonType.BackToDevicesList,
         }),
       ],
     ],
