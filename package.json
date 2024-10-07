@@ -80,6 +80,7 @@
     "webpack-dev-middleware": "^6.1.1",
     "webtorrent": "^2.5.1",
     "yandex-dialogs-sdk": "^2.3.0",
+    "yeelight-control": "^1.0.3",
     "zod": "^3.22.4"
   }
 }

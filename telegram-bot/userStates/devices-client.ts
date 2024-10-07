@@ -8,8 +8,13 @@ import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/dev
 import { isMac } from 'devices-client/utilities/is';
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
 import { callbackButton } from 'telegram-bot/utilities/keyboard';
+import { isDefined } from 'utilities/is';
 
-import { getAddDeviceSetAddressAction, getAddDeviceSetTypeAction } from 'telegram-bot/actions/devices-client';
+import {
+  getAddDeviceSetAddressAction,
+  getAddDeviceSetManufacturerAction,
+  getAddDeviceSetTypeAction,
+} from 'telegram-bot/actions/devices-client';
 import { userDataProvider } from 'telegram-bot/bot';
 
 const BACK_TO_STATUS_BUTTON = callbackButton('◀️', 'К устройствам', {
@@ -65,10 +70,18 @@ userDataProvider.handle(TelegramUserState.AddDeviceSetType, async ({ user }) => 
   return getAddDeviceSetTypeAction(getAddDevicePayload(user.data.addDevicePayload));
 });
 
-userDataProvider.handle(TelegramUserState.AddDeviceSetMac, async ({ message, user }) => {
-  const mac = message.text?.toUpperCase();
+userDataProvider.handle(TelegramUserState.AddDeviceSetManufacturer, async ({ user }) => {
+  return getAddDeviceSetManufacturerAction(getAddDevicePayload(user.data.addDevicePayload));
+});
 
-  if (!mac || !isMac(mac)) {
+userDataProvider.handle(TelegramUserState.AddDeviceSetMac, async ({ message, user }) => {
+  let mac: string | null = message.text?.toUpperCase() ?? '';
+
+  if (mac === '-') {
+    mac = null;
+  }
+
+  if (isDefined(mac) && !isMac(mac)) {
     return new MessageAction({
       content: {
         type: 'text',
@@ -78,7 +91,7 @@ userDataProvider.handle(TelegramUserState.AddDeviceSetMac, async ({ message, use
     });
   }
 
-  if (!(await devicesClient.isMacAllowed(mac))) {
+  if (isDefined(mac) && !(await devicesClient.isMacAllowed(mac))) {
     return new MessageAction({
       content: {
         type: 'text',
@@ -131,7 +144,7 @@ userDataProvider.handle(TelegramUserState.AddDeviceSetAddress, async ({ message,
     addDevicePayload: null,
   });
 
-  await devicesClient.addDevice({
+  const device = await devicesClient.addDevice({
     ...getAddDevicePayload(user.data.addDevicePayload),
     address,
   });
@@ -141,6 +154,13 @@ userDataProvider.handle(TelegramUserState.AddDeviceSetAddress, async ({ message,
       type: 'text',
       text: 'Устройство добавлено!',
     },
-    replyMarkup: [[BACK_TO_STATUS_BUTTON]],
+    replyMarkup: [
+      [
+        callbackButton('▶️', 'Подробнее', {
+          type: DevicesClientCallbackButtonType.NavigateToDevice,
+          deviceId: device.id,
+        }),
+      ],
+    ],
   });
 });

@@ -1,7 +1,7 @@
-import { Device, DeviceType } from '@prisma/client';
+import { Device, DeviceManufacturer, DeviceType } from '@prisma/client';
 import { Markdown } from '@tg-sensei/bot';
+import devicesClient from 'devices-client/client';
 
-import prisma from 'db/prisma';
 import { getPaginationInfo } from 'db/utilities/pagination';
 
 import { AddDevicePayload, AddDevicePayloadField } from 'devices-client/types/device';
@@ -18,7 +18,6 @@ import {
   listCallbackButton,
   refreshCallbackButton,
 } from 'telegram-bot/utilities/keyboard';
-import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 const ADD_DEVICE_FIELDS_INFO: Record<AddDevicePayloadField, { icon: string; name: string }> = {
   name: {
@@ -28,6 +27,10 @@ const ADD_DEVICE_FIELDS_INFO: Record<AddDevicePayloadField, { icon: string; name
   type: {
     icon: '🔤',
     name: 'Тип',
+  },
+  manufacturer: {
+    icon: '🏭',
+    name: 'Производитель',
   },
   mac: {
     icon: '🔠',
@@ -41,10 +44,14 @@ const ADD_DEVICE_FIELDS_INFO: Record<AddDevicePayloadField, { icon: string; name
 
 const DEVICE_TYPE_ICON_MAP: Record<DeviceType, string> = {
   [DeviceType.Tv]: '📺',
+  [DeviceType.Lightbulb]: '💡',
+  [DeviceType.Other]: '❓',
 };
 
 const DEVICE_TYPE_NAME_MAP: Record<DeviceType, string> = {
   [DeviceType.Tv]: 'Телевизор',
+  [DeviceType.Lightbulb]: 'Лампочка',
+  [DeviceType.Other]: 'Неизвестно',
 };
 
 export async function getStatusAction(): Promise<MessageAction> {
@@ -144,12 +151,14 @@ ${Markdown.italic('Выберите тип устройства')}`,
     },
     replyMarkup: [
       [
-        ...Object.values(DeviceType).map((deviceType) =>
-          callbackButton(DEVICE_TYPE_ICON_MAP[deviceType], DEVICE_TYPE_NAME_MAP[deviceType], {
-            type: DevicesClientCallbackButtonType.AddDeviceSetType,
-            deviceType,
-          }),
-        ),
+        ...Object.values(DeviceType)
+          .filter((type) => type !== DeviceType.Other)
+          .map((deviceType) =>
+            callbackButton(DEVICE_TYPE_ICON_MAP[deviceType], DEVICE_TYPE_NAME_MAP[deviceType], {
+              type: DevicesClientCallbackButtonType.AddDeviceSetType,
+              deviceType,
+            }),
+          ),
       ],
       [
         callbackButton('◀️', 'К выбору названия', {
@@ -165,19 +174,51 @@ ${Markdown.italic('Выберите тип устройства')}`,
   });
 }
 
-export function getAddDeviceSetMacAction(addDevicePayload: AddDevicePayload): MessageAction {
+export function getAddDeviceSetManufacturerAction(addDevicePayload: AddDevicePayload): MessageAction {
   return new MessageAction({
     content: {
       type: 'text',
       text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type'])}
 
 
-${Markdown.italic('Введите MAC устройства')}`,
+${Markdown.italic('Выберите производителя устройства')}`,
     },
     replyMarkup: [
       [
+        ...Object.values(DeviceManufacturer).map((manufacturer) =>
+          callbackButton('', manufacturer === DeviceType.Other ? 'Другой' : manufacturer, {
+            type: DevicesClientCallbackButtonType.AddDeviceSetManufacturer,
+            manufacturer,
+          }),
+        ),
+      ],
+      [
         callbackButton('◀️', 'К выбору типа', {
           type: DevicesClientCallbackButtonType.AddDeviceBackToSetType,
+        }),
+      ],
+      [
+        callbackButton('◀️', 'К устройствам', {
+          type: DevicesClientCallbackButtonType.BackToStatus,
+        }),
+      ],
+    ],
+  });
+}
+
+export function getAddDeviceSetMacAction(addDevicePayload: AddDevicePayload): MessageAction {
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type', 'manufacturer'])}
+
+
+${Markdown.italic('Введите MAC устройства. Вбейте "-", чтобы пропустить')}`,
+    },
+    replyMarkup: [
+      [
+        callbackButton('◀️', 'К выбору производителя', {
+          type: DevicesClientCallbackButtonType.AddDeviceBackToSetManufacturer,
         }),
       ],
       [
@@ -193,7 +234,7 @@ export function getAddDeviceSetAddressAction(addDevicePayload: AddDevicePayload)
   return new MessageAction({
     content: {
       type: 'text',
-      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type', 'mac'])}
+      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type', 'manufacturer', 'mac'])}
 
 
 ${Markdown.italic('Введите адрес устройства')}`,
@@ -214,20 +255,21 @@ ${Markdown.italic('Введите адрес устройства')}`,
 }
 
 export async function getDeviceAction(deviceId: number, withDeleteConfirm: boolean = false): Promise<MessageAction> {
-  const device = await prisma.device.findUnique({
-    where: {
-      id: deviceId,
-    },
-  });
-
-  if (!device) {
-    throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
-  }
+  const deviceInfo = await devicesClient.getDeviceInfo(deviceId);
+  const { state: deviceState } = deviceInfo;
 
   return new MessageAction({
     content: {
       type: 'text',
-      text: formatDeviceFields(device, ['name', 'type', 'mac', 'address']),
+      text: Markdown.create`${formatDeviceFields(deviceInfo, ['name', 'type', 'manufacturer', 'mac', 'address'])}
+
+${Markdown.bold('⚡ Питание:')} ${
+        deviceState.power === 'unknown'
+          ? Markdown.italic('Неизвестно')
+          : deviceState.power
+            ? '🟢 Включено'
+            : '🔴 Выключено'
+      }`,
     },
     replyMarkup: [
       [
@@ -248,10 +290,15 @@ export async function getDeviceAction(deviceId: number, withDeleteConfirm: boole
         ),
       ],
       [
-        callbackButton('🟢', 'Включить', {
-          type: DevicesClientCallbackButtonType.DeviceTurnOn,
-          deviceId,
-        }),
+        deviceState.power === true
+          ? callbackButton('🔴', 'Выключить', {
+              type: DevicesClientCallbackButtonType.DeviceTurnOff,
+              deviceId,
+            })
+          : callbackButton('🟢', 'Включить', {
+              type: DevicesClientCallbackButtonType.DeviceTurnOn,
+              deviceId,
+            }),
       ],
       [
         callbackButton('◀️', 'К списку', {
@@ -290,8 +337,14 @@ export function formatDeviceField<Field extends AddDevicePayloadField>(
     field === 'type'
       ? Markdown.create`${DEVICE_TYPE_ICON_MAP[value as DeviceType]} ${DEVICE_TYPE_NAME_MAP[value as DeviceType]}`
       : field === 'mac'
-        ? Markdown.fixedWidth(value)
-        : value;
+        ? value
+          ? Markdown.fixedWidth(value)
+          : Markdown.italic('Отсутствует')
+        : field === 'manufacturer'
+          ? value === DeviceManufacturer.Other
+            ? Markdown.italic('Неизвестно')
+            : value
+          : value;
 
   return Markdown.create`${ADD_DEVICE_FIELDS_INFO[field].icon} ${Markdown.bold(
     ADD_DEVICE_FIELDS_INFO[field].name,

@@ -10,6 +10,7 @@ export enum ErrorCode {
   COMMAND_ERROR = 'COMMAND_ERROR',
   NETWORK_ERROR = 'NETWORK_ERROR',
   TIMEOUT = 'TIMEOUT',
+  NO_MAC = 'NO_MAC',
 }
 
 export interface CustomErrorOptions extends ErrorOptions {

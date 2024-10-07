@@ -11,6 +11,7 @@ import RefreshDataAction from 'telegram-bot/utilities/actions/RefreshDataAction'
 
 import {
   getAddDeviceSetMacAction,
+  getAddDeviceSetManufacturerAction,
   getAddDeviceSetNameAction,
   getAddDeviceSetTypeAction,
   getDeviceAction,
@@ -85,6 +86,21 @@ callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetType, as
 
   await userDataProvider.setUserData(user.id, {
     ...user.data,
+    state: TelegramUserState.AddDeviceSetManufacturer,
+    addDevicePayload: newPayload,
+  });
+
+  return getAddDeviceSetManufacturerAction(newPayload);
+});
+
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetManufacturer, async ({ data, user }) => {
+  const newPayload = {
+    ...getAddDevicePayload(user.data.addDevicePayload),
+    manufacturer: data.manufacturer,
+  };
+
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
     state: TelegramUserState.AddDeviceSetMac,
     addDevicePayload: newPayload,
   });
@@ -101,6 +117,15 @@ callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetTy
   return getAddDeviceSetTypeAction(getAddDevicePayload(user.data.addDevicePayload));
 });
 
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetManufacturer, async ({ user }) => {
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
+    state: TelegramUserState.AddDeviceSetManufacturer,
+  });
+
+  return getAddDeviceSetManufacturerAction(getAddDevicePayload(user.data.addDevicePayload));
+});
+
 callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetMac, async ({ user }) => {
   await userDataProvider.setUserData(user.id, {
     ...user.data,
@@ -113,7 +138,17 @@ callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetMa
 callbackDataProvider.handle(DevicesClientCallbackButtonType.DeviceTurnOn, async ({ data }) => {
   await devicesClient.turnOnDevice(data.deviceId);
 
-  return new NotificationAction({
+  return new MessageWithNotificationAction({
     text: 'Устройство включено',
+    updateAction: await getDeviceAction(data.deviceId),
+  });
+});
+
+callbackDataProvider.handle(DevicesClientCallbackButtonType.DeviceTurnOff, async ({ data }) => {
+  await devicesClient.turnOffDevice(data.deviceId);
+
+  return new MessageWithNotificationAction({
+    text: 'Устройство выключено',
+    updateAction: await getDeviceAction(data.deviceId),
   });
 });

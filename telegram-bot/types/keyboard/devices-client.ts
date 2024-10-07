@@ -1,5 +1,6 @@
-import { DeviceType } from '@prisma/client';
 import { z } from 'zod';
+
+import { deviceManufacturerSchema, deviceTypeSchema } from 'devices-client/types/device';
 
 export enum DevicesClientCallbackButtonType {
   // Status
@@ -16,8 +17,10 @@ export enum DevicesClientCallbackButtonType {
   // Add device
   AddDevice = 'd1',
   AddDeviceSetType = 'd3',
+  AddDeviceSetManufacturer = 'd16',
   AddDeviceBackToSetName = 'd5',
   AddDeviceBackToSetType = 'd4',
+  AddDeviceBackToSetManufacturer = 'd17',
   AddDeviceBackToSetMac = 'd6',
 
   // Device
@@ -25,9 +28,8 @@ export enum DevicesClientCallbackButtonType {
   DeviceDelete = 'd8',
   DeviceDeleteConfirm = 'd9',
   DeviceTurnOn = 'd15',
+  DeviceTurnOff = 'd18',
 }
-
-export const deviceTypeSchema = z.enum([DeviceType.Tv]);
 
 export const devicesClientCallbackDataSchema = z.union([
   z.object({
@@ -71,11 +73,20 @@ export const devicesClientCallbackDataSchema = z.union([
   }),
 
   z.object({
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetManufacturer),
+    manufacturer: deviceManufacturerSchema,
+  }),
+
+  z.object({
     type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetName),
   }),
 
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetType),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetManufacturer),
   }),
 
   z.object({
@@ -99,6 +110,11 @@ export const devicesClientCallbackDataSchema = z.union([
 
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.DeviceTurnOn),
+    deviceId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.DeviceTurnOff),
     deviceId: z.number(),
   }),
 ]);
