@@ -45,7 +45,7 @@ export default class DevicesClient {
     });
   }
 
-  async getDeviceInfo(deviceId: number): Promise<DeviceInfo> {
+  async getDevice(deviceId: number): Promise<Device> {
     const device = await prisma.device.findUnique({
       where: {
         id: deviceId,
@@ -55,6 +55,12 @@ export default class DevicesClient {
     if (!device) {
       throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
     }
+
+    return device;
+  }
+
+  async getDeviceInfo(deviceId: number): Promise<DeviceInfo> {
+    const device = await this.getDevice(deviceId);
 
     const deviceInfo: DeviceInfo = {
       ...device,
@@ -79,6 +85,15 @@ export default class DevicesClient {
       where: {
         id: deviceId,
       },
+    });
+  }
+
+  async editDevice(deviceId: number, data: Partial<Device>): Promise<void> {
+    await prisma.device.update({
+      where: {
+        id: deviceId,
+      },
+      data,
     });
   }
 
@@ -107,15 +122,7 @@ export default class DevicesClient {
   }
 
   async turnOffDevice(deviceId: number): Promise<void> {
-    const device = await prisma.device.findUnique({
-      where: {
-        id: deviceId,
-      },
-    });
-
-    if (!device) {
-      throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
-    }
+    const device = await this.getDevice(deviceId);
 
     if (device.type === DeviceType.Lightbulb) {
       if (device.manufacturer === DeviceManufacturer.Yeelight) {
@@ -127,15 +134,7 @@ export default class DevicesClient {
   }
 
   async turnOnDevice(deviceId: number): Promise<void> {
-    const device = await prisma.device.findUnique({
-      where: {
-        id: deviceId,
-      },
-    });
-
-    if (!device) {
-      throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
-    }
+    const device = await this.getDevice(deviceId);
 
     if (device.type === DeviceType.Lightbulb) {
       if (device.manufacturer === DeviceManufacturer.Yeelight) {

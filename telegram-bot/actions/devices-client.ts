@@ -1,11 +1,12 @@
 import { Device, DeviceManufacturer, DeviceType } from '@prisma/client';
-import { Markdown } from '@tg-sensei/bot';
+import { InlineKeyboard, Markdown } from '@tg-sensei/bot';
 import devicesClient from 'devices-client/client';
 
 import { getPaginationInfo } from 'db/utilities/pagination';
 
 import { AddDevicePayload, AddDevicePayloadField } from 'devices-client/types/device';
 import { MessageAction } from 'telegram-bot/types/actions';
+import { CallbackData } from 'telegram-bot/types/keyboard';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 import { RootCallbackButtonType } from 'telegram-bot/types/keyboard/root';
 
@@ -13,6 +14,7 @@ import PaginationMessageAction from 'telegram-bot/utilities/actions/PaginationMe
 import {
   addCallbackButton,
   backCallbackButton,
+  backToCallbackButton,
   callbackButton,
   deleteCallbackButton,
   listCallbackButton,
@@ -132,7 +134,7 @@ export function getAddDeviceSetNameAction(): MessageAction {
     },
     replyMarkup: [
       [
-        callbackButton('◀️', 'К устройствам', {
+        backToCallbackButton('К устройствам', {
           type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
@@ -161,12 +163,12 @@ ${Markdown.italic('Выберите тип устройства')}`,
           ),
       ],
       [
-        callbackButton('◀️', 'К выбору названия', {
+        backToCallbackButton('К выбору названия', {
           type: DevicesClientCallbackButtonType.AddDeviceBackToSetName,
         }),
       ],
       [
-        callbackButton('◀️', 'К устройствам', {
+        backToCallbackButton('К устройствам', {
           type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
@@ -193,12 +195,12 @@ ${Markdown.italic('Выберите производителя устройст�
         ),
       ],
       [
-        callbackButton('◀️', 'К выбору типа', {
+        backToCallbackButton('К выбору типа', {
           type: DevicesClientCallbackButtonType.AddDeviceBackToSetType,
         }),
       ],
       [
-        callbackButton('◀️', 'К устройствам', {
+        backToCallbackButton('К устройствам', {
           type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
@@ -217,12 +219,12 @@ ${Markdown.italic('Введите MAC устройства. Вбейте "-", ч
     },
     replyMarkup: [
       [
-        callbackButton('◀️', 'К выбору производителя', {
+        backToCallbackButton('К выбору производителя', {
           type: DevicesClientCallbackButtonType.AddDeviceBackToSetManufacturer,
         }),
       ],
       [
-        callbackButton('◀️', 'К устройствам', {
+        backToCallbackButton('К устройствам', {
           type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
@@ -241,12 +243,12 @@ ${Markdown.italic('Введите адрес устройства')}`,
     },
     replyMarkup: [
       [
-        callbackButton('◀️', 'К вводу MAC', {
+        backToCallbackButton('К вводу MAC', {
           type: DevicesClientCallbackButtonType.AddDeviceBackToSetMac,
         }),
       ],
       [
-        callbackButton('◀️', 'К устройствам', {
+        backToCallbackButton('К устройствам', {
           type: DevicesClientCallbackButtonType.BackToStatus,
         }),
       ],
@@ -301,7 +303,57 @@ ${Markdown.bold('⚡ Питание:')} ${
             }),
       ],
       [
-        callbackButton('◀️', 'К списку', {
+        callbackButton('✏️', 'Редактировать', {
+          type: DevicesClientCallbackButtonType.DeviceEdit,
+          deviceId,
+        }),
+      ],
+      [
+        backToCallbackButton('К списку устройств', {
+          type: DevicesClientCallbackButtonType.BackToDevicesList,
+        }),
+      ],
+    ],
+  });
+}
+
+export async function getEditDeviceAction(deviceId: number): Promise<MessageAction> {
+  const device = await devicesClient.getDevice(deviceId);
+
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: Markdown.create`${Markdown.bold('Редактирование устройства')}
+
+${formatDeviceFields(device, ['name', 'type', 'manufacturer', 'mac', 'address'])}`,
+    },
+    replyMarkup: [
+      [
+        callbackButton('🅰️️', 'Изменить название', {
+          type: DevicesClientCallbackButtonType.EditDeviceName,
+          deviceId,
+        }),
+        callbackButton('🏭️', 'Изменить производителя', {
+          type: DevicesClientCallbackButtonType.EditDeviceManufacturer,
+          deviceId,
+        }),
+      ],
+      [
+        callbackButton('🔠️', 'Изменить MAC', {
+          type: DevicesClientCallbackButtonType.EditDeviceMac,
+          deviceId,
+        }),
+        callbackButton('🌐️', 'Изменить адрес', {
+          type: DevicesClientCallbackButtonType.EditDeviceAddress,
+          deviceId,
+        }),
+      ],
+      [
+        backToCallbackButton('К устройству', {
+          type: DevicesClientCallbackButtonType.BackToDevice,
+          deviceId,
+        }),
+        backToCallbackButton('К списку', {
           type: DevicesClientCallbackButtonType.BackToDevicesList,
         }),
       ],
@@ -353,4 +405,24 @@ export function formatDeviceField<Field extends AddDevicePayloadField>(
 
 export function formatDevice(device: Device): Markdown {
   return formatDeviceFields(device, ['name', 'type']);
+}
+
+export function getBackToEditDeviceKeyboard(deviceId: number): InlineKeyboard<CallbackData> {
+  return [
+    [
+      backToCallbackButton('К редактированию', {
+        type: DevicesClientCallbackButtonType.BackToEditDevice,
+        deviceId,
+      }),
+    ],
+    [
+      backToCallbackButton('К устройству', {
+        type: DevicesClientCallbackButtonType.BackToDevice,
+        deviceId,
+      }),
+      backToCallbackButton('К списку', {
+        type: DevicesClientCallbackButtonType.BackToDevicesList,
+      }),
+    ],
+  ];
 }

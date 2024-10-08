@@ -29,6 +29,16 @@ export enum DevicesClientCallbackButtonType {
   DeviceDeleteConfirm = 'd9',
   DeviceTurnOn = 'd15',
   DeviceTurnOff = 'd18',
+  DeviceEdit = 'd19',
+  BackToDevice = 'd24',
+
+  // Edit device
+  EditDeviceName = 'd20',
+  EditDeviceManufacturer = 'd21',
+  EditDeviceSetManufacturer = 'd26',
+  EditDeviceMac = 'd22',
+  EditDeviceAddress = 'd23',
+  BackToEditDevice = 'd25',
 }
 
 export const devicesClientCallbackDataSchema = z.union([
@@ -115,6 +125,47 @@ export const devicesClientCallbackDataSchema = z.union([
 
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.DeviceTurnOff),
+    deviceId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.DeviceEdit),
+    deviceId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.BackToDevice),
+    deviceId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.EditDeviceName),
+    deviceId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.EditDeviceManufacturer),
+    deviceId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.EditDeviceSetManufacturer),
+    deviceId: z.number(),
+    manufacturer: deviceManufacturerSchema,
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.EditDeviceMac),
+    deviceId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.EditDeviceAddress),
+    deviceId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.BackToEditDevice),
     deviceId: z.number(),
   }),
 ]);

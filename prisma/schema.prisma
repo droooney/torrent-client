@@ -81,6 +81,9 @@ enum TelegramUserState {
   AddDeviceSetManufacturer
   AddDeviceSetMac
   AddDeviceSetAddress
+  EditDeviceName
+  EditDeviceMac
+  EditDeviceAddress
 
   // Torrent client
   SearchRutracker
@@ -92,9 +95,10 @@ enum TelegramUserState {
 model TelegramUserData {
   @@map("telegram_user_data")
 
-  telegramUserId   Int               @map("telegram_user_id") @unique()
-  state            TelegramUserState
-  addDevicePayload Json?             @map("add_device_payload")
+  telegramUserId    Int               @map("telegram_user_id") @unique()
+  state             TelegramUserState
+  addDevicePayload  Json?             @map("add_device_payload")
+  editDevicePayload Json?             @map("edit_device_payload")
 }
 
 model TelegramCallbackData {

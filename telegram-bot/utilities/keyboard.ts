@@ -8,8 +8,12 @@ export function callbackButton(icon: string, text: string, callbackData: Callbac
   };
 }
 
+export function backToCallbackButton(text: string, callbackData: CallbackData): CallbackInlineKeyboardButton {
+  return callbackButton('◀️', text, callbackData);
+}
+
 export function backCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {
-  return callbackButton('◀️', 'Назад', callbackData);
+  return backToCallbackButton('Назад', callbackData);
 }
 
 export function refreshCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {

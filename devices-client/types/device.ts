@@ -17,6 +17,12 @@ export const addDevicePayloadSchema = z.object({
   address: z.string(),
 });
 
-export type AddDevicePayload = z.infer<typeof addDevicePayloadSchema>;
+export type AddDevicePayload = z.TypeOf<typeof addDevicePayloadSchema>;
 
 export type AddDevicePayloadField = keyof AddDevicePayload;
+
+export const editDevicePayloadSchema = z.object({
+  deviceId: z.number(),
+});
+
+export type EditDevicePayload = z.TypeOf<typeof editDevicePayloadSchema>;

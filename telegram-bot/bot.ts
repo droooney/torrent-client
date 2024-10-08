@@ -79,6 +79,7 @@ export const userDataProvider = new JsonUserDataProvider<CommandType, CallbackDa
       data: {
         ...data,
         addDevicePayload: data.addDevicePayload ?? Prisma.DbNull,
+        editDevicePayload: data.editDevicePayload ?? Prisma.DbNull,
       },
     });
   },

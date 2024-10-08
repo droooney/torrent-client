@@ -17,6 +17,7 @@ import PaginationMessageAction from 'telegram-bot/utilities/actions/PaginationMe
 import {
   addCallbackButton,
   backCallbackButton,
+  backToCallbackButton,
   callbackButton,
   deleteCallbackButton,
   listCallbackButton,
@@ -353,7 +354,7 @@ export async function getTorrentAction(infoHash: string, withDeleteConfirm: bool
         }),
       ],
       [
-        callbackButton('◀️', 'К списку', {
+        backToCallbackButton('К списку', {
           type: TorrentClientCallbackButtonType.TorrentBackToList,
         }),
       ],
@@ -420,7 +421,7 @@ export async function getFilesAction(
       ],
       ...paginationButtons,
       [
-        callbackButton('◀️', 'К торренту', {
+        backToCallbackButton('К торренту', {
           type: TorrentClientCallbackButtonType.FilesListBackToTorrent,
           torrentId: infoHash,
         }),
@@ -482,7 +483,7 @@ export async function getFileAction(fileId: number, withDeleteConfirm: boolean =
         ),
       ],
       [
-        callbackButton('◀️', 'К файлам', {
+        backToCallbackButton('К файлам', {
           type: TorrentClientCallbackButtonType.BackToFilesList,
           torrentId: file.torrentId,
         }),
