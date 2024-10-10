@@ -9,6 +9,7 @@ import { formatScenario } from 'telegram-bot/utilities/actions/scenarios-manager
 import {
   activateCallbackButton,
   backToCallbackButton,
+  callbackButton,
   deleteCallbackButton,
   editCallbackButton,
   refreshCallbackButton,
@@ -78,6 +79,12 @@ export async function getScenarioAction(
           scenarioId,
           isActive: !isActive,
         })),
+      ],
+      [
+        callbackButton('🔨', 'Шаги', {
+          type: ScenariosManagerCallbackButtonType.OpenScenarioSteps,
+          scenarioId,
+        }),
       ],
       [
         editCallbackButton({

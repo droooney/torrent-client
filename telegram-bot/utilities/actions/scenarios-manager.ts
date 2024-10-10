@@ -19,6 +19,19 @@ export function formatScenario(scenario: Scenario, options: FormatScenarioOption
 ${scenario.isActive ? '🟢' : '🔴'} ${Markdown.bold('Статус:')} ${scenario.isActive ? 'Активен' : 'Не активен'}`;
 }
 
+export type FormatScenarioStepOptions = {
+  indexString?: string;
+};
+
+export function formatScenarioStep(scenarioStep: Scenario, options: FormatScenarioStepOptions = {}): Markdown {
+  const { indexString } = options;
+
+  return Markdown.create`🅰️ ${Markdown.bold('Название')}: ${indexString && Markdown.create`${indexString} `}${
+    scenarioStep.name
+  }
+${scenarioStep.isActive ? '🟢' : '🔴'} ${Markdown.bold('Статус:')} ${scenarioStep.isActive ? 'Активен' : 'Не активен'}`;
+}
+
 export function getBackToEditScenarioKeyboard(scenarioId: number): InlineKeyboard {
   return [
     [

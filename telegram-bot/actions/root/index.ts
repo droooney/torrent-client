@@ -49,7 +49,7 @@ async function getRootAction(): Promise<MessageAction> {
         }),
       ],
       [
-        callbackButton('🔢', 'Сценарии', {
+        callbackButton('📋', 'Сценарии', {
           type: ScenariosManagerCallbackButtonType.OpenStatus,
         }),
       ],
