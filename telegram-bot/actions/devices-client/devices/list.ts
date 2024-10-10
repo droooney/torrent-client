@@ -12,12 +12,9 @@ import { backCallbackButton, callbackButton, refreshCallbackButton } from 'teleg
 
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(
-  [DevicesClientCallbackButtonType.OpenDevicesList, DevicesClientCallbackButtonType.DevicesListPage],
-  async ({ data }) => {
-    return getDevicesListAction('page' in data ? data.page : 0);
-  },
-);
+callbackDataProvider.handle(DevicesClientCallbackButtonType.OpenDevicesList, async ({ data }) => {
+  return getDevicesListAction(data.page);
+});
 
 callbackDataProvider.handle(DevicesClientCallbackButtonType.RefreshDevicesList, async ({ data }) => {
   return new RefreshDataAction(await getDevicesListAction(data.page));
@@ -38,7 +35,7 @@ export async function getDevicesListAction(page: number = 0): Promise<Pagination
         pagination: options,
       }),
     getPageButtonCallbackData: (page) => ({
-      type: DevicesClientCallbackButtonType.DevicesListPage,
+      type: DevicesClientCallbackButtonType.OpenDevicesList,
       page,
     }),
     getItemButton: (device) =>

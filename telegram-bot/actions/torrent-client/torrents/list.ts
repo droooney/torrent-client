@@ -12,12 +12,9 @@ import { backCallbackButton, callbackButton, refreshCallbackButton } from 'teleg
 
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(
-  [TorrentClientCallbackButtonType.OpenTorrentsList, TorrentClientCallbackButtonType.TorrentsListPage],
-  async ({ data }) => {
-    return getTorrentsListAction('page' in data ? data.page : 0);
-  },
-);
+callbackDataProvider.handle(TorrentClientCallbackButtonType.OpenTorrentsList, async ({ data }) => {
+  return getTorrentsListAction(data.page);
+});
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentsListRefresh, async ({ data }) => {
   return new RefreshDataAction(await getTorrentsListAction(data.page));
@@ -44,7 +41,7 @@ export async function getTorrentsListAction(page: number = 0): Promise<Paginatio
       };
     },
     getPageButtonCallbackData: (page) => ({
-      type: TorrentClientCallbackButtonType.TorrentsListPage,
+      type: TorrentClientCallbackButtonType.OpenTorrentsList,
       page,
     }),
     getItemButton: (torrent, indexIcon) =>

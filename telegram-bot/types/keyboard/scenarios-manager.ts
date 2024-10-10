@@ -8,7 +8,6 @@ export enum ScenariosManagerCallbackButtonType {
 
   // Scenarios list
   OpenScenariosList = 'sc0',
-  ScenariosListPage = 'sc1',
   RefreshScenariosList = 'sc2',
 
   // Add scenario
@@ -44,11 +43,7 @@ export const scenariosManagerCallbackDataSchema = z.union([
 
   z.object({
     type: z.literal(ScenariosManagerCallbackButtonType.OpenScenariosList),
-  }),
-
-  z.object({
-    type: z.literal(ScenariosManagerCallbackButtonType.ScenariosListPage),
-    page: z.number(),
+    page: z.optional(z.number()),
   }),
 
   z.object({

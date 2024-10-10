@@ -14,12 +14,9 @@ import TorrentClient from 'torrent-client/utilities/TorrentClient';
 
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(
-  [TorrentClientCallbackButtonType.OpenFiles, TorrentClientCallbackButtonType.FilesListPage],
-  async ({ data }) => {
-    return getFilesAction(data.torrentId, 'page' in data ? data.page : 0);
-  },
-);
+callbackDataProvider.handle(TorrentClientCallbackButtonType.OpenFiles, async ({ data }) => {
+  return getFilesAction(data.torrentId, data.page);
+});
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.FilesListRefresh, async ({ data }) => {
   return new RefreshDataAction(await getFilesAction(data.torrentId, data.page));
@@ -51,7 +48,7 @@ export async function getFilesAction(
         pagination: options,
       }),
     getPageButtonCallbackData: (page) => ({
-      type: TorrentClientCallbackButtonType.FilesListPage,
+      type: TorrentClientCallbackButtonType.OpenFiles,
       torrentId: infoHash,
       page,
     }),

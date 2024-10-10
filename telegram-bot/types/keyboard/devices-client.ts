@@ -11,7 +11,6 @@ export enum DevicesClientCallbackButtonType {
   // Devices list
   OpenDevicesList = 'd10',
   RefreshDevicesList = 'd13',
-  DevicesListPage = 'd12',
 
   // Add device
   AddDevice = 'd1',
@@ -50,15 +49,11 @@ export const devicesClientCallbackDataSchema = z.union([
 
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.OpenDevicesList),
+    page: z.optional(z.number()),
   }),
 
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.RefreshDevicesList),
-    page: z.number(),
-  }),
-
-  z.object({
-    type: z.literal(DevicesClientCallbackButtonType.DevicesListPage),
     page: z.number(),
   }),
 

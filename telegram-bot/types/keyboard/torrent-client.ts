@@ -9,7 +9,6 @@ export enum TorrentClientCallbackButtonType {
 
   // Torrent list
   OpenTorrentsList = 't3',
-  TorrentsListPage = 't5',
   TorrentsListRefresh = 't6',
 
   // Torrent
@@ -22,7 +21,6 @@ export enum TorrentClientCallbackButtonType {
 
   // File list
   OpenFiles = 't13',
-  FilesListPage = 't14',
   FilesListRefresh = 't15',
 
   // File
@@ -55,11 +53,7 @@ export const torrentClientCallbackDataSchema = z.union([
 
   z.object({
     type: z.literal(TorrentClientCallbackButtonType.OpenTorrentsList),
-  }),
-
-  z.object({
-    type: z.literal(TorrentClientCallbackButtonType.TorrentsListPage),
-    page: z.number(),
+    page: z.optional(z.number()),
   }),
 
   z.object({
@@ -97,12 +91,7 @@ export const torrentClientCallbackDataSchema = z.union([
   z.object({
     type: z.literal(TorrentClientCallbackButtonType.OpenFiles),
     torrentId: z.string(),
-  }),
-
-  z.object({
-    type: z.literal(TorrentClientCallbackButtonType.FilesListPage),
-    torrentId: z.string(),
-    page: z.number(),
+    page: z.optional(z.number()),
   }),
 
   z.object({
