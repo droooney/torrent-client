@@ -18,14 +18,11 @@ import {
 import { getScenariosListAction } from 'telegram-bot/actions/scenarios-manager/scenarios/list';
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(
-  [ScenariosManagerCallbackButtonType.OpenScenario, ScenariosManagerCallbackButtonType.ScenarioDelete],
-  async ({ data }) => {
-    return getScenarioAction(data.scenarioId, {
-      withDeleteConfirm: data.type === ScenariosManagerCallbackButtonType.ScenarioDelete,
-    });
-  },
-);
+callbackDataProvider.handle(ScenariosManagerCallbackButtonType.OpenScenario, async ({ data }) => {
+  return getScenarioAction(data.scenarioId, {
+    withDeleteConfirm: data.withDeleteConfirm,
+  });
+});
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.RefreshSScenario, async ({ data }) => {
   return new RefreshDataAction(await getScenarioAction(data.scenarioId));
@@ -98,8 +95,9 @@ export async function getScenarioAction(
             scenarioId,
           },
           {
-            type: ScenariosManagerCallbackButtonType.ScenarioDelete,
+            type: ScenariosManagerCallbackButtonType.OpenScenario,
             scenarioId,
+            withDeleteConfirm: true,
           },
         ),
       ],

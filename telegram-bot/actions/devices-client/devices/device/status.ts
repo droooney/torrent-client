@@ -20,15 +20,12 @@ import {
 import { getDevicesListAction } from 'telegram-bot/actions/devices-client/devices/list';
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(
-  [DevicesClientCallbackButtonType.OpenDevice, DevicesClientCallbackButtonType.DeviceDelete],
-  async ({ data }) => {
-    return getDeviceAction(data.deviceId, {
-      withDeleteConfirm: data.type === DevicesClientCallbackButtonType.DeviceDelete,
-      timeout: SECOND,
-    });
-  },
-);
+callbackDataProvider.handle(DevicesClientCallbackButtonType.OpenDevice, async ({ data }) => {
+  return getDeviceAction(data.deviceId, {
+    withDeleteConfirm: data.withDeleteConfirm,
+    timeout: SECOND,
+  });
+});
 
 callbackDataProvider.handle(DevicesClientCallbackButtonType.DeviceRefresh, async ({ data }) => {
   return new RefreshDataAction(await getDeviceAction(data.deviceId));
@@ -97,8 +94,9 @@ ${Markdown.bold('⚡ Питание:')} ${
             deviceId,
           },
           {
-            type: DevicesClientCallbackButtonType.DeviceDelete,
+            type: DevicesClientCallbackButtonType.OpenDevice,
             deviceId,
+            withDeleteConfirm: true,
           },
         ),
       ],

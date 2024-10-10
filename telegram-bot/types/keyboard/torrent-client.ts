@@ -14,7 +14,6 @@ export enum TorrentClientCallbackButtonType {
   // Torrent
   OpenTorrent = 't23',
   TorrentRefresh = 't7',
-  TorrentDelete = 't8',
   TorrentDeleteConfirm = 't9',
   TorrentPause = 't10',
   TorrentSetCritical = 't11',
@@ -26,7 +25,6 @@ export enum TorrentClientCallbackButtonType {
   // File
   OpenFile = 't17',
   FileRefresh = 't18',
-  DeleteFile = 't19',
   DeleteFileConfirm = 't20',
 
   // Misc
@@ -67,11 +65,6 @@ export const torrentClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(TorrentClientCallbackButtonType.TorrentDelete),
-    torrentId: z.string(),
-  }),
-
-  z.object({
     type: z.literal(TorrentClientCallbackButtonType.TorrentDeleteConfirm),
     torrentId: z.string(),
   }),
@@ -103,15 +96,11 @@ export const torrentClientCallbackDataSchema = z.union([
   z.object({
     type: z.literal(TorrentClientCallbackButtonType.OpenFile),
     fileId: z.number(),
+    withDeleteConfirm: z.optional(z.boolean()),
   }),
 
   z.object({
     type: z.literal(TorrentClientCallbackButtonType.FileRefresh),
-    fileId: z.number(),
-  }),
-
-  z.object({
-    type: z.literal(TorrentClientCallbackButtonType.DeleteFile),
     fileId: z.number(),
   }),
 
@@ -127,6 +116,7 @@ export const torrentClientCallbackDataSchema = z.union([
   z.object({
     type: z.literal(TorrentClientCallbackButtonType.OpenTorrent),
     torrentId: z.string(),
+    withDeleteConfirm: z.optional(z.boolean()),
   }),
 
   z.object({

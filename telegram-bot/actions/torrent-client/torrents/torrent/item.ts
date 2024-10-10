@@ -18,14 +18,11 @@ import {
 import { getTorrentsListAction } from 'telegram-bot/actions/torrent-client/torrents/list';
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(
-  [TorrentClientCallbackButtonType.OpenTorrent, TorrentClientCallbackButtonType.TorrentDelete],
-  async ({ data }) => {
-    return getTorrentAction(data.torrentId, {
-      withDeleteConfirm: data.type === TorrentClientCallbackButtonType.TorrentDelete,
-    });
-  },
-);
+callbackDataProvider.handle(TorrentClientCallbackButtonType.OpenTorrent, async ({ data }) => {
+  return getTorrentAction(data.torrentId, {
+    withDeleteConfirm: data.withDeleteConfirm,
+  });
+});
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentRefresh, async ({ data }) => {
   return new RefreshDataAction(await getTorrentAction(data.torrentId));
@@ -125,8 +122,9 @@ export async function getTorrentAction(
             torrentId: infoHash,
           },
           {
-            type: TorrentClientCallbackButtonType.TorrentDelete,
+            type: TorrentClientCallbackButtonType.OpenTorrent,
             torrentId: infoHash,
+            withDeleteConfirm: true,
           },
         ),
       ],

@@ -17,7 +17,6 @@ export enum ScenariosManagerCallbackButtonType {
   OpenScenario = 'sc3',
   RefreshSScenario = 'sc10',
   ScenarioSetActive = 'sc9',
-  ScenarioDelete = 'sc7',
   ScenarioDeleteConfirm = 'sc8',
 
   // Edit scenario
@@ -58,6 +57,7 @@ export const scenariosManagerCallbackDataSchema = z.union([
   z.object({
     type: z.literal(ScenariosManagerCallbackButtonType.OpenScenario),
     scenarioId: z.number(),
+    withDeleteConfirm: z.optional(z.boolean()),
   }),
 
   z.object({
@@ -69,11 +69,6 @@ export const scenariosManagerCallbackDataSchema = z.union([
     type: z.literal(ScenariosManagerCallbackButtonType.ScenarioSetActive),
     scenarioId: z.number(),
     isActive: z.boolean(),
-  }),
-
-  z.object({
-    type: z.literal(ScenariosManagerCallbackButtonType.ScenarioDelete),
-    scenarioId: z.number(),
   }),
 
   z.object({

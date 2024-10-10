@@ -24,7 +24,6 @@ export enum DevicesClientCallbackButtonType {
   // Device
   OpenDevice = 'd11',
   DeviceRefresh = 'd7',
-  DeviceDelete = 'd8',
   DeviceDeleteConfirm = 'd9',
   DeviceTurnOn = 'd15',
   DeviceTurnOff = 'd18',
@@ -60,6 +59,7 @@ export const devicesClientCallbackDataSchema = z.union([
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.OpenDevice),
     deviceId: z.number(),
+    withDeleteConfirm: z.optional(z.boolean()),
   }),
 
   z.object({
@@ -94,11 +94,6 @@ export const devicesClientCallbackDataSchema = z.union([
 
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.DeviceRefresh),
-    deviceId: z.number(),
-  }),
-
-  z.object({
-    type: z.literal(DevicesClientCallbackButtonType.DeviceDelete),
     deviceId: z.number(),
   }),
 

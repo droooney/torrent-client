@@ -12,12 +12,11 @@ import { backToCallbackButton, deleteCallbackButton, refreshCallbackButton } fro
 import { getFilesAction } from 'telegram-bot/actions/torrent-client/torrents/torrent/files/list';
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(
-  [TorrentClientCallbackButtonType.OpenFile, TorrentClientCallbackButtonType.DeleteFile],
-  async ({ data }) => {
-    return getFileAction(data.fileId, data.type === TorrentClientCallbackButtonType.DeleteFile);
-  },
-);
+callbackDataProvider.handle(TorrentClientCallbackButtonType.OpenFile, async ({ data }) => {
+  return getFileAction(data.fileId, {
+    withDeleteConfirm: data.withDeleteConfirm,
+  });
+});
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.FileRefresh, async ({ data }) => {
   return new RefreshDataAction(await getFileAction(data.fileId));
@@ -36,7 +35,13 @@ callbackDataProvider.handle(TorrentClientCallbackButtonType.DeleteFileConfirm, a
   });
 });
 
-async function getFileAction(fileId: number, withDeleteConfirm: boolean = false): Promise<MessageAction> {
+type GetFileActionOptions = {
+  withDeleteConfirm?: boolean;
+};
+
+async function getFileAction(fileId: number, options: GetFileActionOptions = {}): Promise<MessageAction> {
+  const { withDeleteConfirm = false } = options;
+
   const file = await torrentClient.getFile(fileId);
 
   const [torrent, clientTorrent] = await Promise.all([
@@ -67,8 +72,9 @@ async function getFileAction(fileId: number, withDeleteConfirm: boolean = false)
             fileId,
           },
           {
-            type: TorrentClientCallbackButtonType.DeleteFile,
+            type: TorrentClientCallbackButtonType.OpenFile,
             fileId,
+            withDeleteConfirm: true,
           },
         ),
       ],
