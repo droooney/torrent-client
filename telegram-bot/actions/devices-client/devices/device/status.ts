@@ -10,6 +10,7 @@ import MessageWithNotificationAction from 'telegram-bot/utilities/actions/Messag
 import RefreshDataAction from 'telegram-bot/utilities/actions/RefreshDataAction';
 import { formatDeviceFields } from 'telegram-bot/utilities/actions/devices-client';
 import {
+  activateCallbackButton,
   backToCallbackButton,
   callbackButton,
   deleteCallbackButton,
@@ -102,15 +103,10 @@ ${Markdown.bold('⚡ Питание:')} ${
         ),
       ],
       [
-        deviceState.power === true
-          ? callbackButton('🔴', 'Выключить', {
-              type: DevicesClientCallbackButtonType.DeviceTurnOff,
-              deviceId,
-            })
-          : callbackButton('🟢', 'Включить', {
-              type: DevicesClientCallbackButtonType.DeviceTurnOn,
-              deviceId,
-            }),
+        activateCallbackButton(deviceState.power === true, (isActive) => ({
+          type: isActive ? DevicesClientCallbackButtonType.DeviceTurnOff : DevicesClientCallbackButtonType.DeviceTurnOn,
+          deviceId,
+        })),
       ],
       [
         callbackButton('✏️', 'Редактировать', {

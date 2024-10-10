@@ -97,6 +97,37 @@ export default class DevicesClient {
     });
   }
 
+  async findDevice(query: string): Promise<Device> {
+    const deviceType = findKey(DEVICE_STRING, (strings) => strings.includes(query)) as DeviceType | undefined;
+
+    const device = await prisma.device.findFirst({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: query,
+            },
+          },
+          ...(deviceType
+            ? [
+                {
+                  type: {
+                    in: [deviceType],
+                  },
+                },
+              ]
+            : []),
+        ],
+      },
+    });
+
+    if (!device) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
+    }
+
+    return device;
+  }
+
   async isAddressAllowed(address: string): Promise<boolean> {
     return !(await prisma.device.findFirst({
       where: {
@@ -145,37 +176,6 @@ export default class DevicesClient {
     }
 
     await this.wakeDevice(device);
-  }
-
-  async findDevice(query: string): Promise<Device> {
-    const deviceType = findKey(DEVICE_STRING, (strings) => strings.includes(query)) as DeviceType | undefined;
-
-    const device = await prisma.device.findFirst({
-      where: {
-        OR: [
-          {
-            name: {
-              contains: query,
-            },
-          },
-          ...(deviceType
-            ? [
-                {
-                  type: {
-                    in: [deviceType],
-                  },
-                },
-              ]
-            : []),
-        ],
-      },
-    });
-
-    if (!device) {
-      throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
-    }
-
-    return device;
   }
 
   private async wakeDevice(device: Device): Promise<void> {

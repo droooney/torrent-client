@@ -34,7 +34,13 @@ callbackDataProvider.handle(
           : user.data.addDevicePayload,
     });
 
-    return getAddDeviceSetNameAction();
+    return new MessageAction({
+      content: {
+        type: 'text',
+        text: Markdown.italic('Введите название устройства'),
+      },
+      replyMarkup: SET_NAME_KEYBOARD,
+    });
   },
 );
 
@@ -45,7 +51,7 @@ userDataProvider.handle(TelegramUserState.AddDeviceSetName, async ({ message, us
     return new MessageAction({
       content: {
         type: 'text',
-        text: 'Имя устройства должно содержать как минимум 1 символ',
+        text: 'Название устройства должно содержать как минимум 1 символ',
       },
       replyMarkup: SET_NAME_KEYBOARD,
     });
@@ -55,7 +61,7 @@ userDataProvider.handle(TelegramUserState.AddDeviceSetName, async ({ message, us
     return new MessageAction({
       content: {
         type: 'text',
-        text: 'Имя устройства должно быть уникальным',
+        text: 'Название устройства должно быть уникальным',
       },
       replyMarkup: SET_NAME_KEYBOARD,
     });
@@ -74,13 +80,3 @@ userDataProvider.handle(TelegramUserState.AddDeviceSetName, async ({ message, us
 
   return getAddDeviceSetTypeAction(newPayload);
 });
-
-function getAddDeviceSetNameAction(): MessageAction {
-  return new MessageAction({
-    content: {
-      type: 'text',
-      text: Markdown.italic('Введите название устройства'),
-    },
-    replyMarkup: SET_NAME_KEYBOARD,
-  });
-}

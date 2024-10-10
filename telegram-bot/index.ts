@@ -8,6 +8,7 @@ import bot from 'telegram-bot/bot';
 
 import './actions/root';
 import './actions/system';
+import './actions/scenarios-manager';
 import './actions/devices-client';
 import './actions/torrent-client';
 

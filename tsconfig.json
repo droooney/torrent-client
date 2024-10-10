@@ -19,6 +19,7 @@
       "devices-client/*": ["./devices-client/*"],
       "github-client/*": ["./github-client/*"],
       "rutracker-client/*": ["./rutracker-client/*"],
+      "scenarios-manager/*": ["./scenarios-manager/*"],
       "scheduler/*": ["./scheduler/*"],
       "system-client/*": ["./system-client/*"],
       "telegram-bot/*": ["./telegram-bot/*"],

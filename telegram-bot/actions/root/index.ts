@@ -4,6 +4,7 @@ import { MessageAction } from 'telegram-bot/types/actions';
 import { CommandType } from 'telegram-bot/types/commands';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 import { RootCallbackButtonType } from 'telegram-bot/types/keyboard/root';
+import { ScenariosManagerCallbackButtonType } from 'telegram-bot/types/keyboard/scenarios-manager';
 import { SystemCallbackButtonType } from 'telegram-bot/types/keyboard/system';
 import { TorrentClientCallbackButtonType } from 'telegram-bot/types/keyboard/torrent-client';
 
@@ -45,6 +46,11 @@ async function getRootAction(): Promise<MessageAction> {
       [
         callbackButton('💻', 'Система', {
           type: SystemCallbackButtonType.OpenStatus,
+        }),
+      ],
+      [
+        callbackButton('🔢', 'Сценарии', {
+          type: ScenariosManagerCallbackButtonType.OpenStatus,
         }),
       ],
       [

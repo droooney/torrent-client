@@ -3,12 +3,14 @@ import { z } from 'zod';
 
 import { devicesClientCallbackDataSchema } from 'telegram-bot/types/keyboard/devices-client';
 import { rootCallbackDataSchema } from 'telegram-bot/types/keyboard/root';
+import { scenariosManagerCallbackDataSchema } from 'telegram-bot/types/keyboard/scenarios-manager';
 import { systemCallbackDataSchema } from 'telegram-bot/types/keyboard/system';
 import { torrentClientCallbackDataSchema } from 'telegram-bot/types/keyboard/torrent-client';
 
 export const callbackDataSchema = z.union([
   rootCallbackDataSchema,
   systemCallbackDataSchema,
+  scenariosManagerCallbackDataSchema,
   devicesClientCallbackDataSchema,
   torrentClientCallbackDataSchema,
 ]);

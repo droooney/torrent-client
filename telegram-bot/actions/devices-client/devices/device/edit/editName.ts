@@ -45,7 +45,7 @@ userDataProvider.handle(TelegramUserState.EditDeviceName, async ({ message, user
     return new MessageAction({
       content: {
         type: 'text',
-        text: 'Имя устройства должно содержать как минимум 1 символ',
+        text: 'Название устройства должно содержать как минимум 1 символ',
       },
       replyMarkup: getBackToEditDeviceKeyboard(deviceId),
     });
@@ -55,7 +55,7 @@ userDataProvider.handle(TelegramUserState.EditDeviceName, async ({ message, user
     return new MessageAction({
       content: {
         type: 'text',
-        text: 'Имя устройства должно быть уникальным',
+        text: 'Название устройства должно быть уникальным',
       },
       replyMarkup: getBackToEditDeviceKeyboard(deviceId),
     });
