@@ -80,6 +80,7 @@ export const userDataProvider = new JsonUserDataProvider<CommandType, CallbackDa
         ...data,
         addDevicePayload: data.addDevicePayload ?? Prisma.DbNull,
         editDevicePayload: data.editDevicePayload ?? Prisma.DbNull,
+        editScenarioPayload: data.editScenarioPayload ?? Prisma.DbNull,
       },
     });
   },

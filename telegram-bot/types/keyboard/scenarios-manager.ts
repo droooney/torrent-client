@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// next number is 11
+// next number is 13
 export enum ScenariosManagerCallbackButtonType {
   // Status
   OpenStatus = 'sc4',
@@ -20,6 +20,10 @@ export enum ScenariosManagerCallbackButtonType {
   ScenarioSetActive = 'sc9',
   ScenarioDelete = 'sc7',
   ScenarioDeleteConfirm = 'sc8',
+
+  // Edit scenario
+  EditScenario = 'sc11',
+  EditScenarioName = 'sc12',
 }
 
 export const scenariosManagerCallbackDataSchema = z.union([
@@ -72,6 +76,16 @@ export const scenariosManagerCallbackDataSchema = z.union([
 
   z.object({
     type: z.literal(ScenariosManagerCallbackButtonType.ScenarioDeleteConfirm),
+    scenarioId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.EditScenario),
+    scenarioId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.EditScenarioName),
     scenarioId: z.number(),
   }),
 ]);

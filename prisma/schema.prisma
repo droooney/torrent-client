@@ -71,6 +71,7 @@ enum TelegramUserState {
 
   // Scenarios manager
   AddScenarioSetName
+  EditScenarioName
 
   // Devices client
   AddDeviceSetName
@@ -92,10 +93,11 @@ enum TelegramUserState {
 }
 
 model TelegramUserData {
-  telegramUserId    Int               @unique() @map("telegram_user_id")
-  state             TelegramUserState
-  addDevicePayload  Json?             @map("add_device_payload")
-  editDevicePayload Json?             @map("edit_device_payload")
+  telegramUserId      Int               @unique() @map("telegram_user_id")
+  state               TelegramUserState
+  editScenarioPayload Json?             @map("edit_scenario_payload")
+  addDevicePayload    Json?             @map("add_device_payload")
+  editDevicePayload   Json?             @map("edit_device_payload")
 
   @@map("telegram_user_data")
 }

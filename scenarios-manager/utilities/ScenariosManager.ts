@@ -26,6 +26,15 @@ export default class ScenariosManager {
     });
   }
 
+  async editScenario(scenarioId: number, data: Partial<Scenario>): Promise<void> {
+    await prisma.scenario.update({
+      where: {
+        id: scenarioId,
+      },
+      data,
+    });
+  }
+
   async getActiveScenarios(): Promise<Scenario[]> {
     return prisma.scenario.findMany({
       where: {
@@ -54,16 +63,5 @@ export default class ScenariosManager {
         name,
       },
     }));
-  }
-
-  async setScenarioIsActive(scenarioId: number, isActive: boolean): Promise<void> {
-    await prisma.scenario.update({
-      where: {
-        id: scenarioId,
-      },
-      data: {
-        isActive,
-      },
-    });
   }
 }

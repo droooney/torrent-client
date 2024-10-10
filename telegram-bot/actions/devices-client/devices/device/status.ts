@@ -12,8 +12,8 @@ import { formatDeviceFields } from 'telegram-bot/utilities/actions/devices-clien
 import {
   activateCallbackButton,
   backToCallbackButton,
-  callbackButton,
   deleteCallbackButton,
+  editCallbackButton,
   refreshCallbackButton,
 } from 'telegram-bot/utilities/keyboard';
 
@@ -109,7 +109,7 @@ ${Markdown.bold('⚡ Питание:')} ${
         })),
       ],
       [
-        callbackButton('✏️', 'Редактировать', {
+        editCallbackButton({
           type: DevicesClientCallbackButtonType.EditDevice,
           deviceId,
         }),

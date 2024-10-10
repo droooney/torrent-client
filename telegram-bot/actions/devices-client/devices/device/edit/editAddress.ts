@@ -65,6 +65,12 @@ userDataProvider.handle(TelegramUserState.EditDeviceAddress, async ({ message, u
     address,
   });
 
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
+    state: TelegramUserState.Waiting,
+    editDevicePayload: null,
+  });
+
   return new ActionsStreamAction(async function* () {
     yield new MessageAction({
       content: {

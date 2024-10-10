@@ -1,5 +1,4 @@
 import { CallbackData, InlineKeyboardButton } from 'telegram-bot/types/keyboard';
-import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
 export function callbackButton(icon: string, text: string, callbackData: CallbackData): InlineKeyboardButton {
   return {
@@ -44,4 +43,8 @@ export function activateCallbackButton(
   getCallbackData: (isActive: boolean) => CallbackData,
 ): InlineKeyboardButton {
   return callbackButton(isActive ? '🔴' : '🟢', isActive ? 'Выключить' : 'Включить', getCallbackData(isActive));
+}
+
+export function editCallbackButton(callbackData: CallbackData): InlineKeyboardButton {
+  return callbackButton('✏️', 'Редактировать', callbackData);
 }

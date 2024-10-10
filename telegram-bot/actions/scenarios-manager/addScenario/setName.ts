@@ -61,6 +61,11 @@ userDataProvider.handle(TelegramUserState.AddScenarioSetName, async ({ message, 
     name,
   });
 
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
+    state: TelegramUserState.Waiting,
+  });
+
   return new ActionsStreamAction(async function* () {
     yield new MessageAction({
       content: {

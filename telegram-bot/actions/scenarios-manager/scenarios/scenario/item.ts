@@ -10,6 +10,7 @@ import {
   activateCallbackButton,
   backToCallbackButton,
   deleteCallbackButton,
+  editCallbackButton,
   refreshCallbackButton,
 } from 'telegram-bot/utilities/keyboard';
 
@@ -39,7 +40,9 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.ScenarioDeleteCon
 });
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.ScenarioSetActive, async ({ data }) => {
-  await scenariosManager.setScenarioIsActive(data.scenarioId, data.isActive);
+  await scenariosManager.editScenario(data.scenarioId, {
+    isActive: data.isActive,
+  });
 
   return new MessageWithNotificationAction({
     text: `Сценарий ${data.isActive ? 'включен' : 'выключен'}`,
@@ -59,12 +62,10 @@ export async function getScenarioAction(
 
   const scenario = await scenariosManager.getScenario(scenarioId);
 
-  const text = formatScenario(scenario);
-
   return new MessageAction({
     content: {
       type: 'text',
-      text,
+      text: formatScenario(scenario),
     },
     replyMarkup: [
       [
@@ -79,6 +80,10 @@ export async function getScenarioAction(
         })),
       ],
       [
+        editCallbackButton({
+          type: ScenariosManagerCallbackButtonType.EditScenario,
+          scenarioId,
+        }),
         deleteCallbackButton(
           withDeleteConfirm,
           {
