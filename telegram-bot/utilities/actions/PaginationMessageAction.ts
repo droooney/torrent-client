@@ -66,7 +66,7 @@ export default class PaginationMessageAction<Item> implements Action {
     this.getItemText = options.getItemText;
   }
 
-  async generateMessageAction(): Promise<MessageAction> {
+  private async generateMessageAction(): Promise<MessageAction> {
     const { page, pageSize } = this;
 
     const start = page * pageSize;

@@ -1,41 +1,38 @@
 import { z } from 'zod';
 
+// next number is 26
 export enum TorrentClientCallbackButtonType {
   // Status
-  BackToStatus = 't0',
+  OpenStatus = 't0',
   StatusRefresh = 't1',
-  StatusPause = 't2',
-  StatusShowTorrentsList = 't3',
+  PauseClient = 't2',
 
   // Torrent list
-  TorrentsListItem = 't4',
+  OpenTorrentsList = 't3',
   TorrentsListPage = 't5',
   TorrentsListRefresh = 't6',
 
   // Torrent
+  OpenTorrent = 't23',
   TorrentRefresh = 't7',
   TorrentDelete = 't8',
   TorrentDeleteConfirm = 't9',
   TorrentPause = 't10',
   TorrentSetCritical = 't11',
-  TorrentBackToList = 't12',
-  TorrentShowFiles = 't13',
 
   // File list
+  OpenFiles = 't13',
   FilesListPage = 't14',
   FilesListRefresh = 't15',
-  FilesListBackToTorrent = 't16',
-  NavigateToFile = 't17',
 
   // File
+  OpenFile = 't17',
   FileRefresh = 't18',
   DeleteFile = 't19',
   DeleteFileConfirm = 't20',
-  BackToFilesList = 't21',
 
   // Misc
   AddTorrent = 't22',
-  NavigateToTorrent = 't23',
 
   // Rutracker
   RutrackerSearch = 't25',
@@ -44,7 +41,7 @@ export enum TorrentClientCallbackButtonType {
 
 export const torrentClientCallbackDataSchema = z.union([
   z.object({
-    type: z.literal(TorrentClientCallbackButtonType.BackToStatus),
+    type: z.literal(TorrentClientCallbackButtonType.OpenStatus),
   }),
 
   z.object({
@@ -52,17 +49,12 @@ export const torrentClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(TorrentClientCallbackButtonType.StatusPause),
+    type: z.literal(TorrentClientCallbackButtonType.PauseClient),
     pause: z.boolean(),
   }),
 
   z.object({
-    type: z.literal(TorrentClientCallbackButtonType.StatusShowTorrentsList),
-  }),
-
-  z.object({
-    type: z.literal(TorrentClientCallbackButtonType.TorrentsListItem),
-    torrentId: z.string(),
+    type: z.literal(TorrentClientCallbackButtonType.OpenTorrentsList),
   }),
 
   z.object({
@@ -103,11 +95,7 @@ export const torrentClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(TorrentClientCallbackButtonType.TorrentBackToList),
-  }),
-
-  z.object({
-    type: z.literal(TorrentClientCallbackButtonType.TorrentShowFiles),
+    type: z.literal(TorrentClientCallbackButtonType.OpenFiles),
     torrentId: z.string(),
   }),
 
@@ -124,12 +112,7 @@ export const torrentClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(TorrentClientCallbackButtonType.FilesListBackToTorrent),
-    torrentId: z.string(),
-  }),
-
-  z.object({
-    type: z.literal(TorrentClientCallbackButtonType.NavigateToFile),
+    type: z.literal(TorrentClientCallbackButtonType.OpenFile),
     fileId: z.number(),
   }),
 
@@ -149,16 +132,11 @@ export const torrentClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(TorrentClientCallbackButtonType.BackToFilesList),
-    torrentId: z.string(),
-  }),
-
-  z.object({
     type: z.literal(TorrentClientCallbackButtonType.AddTorrent),
   }),
 
   z.object({
-    type: z.literal(TorrentClientCallbackButtonType.NavigateToTorrent),
+    type: z.literal(TorrentClientCallbackButtonType.OpenTorrent),
     torrentId: z.string(),
   }),
 

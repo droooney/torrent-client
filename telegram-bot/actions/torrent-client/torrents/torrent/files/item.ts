@@ -1,0 +1,83 @@
+import { TorrentFileState } from '@prisma/client';
+import torrentClient from 'torrent-client/client';
+
+import { MessageAction } from 'telegram-bot/types/actions';
+import { TorrentClientCallbackButtonType } from 'telegram-bot/types/keyboard/torrent-client';
+
+import MessageWithNotificationAction from 'telegram-bot/utilities/actions/MessageWithNotificationAction';
+import RefreshDataAction from 'telegram-bot/utilities/actions/RefreshDataAction';
+import { formatTorrentFile } from 'telegram-bot/utilities/actions/torrent-client';
+import { backToCallbackButton, deleteCallbackButton, refreshCallbackButton } from 'telegram-bot/utilities/keyboard';
+
+import { getFilesAction } from 'telegram-bot/actions/torrent-client/torrents/torrent/files/list';
+import { callbackDataProvider } from 'telegram-bot/bot';
+
+callbackDataProvider.handle(
+  [TorrentClientCallbackButtonType.OpenFile, TorrentClientCallbackButtonType.DeleteFile],
+  async ({ data }) => {
+    return getFileAction(data.fileId, data.type === TorrentClientCallbackButtonType.DeleteFile);
+  },
+);
+
+callbackDataProvider.handle(TorrentClientCallbackButtonType.FileRefresh, async ({ data }) => {
+  return new RefreshDataAction(await getFileAction(data.fileId));
+});
+
+callbackDataProvider.handle(TorrentClientCallbackButtonType.DeleteFileConfirm, async ({ data }) => {
+  const file = await torrentClient.getFile(data.fileId);
+
+  await torrentClient.deleteFile(data.fileId);
+
+  const torrent = await torrentClient.getTorrent(file.torrentId);
+
+  return new MessageWithNotificationAction({
+    text: 'Файл успешно удален',
+    updateAction: await getFilesAction(torrent.infoHash),
+  });
+});
+
+async function getFileAction(fileId: number, withDeleteConfirm: boolean = false): Promise<MessageAction> {
+  const file = await torrentClient.getFile(fileId);
+
+  const [torrent, clientTorrent] = await Promise.all([
+    torrentClient.getTorrent(file.torrentId),
+    torrentClient.getClientTorrent(file.torrentId),
+  ]);
+
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: formatTorrentFile(file, {
+        torrent,
+        clientTorrent,
+      }),
+    },
+    replyMarkup: [
+      file.state !== TorrentFileState.Finished && [
+        refreshCallbackButton({
+          type: TorrentClientCallbackButtonType.FileRefresh,
+          fileId,
+        }),
+      ],
+      file.state === TorrentFileState.Finished && [
+        deleteCallbackButton(
+          withDeleteConfirm,
+          {
+            type: TorrentClientCallbackButtonType.DeleteFileConfirm,
+            fileId,
+          },
+          {
+            type: TorrentClientCallbackButtonType.DeleteFile,
+            fileId,
+          },
+        ),
+      ],
+      [
+        backToCallbackButton('К файлам', {
+          type: TorrentClientCallbackButtonType.OpenFiles,
+          torrentId: file.torrentId,
+        }),
+      ],
+    ],
+  });
+}

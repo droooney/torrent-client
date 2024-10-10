@@ -2,17 +2,16 @@ import { z } from 'zod';
 
 import { deviceManufacturerSchema, deviceTypeSchema } from 'devices-client/types/device';
 
+// next number is 27
 export enum DevicesClientCallbackButtonType {
   // Status
+  OpenStatus = 'd2',
   RefreshStatus = 'd0',
-  BackToStatus = 'd2',
-  StatusShowDevicesList = 'd10',
 
   // Devices list
-  BackToDevicesList = 'd14',
-  DevicesListRefresh = 'd13',
+  OpenDevicesList = 'd10',
+  RefreshDevicesList = 'd13',
   DevicesListPage = 'd12',
-  NavigateToDevice = 'd11',
 
   // Add device
   AddDevice = 'd1',
@@ -24,21 +23,20 @@ export enum DevicesClientCallbackButtonType {
   AddDeviceBackToSetMac = 'd6',
 
   // Device
+  OpenDevice = 'd11',
   DeviceRefresh = 'd7',
   DeviceDelete = 'd8',
   DeviceDeleteConfirm = 'd9',
   DeviceTurnOn = 'd15',
   DeviceTurnOff = 'd18',
-  DeviceEdit = 'd19',
-  BackToDevice = 'd24',
 
   // Edit device
+  EditDevice = 'd19',
   EditDeviceName = 'd20',
   EditDeviceManufacturer = 'd21',
   EditDeviceSetManufacturer = 'd26',
   EditDeviceMac = 'd22',
   EditDeviceAddress = 'd23',
-  BackToEditDevice = 'd25',
 }
 
 export const devicesClientCallbackDataSchema = z.union([
@@ -47,19 +45,15 @@ export const devicesClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.BackToStatus),
+    type: z.literal(DevicesClientCallbackButtonType.OpenStatus),
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.StatusShowDevicesList),
+    type: z.literal(DevicesClientCallbackButtonType.OpenDevicesList),
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.BackToDevicesList),
-  }),
-
-  z.object({
-    type: z.literal(DevicesClientCallbackButtonType.DevicesListRefresh),
+    type: z.literal(DevicesClientCallbackButtonType.RefreshDevicesList),
     page: z.number(),
   }),
 
@@ -69,7 +63,7 @@ export const devicesClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.NavigateToDevice),
+    type: z.literal(DevicesClientCallbackButtonType.OpenDevice),
     deviceId: z.number(),
   }),
 
@@ -129,12 +123,7 @@ export const devicesClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.DeviceEdit),
-    deviceId: z.number(),
-  }),
-
-  z.object({
-    type: z.literal(DevicesClientCallbackButtonType.BackToDevice),
+    type: z.literal(DevicesClientCallbackButtonType.EditDevice),
     deviceId: z.number(),
   }),
 
@@ -161,11 +150,6 @@ export const devicesClientCallbackDataSchema = z.union([
 
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.EditDeviceAddress),
-    deviceId: z.number(),
-  }),
-
-  z.object({
-    type: z.literal(DevicesClientCallbackButtonType.BackToEditDevice),
     deviceId: z.number(),
   }),
 ]);

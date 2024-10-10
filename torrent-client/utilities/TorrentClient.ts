@@ -109,15 +109,7 @@ class TorrentClient {
   }
 
   async deleteFile(fileId: number): Promise<void> {
-    const file = await prisma.torrentFile.findUnique({
-      where: {
-        id: fileId,
-      },
-    });
-
-    if (!file) {
-      throw new CustomError(ErrorCode.NOT_FOUND, 'Файл не найден');
-    }
+    const file = await this.getFile(fileId);
 
     await prisma.$transaction(async (tx) => {
       const torrent = await tx.torrent.findUnique({
@@ -153,17 +145,9 @@ class TorrentClient {
   async deleteTorrent(infoHash: string): Promise<void> {
     await this.destroyClientTorrent(infoHash);
 
-    const torrent = await prisma.torrent.findUnique({
-      where: {
-        infoHash,
-      },
-    });
+    const torrent = await this.getTorrent(infoHash);
 
-    if (!torrent) {
-      throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
-    }
-
-    if (torrent?.name) {
+    if (torrent.name) {
       await fs.remove(path.resolve(TORRENTS_DIRECTORY, torrent.name));
     }
 
@@ -184,6 +168,34 @@ class TorrentClient {
     const client = await this.clientPromise;
 
     return client.torrents.find((clientTorrent) => infoHash === clientTorrent.infoHash) ?? null;
+  }
+
+  async getFile(fileId: number): Promise<TorrentFile> {
+    const file = await prisma.torrentFile.findUnique({
+      where: {
+        id: fileId,
+      },
+    });
+
+    if (!file) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Файл не найден');
+    }
+
+    return file;
+  }
+
+  async getTorrent(infoHash: string): Promise<Torrent> {
+    const torrent = await prisma.torrent.findUnique({
+      where: {
+        infoHash,
+      },
+    });
+
+    if (!torrent) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Торрент не найден');
+    }
+
+    return torrent;
   }
 
   async getDownloadSpeed(): Promise<number> {

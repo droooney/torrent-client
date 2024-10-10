@@ -1,6 +1,6 @@
-import { CallbackData, CallbackInlineKeyboardButton } from 'telegram-bot/types/keyboard';
+import { CallbackData, InlineKeyboardButton } from 'telegram-bot/types/keyboard';
 
-export function callbackButton(icon: string, text: string, callbackData: CallbackData): CallbackInlineKeyboardButton {
+export function callbackButton(icon: string, text: string, callbackData: CallbackData): InlineKeyboardButton {
   return {
     type: 'callbackData',
     text: [icon, text].filter(Boolean).join(' '),
@@ -8,15 +8,15 @@ export function callbackButton(icon: string, text: string, callbackData: Callbac
   };
 }
 
-export function backToCallbackButton(text: string, callbackData: CallbackData): CallbackInlineKeyboardButton {
+export function backToCallbackButton(text: string, callbackData: CallbackData): InlineKeyboardButton {
   return callbackButton('◀️', text, callbackData);
 }
 
-export function backCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {
+export function backCallbackButton(callbackData: CallbackData): InlineKeyboardButton {
   return backToCallbackButton('Назад', callbackData);
 }
 
-export function refreshCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {
+export function refreshCallbackButton(callbackData: CallbackData): InlineKeyboardButton {
   return callbackButton('🔄', 'Обновить', callbackData);
 }
 
@@ -24,16 +24,16 @@ export function deleteCallbackButton(
   withDeleteConfirm: boolean,
   confirmCallbackData: CallbackData,
   deleteCallbackData: CallbackData,
-): CallbackInlineKeyboardButton {
+): InlineKeyboardButton {
   return withDeleteConfirm
     ? callbackButton('🗑', 'Точно удалить?', confirmCallbackData)
     : callbackButton('🗑', 'Удалить', deleteCallbackData);
 }
 
-export function addCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {
+export function addCallbackButton(callbackData: CallbackData): InlineKeyboardButton {
   return callbackButton('➕', 'Добавить', callbackData);
 }
 
-export function listCallbackButton(callbackData: CallbackData): CallbackInlineKeyboardButton {
+export function listCallbackButton(callbackData: CallbackData): InlineKeyboardButton {
   return callbackButton('📜', 'Список', callbackData);
 }

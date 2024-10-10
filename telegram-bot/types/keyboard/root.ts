@@ -1,26 +1,10 @@
 import { z } from 'zod';
 
+// next number is 4
 export enum RootCallbackButtonType {
-  BackToRoot = 'r0',
-  OpenSystem = 'r1',
-  OpenDevices = 'r3',
-  OpenTorrentClient = 'r2',
+  OpenRoot = 'r0',
 }
 
-export const rootCallbackDataSchema = z.union([
-  z.object({
-    type: z.literal(RootCallbackButtonType.BackToRoot),
-  }),
-
-  z.object({
-    type: z.literal(RootCallbackButtonType.OpenSystem),
-  }),
-
-  z.object({
-    type: z.literal(RootCallbackButtonType.OpenDevices),
-  }),
-
-  z.object({
-    type: z.literal(RootCallbackButtonType.OpenTorrentClient),
-  }),
-]);
+export const rootCallbackDataSchema = z.object({
+  type: z.literal(RootCallbackButtonType.OpenRoot),
+});

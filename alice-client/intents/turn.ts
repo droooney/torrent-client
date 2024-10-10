@@ -16,10 +16,6 @@ aliceClient.handleIntent(IntentType.TURN_ON, async ({ slots }) => {
 
   const device = await devicesClient.findDevice(target.value);
 
-  if (!device) {
-    throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
-  }
-
   runTask(async () => {
     await devicesClient.turnOnDevice(device.id);
   });
@@ -37,10 +33,6 @@ aliceClient.handleIntent(IntentType.TURN_OFF, async ({ slots }) => {
   }
 
   const device = await devicesClient.findDevice(target.value);
-
-  if (!device) {
-    throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
-  }
 
   runTask(async () => {
     await devicesClient.turnOffDevice(device.id);

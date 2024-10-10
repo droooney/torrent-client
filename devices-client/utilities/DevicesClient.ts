@@ -29,7 +29,7 @@ export default class DevicesClient {
     name: '',
     type: DeviceType.Other,
     manufacturer: DeviceManufacturer.Other,
-    mac: '',
+    mac: null,
     address: '',
   };
 
@@ -59,7 +59,7 @@ export default class DevicesClient {
     return device;
   }
 
-  async getDeviceInfo(deviceId: number): Promise<DeviceInfo> {
+  async getDeviceInfo(deviceId: number, timeout?: number): Promise<DeviceInfo> {
     const device = await this.getDevice(deviceId);
 
     const deviceInfo: DeviceInfo = {
@@ -70,7 +70,7 @@ export default class DevicesClient {
     };
 
     if (device.type === DeviceType.Lightbulb && device.manufacturer === DeviceManufacturer.Yeelight) {
-      const deviceState = await this.yeelightClient.getState(device.address);
+      const deviceState = await this.yeelightClient.getState(device.address, timeout);
 
       if (deviceState?.power) {
         deviceInfo.state.power = deviceState.power === 'on';
@@ -147,10 +147,10 @@ export default class DevicesClient {
     await this.wakeDevice(device);
   }
 
-  async findDevice(query: string): Promise<Device | null> {
+  async findDevice(query: string): Promise<Device> {
     const deviceType = findKey(DEVICE_STRING, (strings) => strings.includes(query)) as DeviceType | undefined;
 
-    return prisma.device.findFirst({
+    const device = await prisma.device.findFirst({
       where: {
         OR: [
           {
@@ -170,6 +170,12 @@ export default class DevicesClient {
         ],
       },
     });
+
+    if (!device) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
+    }
+
+    return device;
   }
 
   private async wakeDevice(device: Device): Promise<void> {

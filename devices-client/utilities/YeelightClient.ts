@@ -16,6 +16,7 @@ type StateChangedEvent = {
 
 type ExecuteCommandOptions = {
   deviceIp: string;
+  timeout?: number;
   throwOnTimeout?: boolean;
   command: (device: Device) => unknown;
 };
@@ -35,14 +36,14 @@ export default class YeelightClient {
   }
 
   async executeCommand(options: ExecuteCommandOptions): Promise<DeviceState | null> {
-    const { deviceIp, throwOnTimeout, command } = options;
+    const { deviceIp, timeout = this.timeout, throwOnTimeout, command } = options;
     const device = this.getDevice(deviceIp);
 
     device.connect();
 
     command(device);
 
-    const state = await timed(this.timeout, async (timeoutInfo) => {
+    const state = await timed(timeout, async (timeoutInfo) => {
       while (!timeoutInfo.timedOut) {
         const newPromise = Promise.withResolvers<StateChangedEvent>();
         const currentPromise = this._stateChangePromiseWithResolvers;
@@ -108,9 +109,10 @@ export default class YeelightClient {
     return device;
   }
 
-  async getState(deviceIp: string): Promise<DeviceState | null> {
+  async getState(deviceIp: string, timeout?: number): Promise<DeviceState | null> {
     return this.executeCommand({
       deviceIp,
+      timeout,
       throwOnTimeout: false,
       command: (device) => device.requestState(),
     });
