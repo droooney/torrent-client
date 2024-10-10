@@ -11,20 +11,18 @@ datasource db {
 }
 
 enum TorrentState {
-  @@map("torrent_state")
-
   Queued
   Verifying
   Error
   Downloading
   Paused
   Finished
+
+  @@map("torrent_state")
 }
 
 model Torrent {
-  @@map("torrent")
-
-  infoHash            String              @map("info_hash") @unique
+  infoHash            String              @unique @map("info_hash")
   name                String?
   size                BigInt
   state               TorrentState
@@ -32,11 +30,11 @@ model Torrent {
   magnetUri           String?             @map("magnet_uri")
   torrentFile         Bytes?              @map("torrent_file")
   errorMessage        String?             @map("error_message")
-
-  createdAt           DateTime            @map("created_at") @default(now())
-
+  createdAt           DateTime            @default(now()) @map("created_at")
   torrentClientState1 TorrentClientState? @relation("criticalTorrent")
   files               TorrentFile[]       @relation("torrent")
+
+  @@map("torrent")
 }
 
 enum TorrentFileState {
@@ -45,33 +43,29 @@ enum TorrentFileState {
 }
 
 model TorrentFile {
-  @@map("torrent_file")
-
   id        Int              @id @default(autoincrement())
   path      String           @unique
   torrentId String           @map("torrent_id")
   state     TorrentFileState
   size      BigInt
   progress  Float
+  torrent   Torrent          @relation("torrent", fields: [torrentId], references: [infoHash], onDelete: Cascade)
 
-  torrent   Torrent @relation("torrent", fields: [torrentId], references: [infoHash], onDelete: Cascade)
+  @@map("torrent_file")
 }
 
 model TorrentClientState {
-  @@map("torrent_client_state")
-
   id                 String   @unique
   paused             Boolean
-  criticalTorrentId  String?  @map("critical_torrent_id") @unique
+  criticalTorrentId  String?  @unique @map("critical_torrent_id")
   downloadSpeedLimit Float?   @map("download_speed_limit")
   uploadSpeedLimit   Float?   @map("upload_speed_limit")
-
   criticalTorrent    Torrent? @relation("criticalTorrent", fields: [criticalTorrentId], references: [infoHash], onDelete: SetNull)
+
+  @@map("torrent_client_state")
 }
 
 enum TelegramUserState {
-  @@map("telegram_user_state")
-
   First
   Waiting
 
@@ -90,49 +84,145 @@ enum TelegramUserState {
   AddTorrent
   SetDownloadLimit
   SetUploadLimit
+
+  @@map("telegram_user_state")
 }
 
 model TelegramUserData {
-  @@map("telegram_user_data")
-
-  telegramUserId    Int               @map("telegram_user_id") @unique()
+  telegramUserId    Int               @unique() @map("telegram_user_id")
   state             TelegramUserState
   addDevicePayload  Json?             @map("add_device_payload")
   editDevicePayload Json?             @map("edit_device_payload")
+
+  @@map("telegram_user_data")
 }
 
 model TelegramCallbackData {
-  dataId String @map("data_id") @unique
-  data   Json
-
-  createdAt DateTime   @map("created_at") @default(now())
+  dataId    String   @unique @map("data_id")
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
 }
 
 enum DeviceType {
-  @@map("device_type")
-
   Tv
   Lightbulb
   Other
+
+  @@map("device_type")
 }
 
 enum DeviceManufacturer {
-  @@map("device_manufacturer")
-
   Haier
   Yeelight
   Other
+
+  @@map("device_manufacturer")
 }
 
 model Device {
-  @@map("device")
-
   id           Int                @id @default(autoincrement())
   name         String             @unique
   type         DeviceType
   mac          String?            @unique
   address      String             @unique
   manufacturer DeviceManufacturer @default(Other)
+  createdAt    DateTime           @default(now()) @map("created_at")
 
-  createdAt DateTime   @map("created_at") @default(now())
+  @@map("device")
+}
+
+enum ScenarioConditionType {
+  // Home
+  EmptyHome
+  NonEmptyHome
+}
+
+enum ScenarioStepType {
+  // Utils
+  RunScenario
+  Wait
+
+  // Devices
+  TurnOnDevice
+  TurnOffDevice
+
+  @@map("scenario_step_type")
+}
+
+model ScenarioStepCondition {
+  id        Int              @id @default(autoincrement())
+  name      String
+  stepId    Int              @map("step_id")
+  isActive  Boolean          @map("is_active")
+  payload   Json
+  type      ScenarioStepType
+  createdAt DateTime         @default(now()) @map("created_at")
+  step      ScenarioStep     @relation("step", fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@map("scenario_step_condition")
+}
+
+model ScenarioStep {
+  id         Int                     @id @default(autoincrement())
+  name       String
+  scenarioId Int                     @map("scenario_id")
+  position   Int
+  isActive   Boolean                 @map("is_active")
+  type       ScenarioStepType
+  payload    Json
+  createdAt  DateTime                @default(now()) @map("created_at")
+  scenario   Scenario                @relation("scenario", fields: [scenarioId], references: [id], onDelete: Cascade)
+  conditions ScenarioStepCondition[] @relation("step")
+
+  @@map("scenario_step")
+}
+
+enum ScenarioTriggerType {
+  // Utils
+  Schedule
+
+  // Home
+  EmptyHome
+  NonEmptyHome
+
+  // Alice
+  AliceCommand
+}
+
+model ScenarioTrigger {
+  id         Int                 @id @default(autoincrement())
+  name       String
+  scenarioId Int                 @map("scenario_id")
+  isActive   Boolean             @map("is_active")
+  type       ScenarioTriggerType
+  payload    Json
+  createdAt  DateTime            @default(now()) @map("created_at")
+  scenario   Scenario            @relation("scenario", fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@map("scenario_trigger")
+}
+
+model ScenarioCondition {
+  id         Int              @id @default(autoincrement())
+  name       String
+  scenarioId Int              @map("scenario_id")
+  isActive   Boolean          @map("is_active")
+  payload    Json
+  type       ScenarioStepType
+  createdAt  DateTime         @default(now()) @map("created_at")
+  scenario   Scenario         @relation("scenario", fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@map("scenario_condition")
+}
+
+model Scenario {
+  id         Int                 @id @default(autoincrement())
+  name       String
+  isActive   Boolean             @map("is_active")
+  createdAt  DateTime            @default(now()) @map("created_at")
+  steps      ScenarioStep[]      @relation("scenario")
+  triggers   ScenarioTrigger[]   @relation("scenario")
+  conditions ScenarioCondition[] @relation("scenario")
+
+  @@map("scenario")
 }
