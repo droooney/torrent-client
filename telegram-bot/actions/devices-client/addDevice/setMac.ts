@@ -1,25 +1,25 @@
 import { TelegramUserState } from '@prisma/client';
-import { InlineKeyboard, Markdown } from '@tg-sensei/bot';
+import { Markdown } from '@tg-sensei/bot';
 import devicesClient from 'devices-client/client';
 
 import { AddDevicePayload } from 'devices-client/types/device';
 import { MessageAction } from 'telegram-bot/types/actions';
-import { CallbackData } from 'telegram-bot/types/keyboard';
+import { InlineKeyboard } from 'telegram-bot/types/keyboard';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
 import { isMac } from 'devices-client/utilities/is';
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
-import { formatEnteredFields } from 'telegram-bot/utilities/actions/devices-client';
+import { formatDeviceEnteredFields } from 'telegram-bot/utilities/actions/devices-client';
 import { backToCallbackButton } from 'telegram-bot/utilities/keyboard';
 import { isDefined } from 'utilities/is';
 
 import { getAddDeviceSetAddressAction } from 'telegram-bot/actions/devices-client/addDevice/setAddress';
 import { callbackDataProvider, userDataProvider } from 'telegram-bot/bot';
 
-const SET_MAC_KEYBOARD: InlineKeyboard<CallbackData> = [
+const SET_MAC_KEYBOARD: InlineKeyboard = [
   [
     backToCallbackButton('К выбору производителя', {
-      type: DevicesClientCallbackButtonType.AddDeviceBackToSetManufacturer,
+      type: DevicesClientCallbackButtonType.AddDeviceSetManufacturer,
     }),
   ],
   [
@@ -29,7 +29,7 @@ const SET_MAC_KEYBOARD: InlineKeyboard<CallbackData> = [
   ],
 ];
 
-callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetMac, async ({ user }) => {
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetMac, async ({ user }) => {
   await userDataProvider.setUserData(user.id, {
     ...user.data,
     state: TelegramUserState.AddDeviceSetMac,
@@ -83,7 +83,7 @@ export function getAddDeviceSetMacAction(addDevicePayload: AddDevicePayload): Me
   return new MessageAction({
     content: {
       type: 'text',
-      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type', 'manufacturer'])}
+      text: Markdown.create`${formatDeviceEnteredFields(addDevicePayload, ['name', 'type', 'manufacturer'])}
 
 
 ${Markdown.italic('Введите MAC устройства. Вбейте "-", чтобы пропустить')}`,

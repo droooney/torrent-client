@@ -20,6 +20,7 @@ export interface PaginationMessageActionOptions<Item> {
   pageSize?: number;
   itemsPerRow?: number;
   emptyPageText?: string | Markdown;
+  getPageText?: (pageText: Markdown) => string | Markdown;
   getPageItemsInfo: (options: GetPageItemsOptions) => MaybePromise<PageItemsInfo<Item>>;
   getPageButtonCallbackData: (page: number) => CallbackData;
   getItemButton: (item: Item, indexIcon: string) => InlineKeyboardButton<CallbackData>;
@@ -48,6 +49,7 @@ export default class PaginationMessageAction<Item> implements Action {
   private readonly pageSize: number;
   private readonly itemsPerRow: number;
   private readonly emptyPageText: string | Markdown;
+  private readonly getPageText: PaginationMessageActionOptions<Item>['getPageText'];
   private readonly getPageItemsInfo: PaginationMessageActionOptions<Item>['getPageItemsInfo'];
   private readonly getPageButtonCallbackData: PaginationMessageActionOptions<Item>['getPageButtonCallbackData'];
   private readonly getItemButton: PaginationMessageActionOptions<Item>['getItemButton'];
@@ -59,6 +61,7 @@ export default class PaginationMessageAction<Item> implements Action {
     this.pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
     this.itemsPerRow = options.itemsPerRow ?? DEFAULT_ITEMS_PER_ROW;
     this.emptyPageText = options.emptyPageText ?? DEFAULT_EMPTY_PAGE_TEXT;
+    this.getPageText = options.getPageText;
     this.getPageItemsInfo = options.getPageItemsInfo;
     this.getPageButtonCallbackData = options.getPageButtonCallbackData;
     this.getKeyboard = options.getKeyboard;
@@ -89,7 +92,7 @@ export default class PaginationMessageAction<Item> implements Action {
       allowedPages.push(page + 1, allPagesCount - 1);
     }
 
-    const text =
+    const headerText =
       allPagesCount < 2
         ? ''
         : Markdown.create`📄 ${Markdown.bold('Страница')}: ${page + 1} из ${allPagesCount}
@@ -98,13 +101,15 @@ export default class PaginationMessageAction<Item> implements Action {
       await Promise.all(items.map((item, index) => this.getItemText(item, formatIndex(index)))),
       '\n\n\n',
     );
+    const pageText = itemsText.isEmpty()
+      ? Markdown.join([headerText, this.emptyPageText], '\n\n')
+      : Markdown.join([headerText, itemsText], '\n\n\n');
+    const text = this.getPageText?.(pageText) ?? pageText;
 
     return new MessageAction({
       content: {
         type: 'text',
-        text: itemsText.isEmpty()
-          ? Markdown.join([text, this.emptyPageText], '\n\n')
-          : Markdown.join([text, itemsText], '\n\n\n'),
+        text,
       },
       replyMarkup: await this.getKeyboard([
         ...chunk(

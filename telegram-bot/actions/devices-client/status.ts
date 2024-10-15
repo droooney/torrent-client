@@ -34,7 +34,7 @@ async function getStatusAction(): Promise<MessageAction> {
           type: DevicesClientCallbackButtonType.RefreshStatus,
         }),
         addCallbackButton({
-          type: DevicesClientCallbackButtonType.AddDevice,
+          type: DevicesClientCallbackButtonType.AddDeviceSetName,
         }),
       ],
       [

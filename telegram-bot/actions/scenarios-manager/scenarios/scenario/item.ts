@@ -1,6 +1,6 @@
 import scenariosManager from 'scenarios-manager/manager';
 
-import { MessageAction } from 'telegram-bot/types/actions';
+import { ActionsStreamAction, MessageAction, NotificationAction } from 'telegram-bot/types/actions';
 import { ScenariosManagerCallbackButtonType } from 'telegram-bot/types/keyboard/scenarios-manager';
 
 import MessageWithNotificationAction from 'telegram-bot/utilities/actions/MessageWithNotificationAction';
@@ -24,8 +24,26 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.OpenScenario, asy
   });
 });
 
-callbackDataProvider.handle(ScenariosManagerCallbackButtonType.RefreshSScenario, async ({ data }) => {
+callbackDataProvider.handle(ScenariosManagerCallbackButtonType.RefreshScenario, async ({ data }) => {
   return new RefreshDataAction(await getScenarioAction(data.scenarioId));
+});
+
+callbackDataProvider.handle(ScenariosManagerCallbackButtonType.RunScenario, async ({ data }) => {
+  return new ActionsStreamAction(async function* () {
+    yield new NotificationAction({
+      text: 'Сценарий начал выполняться',
+    });
+
+    await scenariosManager.runScenario(data.scenarioId);
+
+    yield new MessageAction({
+      mode: 'separate',
+      content: {
+        type: 'text',
+        text: 'Сценарий успешно выполнен!',
+      },
+    });
+  });
 });
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.ScenarioDeleteConfirm, async ({ data }) => {
@@ -68,7 +86,7 @@ export async function getScenarioAction(
     replyMarkup: [
       [
         refreshCallbackButton({
-          type: ScenariosManagerCallbackButtonType.RefreshSScenario,
+          type: ScenariosManagerCallbackButtonType.RefreshScenario,
           scenarioId,
         }),
         activateCallbackButton(scenario.isActive, (isActive) => ({
@@ -78,6 +96,10 @@ export async function getScenarioAction(
         })),
       ],
       [
+        callbackButton('▶️', 'Выполнить', {
+          type: ScenariosManagerCallbackButtonType.RunScenario,
+          scenarioId,
+        }),
         callbackButton('🔨', 'Шаги', {
           type: ScenariosManagerCallbackButtonType.OpenScenarioSteps,
           scenarioId,

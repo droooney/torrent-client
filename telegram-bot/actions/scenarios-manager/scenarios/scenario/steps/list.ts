@@ -8,7 +8,12 @@ import { ScenariosManagerCallbackButtonType } from 'telegram-bot/types/keyboard/
 import PaginationMessageAction from 'telegram-bot/utilities/actions/PaginationMessageAction';
 import RefreshDataAction from 'telegram-bot/utilities/actions/RefreshDataAction';
 import { formatScenarioStep } from 'telegram-bot/utilities/actions/scenarios-manager';
-import { backCallbackButton, callbackButton, refreshCallbackButton } from 'telegram-bot/utilities/keyboard';
+import {
+  addCallbackButton,
+  backCallbackButton,
+  callbackButton,
+  refreshCallbackButton,
+} from 'telegram-bot/utilities/keyboard';
 
 import { callbackDataProvider } from 'telegram-bot/bot';
 
@@ -60,6 +65,10 @@ export async function getScenarioStepsAction(
           type: ScenariosManagerCallbackButtonType.RefreshScenarioSteps,
           scenarioId,
           page,
+        }),
+        addCallbackButton({
+          type: ScenariosManagerCallbackButtonType.AddScenarioStepSetName,
+          scenarioId,
         }),
       ],
       ...paginationButtons,

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-// next number is 16
+import { scenarioStepTypeSchema } from 'scenarios-manager/types/scenario';
+
+// next number is 26
 export enum ScenariosManagerCallbackButtonType {
   // Status
   OpenStatus = 'sc4',
@@ -15,7 +17,8 @@ export enum ScenariosManagerCallbackButtonType {
 
   // Scenario
   OpenScenario = 'sc3',
-  RefreshSScenario = 'sc10',
+  RefreshScenario = 'sc10',
+  RunScenario = 'sc25',
   ScenarioSetActive = 'sc9',
   ScenarioDeleteConfirm = 'sc8',
 
@@ -27,8 +30,19 @@ export enum ScenariosManagerCallbackButtonType {
   OpenScenarioSteps = 'sc13',
   RefreshScenarioSteps = 'sc14',
 
+  // Add scenario step
+  AddScenarioStepSetName = 'sc16',
+  AddScenarioStepSetType = 'sc17',
+  AddScenarioStepType = 'sc18',
+  AddScenarioStepScenariosList = 'sc19',
+  AddScenarioStepScenario = 'sc20',
+  AddScenarioStepDevicesList = 'sc21',
+  AddScenarioStepDevice = 'sc22',
+
   // Scenario step
   OpenScenarioStep = 'sc15',
+  ScenarioStepSetActive = 'sc23',
+  ScenarioStepDeleteConfirm = 'sc24',
 }
 
 export const scenariosManagerCallbackDataSchema = z.union([
@@ -61,7 +75,12 @@ export const scenariosManagerCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(ScenariosManagerCallbackButtonType.RefreshSScenario),
+    type: z.literal(ScenariosManagerCallbackButtonType.RefreshScenario),
+    scenarioId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.RunScenario),
     scenarioId: z.number(),
   }),
 
@@ -99,7 +118,57 @@ export const scenariosManagerCallbackDataSchema = z.union([
   }),
 
   z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioStepSetName),
+    scenarioId: z.number(),
+    isBack: z.optional(z.boolean()),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioStepSetType),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioStepType),
+    stepType: scenarioStepTypeSchema,
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioStepScenariosList),
+    page: z.optional(z.number()),
+    isRefresh: z.optional(z.boolean()),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioStepScenario),
+    scenarioId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioStepDevicesList),
+    page: z.optional(z.number()),
+    isRefresh: z.optional(z.boolean()),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioStepDevice),
+    deviceId: z.number(),
+  }),
+
+  z.object({
     type: z.literal(ScenariosManagerCallbackButtonType.OpenScenarioStep),
+    stepId: z.number(),
+    withDeleteConfirm: z.optional(z.boolean()),
+    isRefresh: z.optional(z.boolean()),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.ScenarioStepSetActive),
+    stepId: z.number(),
+    isActive: z.boolean(),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.ScenarioStepDeleteConfirm),
     stepId: z.number(),
   }),
 ]);

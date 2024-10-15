@@ -78,9 +78,10 @@ export const userDataProvider = new JsonUserDataProvider<CommandType, CallbackDa
       },
       data: {
         ...data,
+        editScenarioPayload: data.editScenarioPayload ?? Prisma.DbNull,
+        addScenarioStepPayload: data.addScenarioStepPayload ?? Prisma.DbNull,
         addDevicePayload: data.addDevicePayload ?? Prisma.DbNull,
         editDevicePayload: data.editDevicePayload ?? Prisma.DbNull,
-        editScenarioPayload: data.editScenarioPayload ?? Prisma.DbNull,
       },
     });
   },

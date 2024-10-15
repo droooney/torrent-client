@@ -11,6 +11,8 @@ export enum ErrorCode {
   NETWORK_ERROR = 'NETWORK_ERROR',
   TIMEOUT = 'TIMEOUT',
   NO_MAC = 'NO_MAC',
+  NOT_ACTIVE = 'NOT_ACTIVE',
+  CONDITIONS_NOT_MET = 'CONDITIONS_NOT_MET',
 }
 
 export interface CustomErrorOptions extends ErrorOptions {

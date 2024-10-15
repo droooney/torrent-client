@@ -10,7 +10,7 @@ import { InlineKeyboard } from 'telegram-bot/types/keyboard';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
-import { formatEnteredFields } from 'telegram-bot/utilities/actions/devices-client';
+import { formatDeviceEnteredFields } from 'telegram-bot/utilities/actions/devices-client';
 import { backToCallbackButton } from 'telegram-bot/utilities/keyboard';
 
 import { getDeviceAction } from 'telegram-bot/actions/devices-client/devices/device/status';
@@ -19,7 +19,7 @@ import { userDataProvider } from 'telegram-bot/bot';
 const SET_ADDRESS_KEYBOARD: InlineKeyboard = [
   [
     backToCallbackButton('К вводу MAC', {
-      type: DevicesClientCallbackButtonType.AddDeviceBackToSetMac,
+      type: DevicesClientCallbackButtonType.AddDeviceSetMac,
     }),
   ],
   [
@@ -81,7 +81,7 @@ export function getAddDeviceSetAddressAction(addDevicePayload: AddDevicePayload)
   return new MessageAction({
     content: {
       type: 'text',
-      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type', 'manufacturer', 'mac'])}
+      text: Markdown.create`${formatDeviceEnteredFields(addDevicePayload, ['name', 'type', 'manufacturer', 'mac'])}
 
 
 ${Markdown.italic('Введите адрес устройства')}`,

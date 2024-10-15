@@ -9,7 +9,7 @@ export function callbackButton(icon: string, text: string, callbackData: Callbac
 }
 
 export function backToCallbackButton(text: string, callbackData: CallbackData): InlineKeyboardButton {
-  return callbackButton('◀️', text, callbackData);
+  return callbackButton('⬅️', text, callbackData);
 }
 
 export function backCallbackButton(callbackData: CallbackData): InlineKeyboardButton {

@@ -6,13 +6,13 @@ import { MessageAction } from 'telegram-bot/types/actions';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
-import { formatEnteredFields } from 'telegram-bot/utilities/actions/devices-client';
+import { formatDeviceEnteredFields } from 'telegram-bot/utilities/actions/devices-client';
 import { backToCallbackButton, callbackButton } from 'telegram-bot/utilities/keyboard';
 
 import { getAddDeviceSetMacAction } from 'telegram-bot/actions/devices-client/addDevice/setMac';
 import { callbackDataProvider, userDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetManufacturer, async ({ user }) => {
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetManufacturer, async ({ user }) => {
   await userDataProvider.setUserData(user.id, {
     ...user.data,
     state: TelegramUserState.AddDeviceSetManufacturer,
@@ -21,7 +21,7 @@ callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetMa
   return getAddDeviceSetManufacturerAction(getAddDevicePayload(user.data.addDevicePayload));
 });
 
-callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetManufacturer, async ({ data, user }) => {
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceManufacturer, async ({ data, user }) => {
   const newPayload: AddDevicePayload = {
     ...getAddDevicePayload(user.data.addDevicePayload),
     manufacturer: data.manufacturer,
@@ -44,7 +44,7 @@ export function getAddDeviceSetManufacturerAction(addDevicePayload: AddDevicePay
   return new MessageAction({
     content: {
       type: 'text',
-      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name', 'type'])}
+      text: Markdown.create`${formatDeviceEnteredFields(addDevicePayload, ['name', 'type'])}
 
 
 ${Markdown.italic('Выберите производителя устройства')}`,
@@ -53,14 +53,14 @@ ${Markdown.italic('Выберите производителя устройст�
       [
         ...Object.values(DeviceManufacturer).map((manufacturer) =>
           callbackButton('', manufacturer === DeviceType.Other ? 'Другой' : manufacturer, {
-            type: DevicesClientCallbackButtonType.AddDeviceSetManufacturer,
+            type: DevicesClientCallbackButtonType.AddDeviceManufacturer,
             manufacturer,
           }),
         ),
       ],
       [
         backToCallbackButton('К выбору типа', {
-          type: DevicesClientCallbackButtonType.AddDeviceBackToSetType,
+          type: DevicesClientCallbackButtonType.AddDeviceSetType,
         }),
       ],
       [

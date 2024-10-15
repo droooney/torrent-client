@@ -1,13 +1,9 @@
 import { DeviceManufacturer, DeviceType } from '@prisma/client';
 import { z } from 'zod';
 
-export const deviceTypeSchema = z.enum([DeviceType.Tv, DeviceType.Lightbulb, DeviceType.Other]);
+export const deviceTypeSchema = z.nativeEnum(DeviceType);
 
-export const deviceManufacturerSchema = z.enum([
-  DeviceManufacturer.Haier,
-  DeviceManufacturer.Yeelight,
-  DeviceManufacturer.Other,
-]);
+export const deviceManufacturerSchema = z.nativeEnum(DeviceManufacturer);
 
 export const addDevicePayloadSchema = z.object({
   name: z.string(),

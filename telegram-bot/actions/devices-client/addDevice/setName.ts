@@ -22,27 +22,21 @@ const SET_NAME_KEYBOARD: InlineKeyboard = [
   ],
 ];
 
-callbackDataProvider.handle(
-  [DevicesClientCallbackButtonType.AddDevice, DevicesClientCallbackButtonType.AddDeviceBackToSetName],
-  async ({ data, user }) => {
-    await userDataProvider.setUserData(user.id, {
-      ...user.data,
-      state: TelegramUserState.AddDeviceSetName,
-      addDevicePayload:
-        data.type === DevicesClientCallbackButtonType.AddDevice
-          ? DevicesClient.defaultDevicePayload
-          : user.data.addDevicePayload,
-    });
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetName, async ({ data, user }) => {
+  await userDataProvider.setUserData(user.id, {
+    ...user.data,
+    state: TelegramUserState.AddDeviceSetName,
+    addDevicePayload: data.isBack ? user.data.addDevicePayload : DevicesClient.defaultDevicePayload,
+  });
 
-    return new MessageAction({
-      content: {
-        type: 'text',
-        text: Markdown.italic('Введите название устройства'),
-      },
-      replyMarkup: SET_NAME_KEYBOARD,
-    });
-  },
-);
+  return new MessageAction({
+    content: {
+      type: 'text',
+      text: Markdown.italic('Введите название устройства'),
+    },
+    replyMarkup: SET_NAME_KEYBOARD,
+  });
+});
 
 userDataProvider.handle(TelegramUserState.AddDeviceSetName, async ({ message, user }) => {
   const name = message.text;

@@ -13,13 +13,12 @@ export enum DevicesClientCallbackButtonType {
   RefreshDevicesList = 'd13',
 
   // Add device
-  AddDevice = 'd1',
-  AddDeviceSetType = 'd3',
-  AddDeviceSetManufacturer = 'd16',
-  AddDeviceBackToSetName = 'd5',
-  AddDeviceBackToSetType = 'd4',
-  AddDeviceBackToSetManufacturer = 'd17',
-  AddDeviceBackToSetMac = 'd6',
+  AddDeviceSetName = 'd5',
+  AddDeviceSetType = 'd4',
+  AddDeviceType = 'd3',
+  AddDeviceSetManufacturer = 'd17',
+  AddDeviceManufacturer = 'd16',
+  AddDeviceSetMac = 'd6',
 
   // Device
   OpenDevice = 'd11',
@@ -63,33 +62,30 @@ export const devicesClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.AddDevice),
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetName),
+    isBack: z.optional(z.boolean()),
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetType),
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceType),
     deviceType: deviceTypeSchema,
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetManufacturer),
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceManufacturer),
     manufacturer: deviceManufacturerSchema,
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetName),
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetType),
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetType),
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetManufacturer),
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetManufacturer),
-  }),
-
-  z.object({
-    type: z.literal(DevicesClientCallbackButtonType.AddDeviceBackToSetMac),
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetMac),
   }),
 
   z.object({

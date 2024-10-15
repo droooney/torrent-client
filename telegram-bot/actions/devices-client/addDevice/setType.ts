@@ -6,13 +6,17 @@ import { MessageAction } from 'telegram-bot/types/actions';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
-import { formatEnteredFields, getDeviceIcon, getDeviceTypeString } from 'telegram-bot/utilities/actions/devices-client';
+import {
+  formatDeviceEnteredFields,
+  getDeviceIcon,
+  getDeviceTypeString,
+} from 'telegram-bot/utilities/actions/devices-client';
 import { backToCallbackButton, callbackButton } from 'telegram-bot/utilities/keyboard';
 
 import { getAddDeviceSetManufacturerAction } from 'telegram-bot/actions/devices-client/addDevice/setManufacturer';
 import { callbackDataProvider, userDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetType, async ({ user }) => {
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetType, async ({ user }) => {
   await userDataProvider.setUserData(user.id, {
     ...user.data,
     state: TelegramUserState.AddDeviceSetType,
@@ -21,7 +25,7 @@ callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceBackToSetTy
   return getAddDeviceSetTypeAction(getAddDevicePayload(user.data.addDevicePayload));
 });
 
-callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetType, async ({ data, user }) => {
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceType, async ({ data, user }) => {
   const newPayload: AddDevicePayload = {
     ...getAddDevicePayload(user.data.addDevicePayload),
     type: data.deviceType,
@@ -44,7 +48,7 @@ export function getAddDeviceSetTypeAction(addDevicePayload: AddDevicePayload): M
   return new MessageAction({
     content: {
       type: 'text',
-      text: Markdown.create`${formatEnteredFields(addDevicePayload, ['name'])}
+      text: Markdown.create`${formatDeviceEnteredFields(addDevicePayload, ['name'])}
 
 
 ${Markdown.italic('Выберите тип устройства')}`,
@@ -55,14 +59,15 @@ ${Markdown.italic('Выберите тип устройства')}`,
           .filter((type) => type !== DeviceType.Other)
           .map((deviceType) =>
             callbackButton(getDeviceIcon(deviceType), getDeviceTypeString(deviceType), {
-              type: DevicesClientCallbackButtonType.AddDeviceSetType,
+              type: DevicesClientCallbackButtonType.AddDeviceType,
               deviceType,
             }),
           ),
       ],
       [
         backToCallbackButton('К выбору названия', {
-          type: DevicesClientCallbackButtonType.AddDeviceBackToSetName,
+          type: DevicesClientCallbackButtonType.AddDeviceSetName,
+          isBack: true,
         }),
       ],
       [

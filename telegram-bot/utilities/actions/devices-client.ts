@@ -62,7 +62,7 @@ export function formatDeviceFields<Field extends AddDevicePayloadField>(
   );
 }
 
-export function formatEnteredFields(
+export function formatDeviceEnteredFields(
   addDevicePayload: AddDevicePayload,
   fields: [AddDevicePayloadField, ...AddDevicePayloadField[]],
 ): Markdown {
@@ -74,6 +74,7 @@ export function formatDeviceField<Field extends AddDevicePayloadField>(
   field: Field,
   value: AddDevicePayload[Field],
 ): Markdown {
+  const { icon, name } = ADD_DEVICE_FIELDS_INFO[field];
   const formattedValue =
     field === 'type'
       ? Markdown.create`${getDeviceIcon(value as DeviceType)} ${getDeviceTypeString(value as DeviceType)}`
@@ -87,9 +88,7 @@ export function formatDeviceField<Field extends AddDevicePayloadField>(
             : value
           : value;
 
-  return Markdown.create`${ADD_DEVICE_FIELDS_INFO[field].icon} ${Markdown.bold(
-    ADD_DEVICE_FIELDS_INFO[field].name,
-  )}: ${formattedValue}`;
+  return Markdown.create`${icon} ${Markdown.bold(name)}: ${formattedValue}`;
 }
 
 export function formatDevice(device: Device): Markdown {
