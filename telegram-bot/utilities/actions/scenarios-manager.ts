@@ -1,7 +1,7 @@
 import { Scenario, ScenarioStepType } from '@prisma/client';
 import { Markdown } from '@tg-sensei/bot';
 
-import { AddScenarioStepPayload, AddScenarioStepPayloadField } from 'scenarios-manager/types/scenario';
+import { AddScenarioStepPayload, AddScenarioStepPayloadField } from 'scenarios-manager/types/step';
 import { InlineKeyboard } from 'telegram-bot/types/keyboard';
 import { ScenariosManagerCallbackButtonType } from 'telegram-bot/types/keyboard/scenarios-manager';
 

@@ -2,8 +2,7 @@ import { ScenarioStepType, TelegramUserState } from '@prisma/client';
 import { Markdown } from '@tg-sensei/bot';
 import chunk from 'lodash/chunk';
 
-import { AddScenarioStepPayload } from 'scenarios-manager/types/scenario';
-import { RunStepParams } from 'scenarios-manager/types/step';
+import { AddScenarioStepPayload, StepRunParams } from 'scenarios-manager/types/step';
 import { MessageAction } from 'telegram-bot/types/actions';
 import { ScenariosManagerCallbackButtonType } from 'telegram-bot/types/keyboard/scenarios-manager';
 
@@ -32,7 +31,7 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepSe
 });
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepType, async ({ data, user }) => {
-  let runParams: RunStepParams;
+  let runParams: StepRunParams;
   let newState: TelegramUserState;
 
   if (data.stepType === ScenarioStepType.RunScenario) {

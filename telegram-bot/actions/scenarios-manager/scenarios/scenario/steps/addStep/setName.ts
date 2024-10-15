@@ -2,7 +2,7 @@ import { TelegramUserState } from '@prisma/client';
 import { Markdown } from '@tg-sensei/bot';
 import scenariosManager from 'scenarios-manager/manager';
 
-import { AddScenarioStepPayload } from 'scenarios-manager/types/scenario';
+import { AddScenarioStepPayload } from 'scenarios-manager/types/step';
 import { MessageAction } from 'telegram-bot/types/actions';
 import { InlineKeyboard } from 'telegram-bot/types/keyboard';
 import { ScenariosManagerCallbackButtonType } from 'telegram-bot/types/keyboard/scenarios-manager';

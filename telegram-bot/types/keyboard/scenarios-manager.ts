@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { scenarioStepTypeSchema } from 'scenarios-manager/types/scenario';
+import { scenarioStepTypeSchema } from 'scenarios-manager/types/step';
 
 // next number is 26
 export enum ScenariosManagerCallbackButtonType {

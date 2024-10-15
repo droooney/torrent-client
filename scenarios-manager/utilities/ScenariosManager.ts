@@ -1,17 +1,34 @@
-import { Scenario, ScenarioCondition, ScenarioStep, ScenarioStepCondition, ScenarioStepType } from '@prisma/client';
+import {
+  Scenario,
+  ScenarioCondition,
+  ScenarioStep,
+  ScenarioStepCondition,
+  ScenarioStepType,
+  ScenarioTrigger,
+  ScenarioTriggerType,
+} from '@prisma/client';
+import { CronJob } from 'cron';
 import devicesClient from 'devices-client/client';
 import omit from 'lodash/omit';
+import scheduler from 'scheduler/scheduler';
 
 import prisma from 'db/prisma';
 
-import { AddScenarioStepPayload } from 'scenarios-manager/types/scenario';
+import { AddScenarioStepPayload } from 'scenarios-manager/types/step';
+import { AddScenarioTriggerPayload } from 'scenarios-manager/types/trigger';
 
-import { getStepRunParams } from 'scenarios-manager/utilities/payload';
+import { getStepRunParams, getTriggerParams } from 'scenarios-manager/utilities/payload';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
+import { prepareErrorForLogging } from 'utilities/error';
 import { delay } from 'utilities/promise';
 
 export type AddScenarioOptions = {
   name: string;
+};
+
+type ScheduledScenario = {
+  scenarioId: number;
+  cronJob: CronJob;
 };
 
 export default class ScenariosManager {
@@ -23,6 +40,42 @@ export default class ScenariosManager {
       scenarioId: 0,
     },
   };
+
+  static readonly defaultAddScenarioTriggerPayload: AddScenarioTriggerPayload = {
+    scenarioId: 0,
+    name: '',
+    params: {
+      type: ScenarioTriggerType.Schedule,
+      schedule: '* * * * * *',
+    },
+  };
+
+  private _scheduledScenarios = new Map<number, ScheduledScenario>();
+
+  constructor() {
+    (async () => {
+      const scenarios = await prisma.scenario.findMany({
+        where: {
+          triggers: {
+            some: {
+              type: ScenarioTriggerType.Schedule,
+            },
+          },
+        },
+        include: {
+          triggers: true,
+        },
+      });
+
+      scenarios.forEach((scenario) => {
+        scenario.triggers.forEach((trigger) => {
+          this.tryRegisterTrigger(trigger);
+        });
+      });
+    })().catch((err) => {
+      console.log(prepareErrorForLogging(new Error('Unable to load scheduled scenarios', { cause: err })));
+    });
+  }
 
   async addScenario(options: AddScenarioOptions): Promise<Scenario> {
     return prisma.scenario.create({
@@ -52,6 +105,22 @@ export default class ScenariosManager {
         },
       });
     });
+  }
+
+  async addScenarioTrigger(addTriggerPayload: AddScenarioTriggerPayload): Promise<ScenarioTrigger> {
+    const trigger = await prisma.scenarioTrigger.create({
+      data: {
+        name: addTriggerPayload.name,
+        scenarioId: addTriggerPayload.scenarioId,
+        isActive: true,
+        type: addTriggerPayload.params.type,
+        payload: omit(addTriggerPayload.params, 'type'),
+      },
+    });
+
+    this.tryRegisterTrigger(trigger);
+
+    return trigger;
   }
 
   async areConditionsMet(conditions: (ScenarioCondition | ScenarioStepCondition)[]): Promise<boolean> {
@@ -112,6 +181,20 @@ export default class ScenariosManager {
     });
   }
 
+  async deleteScenarioTrigger(triggerId: number): Promise<void> {
+    await prisma.scenarioTrigger.delete({
+      where: {
+        id: triggerId,
+      },
+    });
+
+    const scheduledScenario = this._scheduledScenarios.get(triggerId);
+
+    scheduledScenario?.cronJob.stop();
+
+    this._scheduledScenarios.delete(triggerId);
+  }
+
   async editScenario(scenarioId: number, data: Partial<Scenario>): Promise<void> {
     await prisma.scenario.update({
       where: {
@@ -131,6 +214,36 @@ export default class ScenariosManager {
         payload: data.payload ?? undefined,
       },
     });
+  }
+
+  async editScenarioTrigger(scenarioTriggerId: number, data: Partial<ScenarioTrigger>): Promise<void> {
+    const trigger = await prisma.scenarioTrigger.update({
+      where: {
+        id: scenarioTriggerId,
+      },
+      data: {
+        ...data,
+        payload: data.payload ?? undefined,
+      },
+    });
+
+    const triggerParams = getTriggerParams(trigger);
+
+    if (triggerParams?.type !== ScenarioTriggerType.Schedule) {
+      return;
+    }
+
+    const scheduledScenario = this._scheduledScenarios.get(trigger.id);
+
+    if (scheduledScenario?.cronJob.cronTime.toString() === triggerParams.schedule) {
+      return;
+    }
+
+    scheduledScenario?.cronJob.stop();
+
+    this._scheduledScenarios.delete(trigger.id);
+
+    this.tryRegisterTrigger(trigger);
   }
 
   async getActiveScenarios(): Promise<Scenario[]> {
@@ -241,5 +354,21 @@ export default class ScenariosManager {
     } else if (runParams.type === ScenarioStepType.TurnOffDevice) {
       await devicesClient.turnOffDevice(runParams.deviceId);
     }
+  }
+
+  tryRegisterTrigger(trigger: ScenarioTrigger): void {
+    const triggerParams = getTriggerParams(trigger);
+
+    if (triggerParams?.type !== ScenarioTriggerType.Schedule) {
+      return;
+    }
+
+    this._scheduledScenarios.set(trigger.id, {
+      scenarioId: trigger.scenarioId,
+      cronJob: scheduler.addJob({
+        schedule: triggerParams.schedule,
+        callback: () => this.runScenario(trigger.scenarioId),
+      }),
+    });
   }
 }

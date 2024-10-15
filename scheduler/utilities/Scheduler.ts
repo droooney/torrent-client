@@ -6,8 +6,8 @@ export type AddJobOptions = {
 };
 
 export default class Scheduler {
-  addJob(options: AddJobOptions): void {
-    CronJob.from({
+  addJob(options: AddJobOptions): CronJob {
+    return CronJob.from({
       cronTime: options.schedule,
       start: true,
       onTick: options.callback,
