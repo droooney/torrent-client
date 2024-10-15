@@ -6,11 +6,9 @@ import { deviceManufacturerSchema, deviceTypeSchema } from 'devices-client/types
 export enum DevicesClientCallbackButtonType {
   // Status
   OpenStatus = 'd2',
-  RefreshStatus = 'd0',
 
   // Devices list
   OpenDevicesList = 'd10',
-  RefreshDevicesList = 'd13',
 
   // Add device
   AddDeviceSetName = 'd5',
@@ -22,7 +20,6 @@ export enum DevicesClientCallbackButtonType {
 
   // Device
   OpenDevice = 'd11',
-  DeviceRefresh = 'd7',
   DeviceDeleteConfirm = 'd9',
   DeviceTurnOn = 'd15',
   DeviceTurnOff = 'd18',
@@ -38,27 +35,14 @@ export enum DevicesClientCallbackButtonType {
 
 export const devicesClientCallbackDataSchema = z.union([
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.RefreshStatus),
-  }),
-
-  z.object({
     type: z.literal(DevicesClientCallbackButtonType.OpenStatus),
+    isRefresh: z.optional(z.boolean()),
   }),
 
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.OpenDevicesList),
     page: z.optional(z.number()),
-  }),
-
-  z.object({
-    type: z.literal(DevicesClientCallbackButtonType.RefreshDevicesList),
-    page: z.number(),
-  }),
-
-  z.object({
-    type: z.literal(DevicesClientCallbackButtonType.OpenDevice),
-    deviceId: z.number(),
-    withDeleteConfirm: z.optional(z.boolean()),
+    isRefresh: z.optional(z.boolean()),
   }),
 
   z.object({
@@ -89,8 +73,10 @@ export const devicesClientCallbackDataSchema = z.union([
   }),
 
   z.object({
-    type: z.literal(DevicesClientCallbackButtonType.DeviceRefresh),
+    type: z.literal(DevicesClientCallbackButtonType.OpenDevice),
     deviceId: z.number(),
+    withDeleteConfirm: z.optional(z.boolean()),
+    isRefresh: z.optional(z.boolean()),
   }),
 
   z.object({

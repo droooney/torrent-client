@@ -13,14 +13,12 @@ import { backCallbackButton, callbackButton, refreshCallbackButton } from 'teleg
 import { callbackDataProvider } from 'telegram-bot/bot';
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.OpenScenariosList, async ({ data }) => {
-  return getScenariosListAction(data.page);
+  const action = getScenariosListAction(data.page);
+
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
-callbackDataProvider.handle(ScenariosManagerCallbackButtonType.RefreshScenariosList, async ({ data }) => {
-  return new RefreshDataAction(await getScenariosListAction(data.page));
-});
-
-export async function getScenariosListAction(page: number = 0): Promise<PaginationMessageAction<Scenario>> {
+export function getScenariosListAction(page: number = 0): PaginationMessageAction<Scenario> {
   return new PaginationMessageAction({
     page,
     emptyPageText: Markdown.italic('Нет сценариев'),
@@ -50,8 +48,9 @@ export async function getScenariosListAction(page: number = 0): Promise<Paginati
     getKeyboard: (paginationButtons) => [
       [
         refreshCallbackButton({
-          type: ScenariosManagerCallbackButtonType.RefreshScenariosList,
+          type: ScenariosManagerCallbackButtonType.OpenScenariosList,
           page,
+          isRefresh: true,
         }),
       ],
       ...paginationButtons,

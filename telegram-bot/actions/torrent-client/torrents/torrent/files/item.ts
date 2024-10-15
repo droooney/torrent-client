@@ -13,13 +13,11 @@ import { getFilesAction } from 'telegram-bot/actions/torrent-client/torrents/tor
 import { callbackDataProvider } from 'telegram-bot/bot';
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.OpenFile, async ({ data }) => {
-  return getFileAction(data.fileId, {
+  const action = await getFileAction(data.fileId, {
     withDeleteConfirm: data.withDeleteConfirm,
   });
-});
 
-callbackDataProvider.handle(TorrentClientCallbackButtonType.FileRefresh, async ({ data }) => {
-  return new RefreshDataAction(await getFileAction(data.fileId));
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.DeleteFileConfirm, async ({ data }) => {
@@ -60,8 +58,9 @@ async function getFileAction(fileId: number, options: GetFileActionOptions = {})
     replyMarkup: [
       file.state !== TorrentFileState.Finished && [
         refreshCallbackButton({
-          type: TorrentClientCallbackButtonType.FileRefresh,
+          type: TorrentClientCallbackButtonType.OpenFile,
           fileId,
+          isRefresh: true,
         }),
       ],
       file.state === TorrentFileState.Finished && [

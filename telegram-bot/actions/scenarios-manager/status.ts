@@ -15,12 +15,10 @@ import {
 
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(ScenariosManagerCallbackButtonType.OpenStatus, async () => {
-  return getStatusAction();
-});
+callbackDataProvider.handle(ScenariosManagerCallbackButtonType.OpenStatus, async ({ data }) => {
+  const action = await getStatusAction();
 
-callbackDataProvider.handle(ScenariosManagerCallbackButtonType.RefreshStatus, async () => {
-  return new RefreshDataAction(await getStatusAction());
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
 async function getStatusAction(): Promise<MessageAction> {
@@ -43,7 +41,8 @@ ${activeScenarios.map(({ name }) => `- ${name}`).join('\n')}`;
     replyMarkup: [
       [
         refreshCallbackButton({
-          type: ScenariosManagerCallbackButtonType.RefreshStatus,
+          type: ScenariosManagerCallbackButtonType.OpenStatus,
+          isRefresh: true,
         }),
         addCallbackButton({
           type: ScenariosManagerCallbackButtonType.AddScenario,

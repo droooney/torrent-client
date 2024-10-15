@@ -22,12 +22,10 @@ import { formatSize, formatSpeed } from 'utilities/size';
 
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(TorrentClientCallbackButtonType.OpenStatus, async () => {
-  return getStatusAction();
-});
+callbackDataProvider.handle(TorrentClientCallbackButtonType.OpenStatus, async ({ data }) => {
+  const action = await getStatusAction();
 
-callbackDataProvider.handle(TorrentClientCallbackButtonType.StatusRefresh, async () => {
-  return new RefreshDataAction(await getStatusAction());
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.PauseClient, async ({ data }) => {
@@ -101,7 +99,8 @@ ${Markdown.bold('💾 Размер всех торрентов')}: ${formatSize(
     replyMarkup: [
       [
         refreshCallbackButton({
-          type: TorrentClientCallbackButtonType.StatusRefresh,
+          type: TorrentClientCallbackButtonType.OpenStatus,
+          isRefresh: true,
         }),
         clientState.paused
           ? callbackButton('▶️', 'Продолжить', {

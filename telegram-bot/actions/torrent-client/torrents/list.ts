@@ -13,14 +13,12 @@ import { backCallbackButton, callbackButton, refreshCallbackButton } from 'teleg
 import { callbackDataProvider } from 'telegram-bot/bot';
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.OpenTorrentsList, async ({ data }) => {
-  return getTorrentsListAction(data.page);
+  const action = getTorrentsListAction(data.page);
+
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
-callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentsListRefresh, async ({ data }) => {
-  return new RefreshDataAction(await getTorrentsListAction(data.page));
-});
-
-export async function getTorrentsListAction(page: number = 0): Promise<PaginationMessageAction<Torrent>> {
+export function getTorrentsListAction(page: number = 0): PaginationMessageAction<Torrent> {
   return new PaginationMessageAction({
     page,
     emptyPageText: Markdown.italic('Нет торрентов'),
@@ -53,8 +51,9 @@ export async function getTorrentsListAction(page: number = 0): Promise<Paginatio
     getKeyboard: (paginationButtons) => [
       [
         refreshCallbackButton({
-          type: TorrentClientCallbackButtonType.TorrentsListRefresh,
+          type: TorrentClientCallbackButtonType.OpenTorrentsList,
           page,
+          isRefresh: true,
         }),
       ],
       ...paginationButtons,

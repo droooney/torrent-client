@@ -18,17 +18,12 @@ import {
 import { callbackDataProvider } from 'telegram-bot/bot';
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.OpenScenarioSteps, async ({ data }) => {
-  return getScenarioStepsAction(data.scenarioId, data.page);
+  const action = getScenarioStepsAction(data.scenarioId, data.page);
+
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
-callbackDataProvider.handle(ScenariosManagerCallbackButtonType.RefreshScenarioSteps, async ({ data }) => {
-  return new RefreshDataAction(await getScenarioStepsAction(data.scenarioId, data.page));
-});
-
-export async function getScenarioStepsAction(
-  scenarioId: number,
-  page: number = 0,
-): Promise<PaginationMessageAction<ScenarioStep>> {
+export function getScenarioStepsAction(scenarioId: number, page: number = 0): PaginationMessageAction<ScenarioStep> {
   return new PaginationMessageAction({
     page,
     emptyPageText: Markdown.italic('Нет шагов'),
@@ -62,9 +57,10 @@ export async function getScenarioStepsAction(
     getKeyboard: (paginationButtons) => [
       [
         refreshCallbackButton({
-          type: ScenariosManagerCallbackButtonType.RefreshScenarioSteps,
+          type: ScenariosManagerCallbackButtonType.OpenScenarioSteps,
           scenarioId,
           page,
+          isRefresh: true,
         }),
         addCallbackButton({
           type: ScenariosManagerCallbackButtonType.AddScenarioStepSetName,

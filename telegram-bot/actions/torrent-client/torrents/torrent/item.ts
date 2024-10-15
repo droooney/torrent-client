@@ -19,13 +19,11 @@ import { getTorrentsListAction } from 'telegram-bot/actions/torrent-client/torre
 import { callbackDataProvider } from 'telegram-bot/bot';
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.OpenTorrent, async ({ data }) => {
-  return getTorrentAction(data.torrentId, {
+  const action = await getTorrentAction(data.torrentId, {
     withDeleteConfirm: data.withDeleteConfirm,
   });
-});
 
-callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentRefresh, async ({ data }) => {
-  return new RefreshDataAction(await getTorrentAction(data.torrentId));
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
 callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentDeleteConfirm, async ({ data }) => {
@@ -33,7 +31,7 @@ callbackDataProvider.handle(TorrentClientCallbackButtonType.TorrentDeleteConfirm
 
   return new MessageWithNotificationAction({
     text: 'Торрент успешно удален',
-    updateAction: await getTorrentsListAction(),
+    updateAction: getTorrentsListAction(),
   });
 });
 
@@ -87,8 +85,9 @@ export async function getTorrentAction(
     replyMarkup: [
       torrent.state !== TorrentState.Finished && [
         refreshCallbackButton({
-          type: TorrentClientCallbackButtonType.TorrentRefresh,
+          type: TorrentClientCallbackButtonType.OpenTorrent,
           torrentId: infoHash,
+          isRefresh: true,
         }),
         isCritical
           ? callbackButton('❕', 'Сделать некритичным', {

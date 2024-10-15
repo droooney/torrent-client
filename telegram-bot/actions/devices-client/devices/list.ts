@@ -13,14 +13,12 @@ import { backCallbackButton, callbackButton, refreshCallbackButton } from 'teleg
 import { callbackDataProvider } from 'telegram-bot/bot';
 
 callbackDataProvider.handle(DevicesClientCallbackButtonType.OpenDevicesList, async ({ data }) => {
-  return getDevicesListAction(data.page);
+  const action = getDevicesListAction(data.page);
+
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
-callbackDataProvider.handle(DevicesClientCallbackButtonType.RefreshDevicesList, async ({ data }) => {
-  return new RefreshDataAction(await getDevicesListAction(data.page));
-});
-
-export async function getDevicesListAction(page: number = 0): Promise<PaginationMessageAction<Device>> {
+export function getDevicesListAction(page: number = 0): PaginationMessageAction<Device> {
   return new PaginationMessageAction({
     page,
     emptyPageText: Markdown.italic('Нет устройств'),
@@ -47,8 +45,9 @@ export async function getDevicesListAction(page: number = 0): Promise<Pagination
     getKeyboard: (paginationButtons) => [
       [
         refreshCallbackButton({
-          type: DevicesClientCallbackButtonType.RefreshDevicesList,
+          type: DevicesClientCallbackButtonType.OpenDevicesList,
           page,
+          isRefresh: true,
         }),
       ],
       ...paginationButtons,

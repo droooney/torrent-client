@@ -19,13 +19,11 @@ import { getScenariosListAction } from 'telegram-bot/actions/scenarios-manager/s
 import { callbackDataProvider } from 'telegram-bot/bot';
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.OpenScenario, async ({ data }) => {
-  return getScenarioAction(data.scenarioId, {
+  const action = await getScenarioAction(data.scenarioId, {
     withDeleteConfirm: data.withDeleteConfirm,
   });
-});
 
-callbackDataProvider.handle(ScenariosManagerCallbackButtonType.RefreshScenario, async ({ data }) => {
-  return new RefreshDataAction(await getScenarioAction(data.scenarioId));
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.RunScenario, async ({ data }) => {
@@ -51,7 +49,7 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.ScenarioDeleteCon
 
   return new MessageWithNotificationAction({
     text: 'Сценарий успешно удален',
-    updateAction: await getScenariosListAction(),
+    updateAction: getScenariosListAction(),
   });
 });
 
@@ -86,8 +84,9 @@ export async function getScenarioAction(
     replyMarkup: [
       [
         refreshCallbackButton({
-          type: ScenariosManagerCallbackButtonType.RefreshScenario,
+          type: ScenariosManagerCallbackButtonType.OpenScenario,
           scenarioId,
+          isRefresh: true,
         }),
         activateCallbackButton(scenario.isActive, (isActive) => ({
           type: ScenariosManagerCallbackButtonType.ScenarioSetActive,

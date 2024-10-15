@@ -14,12 +14,10 @@ import { formatTemperature } from 'utilities/temperature';
 
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(SystemCallbackButtonType.OpenStatus, async () => {
-  return getStatusAction();
-});
+callbackDataProvider.handle(SystemCallbackButtonType.OpenStatus, async ({ data }) => {
+  const action = await getStatusAction();
 
-callbackDataProvider.handle(SystemCallbackButtonType.RefreshStatus, async () => {
-  return new RefreshDataAction(await getStatusAction());
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
 async function getStatusAction(): Promise<MessageAction> {
@@ -56,7 +54,8 @@ async function getStatusAction(): Promise<MessageAction> {
     replyMarkup: [
       [
         refreshCallbackButton({
-          type: SystemCallbackButtonType.RefreshStatus,
+          type: SystemCallbackButtonType.OpenStatus,
+          isRefresh: true,
         }),
       ],
       [

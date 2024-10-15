@@ -14,12 +14,10 @@ import {
 
 import { callbackDataProvider } from 'telegram-bot/bot';
 
-callbackDataProvider.handle(DevicesClientCallbackButtonType.OpenStatus, async () => {
-  return getStatusAction();
-});
+callbackDataProvider.handle(DevicesClientCallbackButtonType.OpenStatus, async ({ data }) => {
+  const action = getStatusAction();
 
-callbackDataProvider.handle(DevicesClientCallbackButtonType.RefreshStatus, async () => {
-  return new RefreshDataAction(await getStatusAction());
+  return data.isRefresh ? new RefreshDataAction(await getStatusAction()) : action;
 });
 
 async function getStatusAction(): Promise<MessageAction> {
@@ -31,7 +29,8 @@ async function getStatusAction(): Promise<MessageAction> {
     replyMarkup: [
       [
         refreshCallbackButton({
-          type: DevicesClientCallbackButtonType.RefreshStatus,
+          type: DevicesClientCallbackButtonType.OpenStatus,
+          isRefresh: true,
         }),
         addCallbackButton({
           type: DevicesClientCallbackButtonType.AddDeviceSetName,

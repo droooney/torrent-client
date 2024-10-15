@@ -21,14 +21,12 @@ import { getDevicesListAction } from 'telegram-bot/actions/devices-client/device
 import { callbackDataProvider } from 'telegram-bot/bot';
 
 callbackDataProvider.handle(DevicesClientCallbackButtonType.OpenDevice, async ({ data }) => {
-  return getDeviceAction(data.deviceId, {
+  const action = await getDeviceAction(data.deviceId, {
     withDeleteConfirm: data.withDeleteConfirm,
     timeout: SECOND,
   });
-});
 
-callbackDataProvider.handle(DevicesClientCallbackButtonType.DeviceRefresh, async ({ data }) => {
-  return new RefreshDataAction(await getDeviceAction(data.deviceId));
+  return data.isRefresh ? new RefreshDataAction(action) : action;
 });
 
 callbackDataProvider.handle(DevicesClientCallbackButtonType.DeviceDeleteConfirm, async ({ data }) => {
@@ -36,7 +34,7 @@ callbackDataProvider.handle(DevicesClientCallbackButtonType.DeviceDeleteConfirm,
 
   return new MessageWithNotificationAction({
     text: 'Устройство успешно удалено',
-    updateAction: await getDevicesListAction(),
+    updateAction: getDevicesListAction(),
   });
 });
 
@@ -84,8 +82,9 @@ ${Markdown.bold('⚡ Питание:')} ${
     replyMarkup: [
       [
         refreshCallbackButton({
-          type: DevicesClientCallbackButtonType.DeviceRefresh,
+          type: DevicesClientCallbackButtonType.OpenDevice,
           deviceId,
+          isRefresh: true,
         }),
         deleteCallbackButton(
           withDeleteConfirm,
