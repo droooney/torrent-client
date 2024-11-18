@@ -1,4 +1,7 @@
-import { InlineKeyboard as LibInlineKeyboard, InlineKeyboardButton as LibInlineKeyboardButton } from '@tg-sensei/bot';
+import {
+  InlineKeyboardButton as LibInlineKeyboardButton,
+  InlineKeyboardButtons as LibInlineKeyboardButtons,
+} from '@tg-sensei/bot';
 import { z } from 'zod';
 
 import { devicesClientCallbackDataSchema } from 'telegram-bot/types/keyboard/devices-client';
@@ -19,4 +22,4 @@ export type CallbackData = z.TypeOf<typeof callbackDataSchema>;
 
 export type InlineKeyboardButton = LibInlineKeyboardButton<CallbackData>;
 
-export type InlineKeyboard = LibInlineKeyboard<CallbackData>;
+export type InlineKeyboardButtons = LibInlineKeyboardButtons<CallbackData>;

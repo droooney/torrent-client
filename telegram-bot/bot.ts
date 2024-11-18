@@ -1,12 +1,24 @@
-import { Prisma, TelegramUserData } from '@prisma/client';
-import { JsonStorageCallbackDataProvider, JsonUserDataProvider, TelegramBot } from '@tg-sensei/bot';
+import { TelegramUserData, TelegramUserState } from '@prisma/client';
+import {
+  CommandsProvider,
+  JsonStorageCallbackDataProvider,
+  MessageProvider,
+  MessageResponse,
+  NotificationResponse,
+  ProviderContext,
+  TelegramBot,
+  UpdatesContextByType,
+  UpdatesProvider,
+  UserDataContextExtension,
+  getUpdateContextUser,
+} from '@tg-sensei/bot';
 
 import prisma from 'db/prisma';
 
-import { MessageAction, NotificationAction } from 'telegram-bot/types/actions';
 import { CommandType } from 'telegram-bot/types/commands';
 import { CallbackData, callbackDataSchema } from 'telegram-bot/types/keyboard';
 
+import { getUserDataProvider } from 'telegram-bot/utilities/providers';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { prepareErrorForHuman } from 'utilities/error';
 
@@ -18,7 +30,17 @@ if (!process.env.TELEGRAM_BOT_TOKEN) {
 
 export type UserData = Omit<TelegramUserData, 'telegramUserId'>;
 
-export const callbackDataProvider = new JsonStorageCallbackDataProvider<CommandType, CallbackData, UserData>({
+const userUpdates = new UpdatesProvider();
+
+export const commandsProvider = new CommandsProvider<
+  CommandType,
+  UpdatesContextByType<'message'> & UserDataContextExtension<UserData>
+>();
+
+export const callbackDataProvider = new JsonStorageCallbackDataProvider<
+  CallbackData,
+  UpdatesContextByType<'callback_query'> & UserDataContextExtension<UserData>
+>({
   getData: async (dataId) => {
     const found = await prisma.telegramCallbackData.findFirst({
       where: {
@@ -59,53 +81,87 @@ export const callbackDataProvider = new JsonStorageCallbackDataProvider<CommandT
   },
 });
 
-export const userDataProvider = new JsonUserDataProvider<CommandType, CallbackData, UserData>({
-  getOrCreateUserData: async (userId) =>
-    prisma.telegramUserData.upsert({
-      where: {
-        telegramUserId: userId,
-      },
-      update: {},
-      create: {
-        telegramUserId: userId,
-        state: 'First',
-      },
-    }),
-  setUserData: async (userId, data) => {
-    await prisma.telegramUserData.update({
-      where: {
-        telegramUserId: userId,
-      },
-      data: {
-        ...data,
-        editScenarioPayload: data.editScenarioPayload ?? Prisma.DbNull,
-        addScenarioStepPayload: data.addScenarioStepPayload ?? Prisma.DbNull,
-        addDevicePayload: data.addDevicePayload ?? Prisma.DbNull,
-        editDevicePayload: data.editDevicePayload ?? Prisma.DbNull,
-      },
-    });
-  },
+export const messageUserDataProvider = getUserDataProvider<UpdatesContextByType<'message'>>();
+
+const callbackQueryMessageProvider = new MessageProvider<UpdatesContextByType<'callback_query'>>();
+const callbackQueryUserDataProvider = getUserDataProvider<ProviderContext<typeof callbackQueryMessageProvider>>();
+
+const bot = new TelegramBot({
+  token: process.env.TELEGRAM_BOT_TOKEN,
 });
 
-const bot = new TelegramBot<CommandType, CallbackData, UserData>({
-  token: process.env.TELEGRAM_BOT_TOKEN,
-  usernameWhitelist: process.env.USERNAME_WHITELIST?.split(',').filter(Boolean) ?? [],
-  commands: {
-    [CommandType.Help]: 'Помощь',
-  },
-  callbackDataProvider,
-  userDataProvider,
-  getCallbackQueryErrorAction: ({ err }) =>
-    new NotificationAction({
-      text: prepareErrorForHuman(err),
-    }),
-  getMessageErrorAction: ({ err }) =>
-    new MessageAction({
-      content: {
-        type: 'text',
-        text: prepareErrorForHuman(err),
-      },
-    }),
+const allowedUsernames = process.env.USERNAME_WHITELIST?.split(',').filter(Boolean) ?? [];
+
+commandsProvider.use(async ({ user, commands }, next) => {
+  if (commands.length > 0) {
+    await user.updateData({
+      state: TelegramUserState.Waiting,
+    });
+  }
+
+  await next();
 });
+
+callbackDataProvider.use(async (ctx, next) => {
+  try {
+    await next();
+
+    if ('isRefresh' in ctx.callbackData && ctx.callbackData.isRefresh) {
+      await ctx.respondWith(
+        new NotificationResponse({
+          text: 'Данные обновлены',
+        }),
+      );
+    }
+  } catch (err) {
+    await ctx.respondWith(
+      new NotificationResponse({
+        text: prepareErrorForHuman(err),
+      }),
+    );
+
+    return;
+  }
+
+  try {
+    await ctx.respondWith(
+      new NotificationResponse({
+        text: '',
+      }),
+    );
+  } catch {
+    /* empty */
+  }
+});
+
+messageUserDataProvider.use(commandsProvider);
+
+userUpdates.handle('message', async (ctx, next) => {
+  try {
+    await next();
+  } catch (err) {
+    await ctx.respondWith(
+      new MessageResponse({
+        content: prepareErrorForHuman(err),
+      }),
+    );
+  }
+});
+userUpdates.handle('message', messageUserDataProvider);
+userUpdates.handle(
+  'callback_query',
+  callbackQueryMessageProvider.use(callbackQueryUserDataProvider.use(callbackDataProvider)),
+);
+
+bot.use(async (ctx, next) => {
+  const user = getUpdateContextUser(ctx);
+
+  if (user && (!user.username || !allowedUsernames.includes(user.username))) {
+    return;
+  }
+
+  await next();
+});
+bot.use(userUpdates);
 
 export default bot;
