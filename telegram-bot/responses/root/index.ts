@@ -26,8 +26,8 @@ messageUserDataProvider.handle(TelegramUserState.First, async (ctx) => {
   await ctx.respondWith(await getRootResponse());
 });
 
-callbackDataProvider.handle(RootCallbackButtonType.OpenRoot, async () => {
-  return getRootResponse();
+callbackDataProvider.handle(RootCallbackButtonType.OpenRoot, async (ctx) => {
+  await ctx.respondWith(await getRootResponse());
 });
 
 async function getRootResponse(): Promise<MessageResponse> {

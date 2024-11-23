@@ -10,7 +10,7 @@ scheduler.addJob({
     await prisma.telegramCallbackData.deleteMany({
       where: {
         createdAt: {
-          lt: new Date(Date.now() - DAY),
+          lt: new Date(Date.now() - 30 * DAY),
         },
       },
     });

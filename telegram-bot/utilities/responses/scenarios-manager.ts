@@ -1,4 +1,4 @@
-import { Scenario, ScenarioStepType } from '@prisma/client';
+import { Scenario, ScenarioStep, ScenarioStepType } from '@prisma/client';
 import { InlineKeyboard, Markdown } from '@tg-sensei/bot';
 
 import { AddScenarioStepPayload, AddScenarioStepPayloadField } from 'scenarios-manager/types/step';
@@ -83,8 +83,10 @@ export type FormatScenarioStepOptions = {
   indexString?: string;
 };
 
-export function formatScenarioStep(scenarioStep: Scenario, options: FormatScenarioStepOptions = {}): Markdown {
+export function formatScenarioStep(scenarioStep: ScenarioStep, options: FormatScenarioStepOptions = {}): Markdown {
   const { indexString } = options;
+
+  // TODO: show scenario step content (type + payload)
 
   return Markdown.create`🅰️ ${Markdown.bold('Название')}: ${indexString && Markdown.create`${indexString} `}${
     scenarioStep.name
