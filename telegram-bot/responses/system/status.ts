@@ -4,7 +4,7 @@ import systemClient from 'system-client/client';
 import { RootCallbackButtonType } from 'telegram-bot/types/keyboard/root';
 import { SystemCallbackButtonType } from 'telegram-bot/types/keyboard/system';
 
-import { backCallbackButton, refreshCallbackButton } from 'telegram-bot/utilities/keyboard';
+import { backCallbackButton, callbackButton, refreshCallbackButton } from 'telegram-bot/utilities/keyboard';
 import { formatDuration } from 'utilities/date';
 import { formatPercent } from 'utilities/number';
 import { formatSize } from 'utilities/size';
@@ -13,10 +13,44 @@ import { formatTemperature } from 'utilities/temperature';
 import { callbackDataProvider } from 'telegram-bot/bot';
 
 callbackDataProvider.handle(SystemCallbackButtonType.OpenStatus, async (ctx) => {
-  await ctx.respondWith(await getStatusResponse());
+  const { withSystemRestartConfirm, withProcessRestartConfirm } = ctx.callbackData;
+
+  await ctx.respondWith(
+    await getStatusResponse({
+      withSystemRestartConfirm,
+      withProcessRestartConfirm,
+    }),
+  );
 });
 
-async function getStatusResponse(): Promise<MessageResponse> {
+callbackDataProvider.handle(SystemCallbackButtonType.RestartProcess, async (ctx) => {
+  systemClient.scheduleProcessShutdown();
+
+  await ctx.respondWith(
+    new MessageResponse({
+      content: 'Дом будет перезагружен через 5 секунд',
+    }),
+  );
+});
+
+callbackDataProvider.handle(SystemCallbackButtonType.RestartSystem, async (ctx) => {
+  await systemClient.scheduleSystemReboot();
+
+  await ctx.respondWith(
+    new MessageResponse({
+      content: 'Система будет перезагружена через одну минуту',
+    }),
+  );
+});
+
+type GetStatusResponseOptions = {
+  withSystemRestartConfirm?: boolean;
+  withProcessRestartConfirm?: boolean;
+};
+
+async function getStatusResponse(options: GetStatusResponseOptions = {}): Promise<MessageResponse> {
+  const { withSystemRestartConfirm = false, withProcessRestartConfirm = false } = options;
+
   const [cpuUsage] = await Promise.all([systemClient.getCpuUsage()]);
 
   const osTotalMemory = systemClient.getOsTotalMemory();
@@ -37,7 +71,7 @@ async function getStatusResponse(): Promise<MessageResponse> {
   text.add`
 
 
-🤖 ${Markdown.underline(Markdown.bold('[Процесс]'))}
+🤖 ${Markdown.underline(Markdown.bold('[Дом]'))}
 🧮 ${Markdown.bold('Использование CPU')}: ${formatPercent(cpuUsage.process)}
 🛠 ${Markdown.bold('Использование RAM')}: ${formatSize(systemClient.getProcessUsedMemory())}
 🕖 ${Markdown.bold('Время работы')}: ${formatDuration(systemClient.getProcessUptime())}`;
@@ -50,6 +84,34 @@ async function getStatusResponse(): Promise<MessageResponse> {
           type: SystemCallbackButtonType.OpenStatus,
           isRefresh: true,
         }),
+      ],
+      [
+        callbackButton(
+          '🛑',
+          withProcessRestartConfirm ? 'Точно перезагрузить дом?' : 'Перезагрузить дом',
+          withProcessRestartConfirm
+            ? {
+                type: SystemCallbackButtonType.RestartProcess,
+              }
+            : {
+                type: SystemCallbackButtonType.OpenStatus,
+                withProcessRestartConfirm: true,
+              },
+        ),
+      ],
+      [
+        callbackButton(
+          '🛑',
+          withSystemRestartConfirm ? 'Точно перезагрузить систему?' : 'Перезагрузить систему',
+          withSystemRestartConfirm
+            ? {
+                type: SystemCallbackButtonType.RestartSystem,
+              }
+            : {
+                type: SystemCallbackButtonType.OpenStatus,
+                withSystemRestartConfirm: true,
+              },
+        ),
       ],
       [
         backCallbackButton({

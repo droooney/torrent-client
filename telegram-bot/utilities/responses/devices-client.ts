@@ -12,12 +12,14 @@ import { callbackDataProvider } from 'telegram-bot/bot';
 const DEVICE_TYPE_ICON_MAP: Record<DeviceType, string> = {
   [DeviceType.Tv]: '📺',
   [DeviceType.Lightbulb]: '💡',
+  [DeviceType.Socket]: '🔌',
   [DeviceType.Other]: '❓',
 };
 
 const DEVICE_TYPE_NAME_MAP: Record<DeviceType, string> = {
   [DeviceType.Tv]: 'Телевизор',
   [DeviceType.Lightbulb]: 'Лампочка',
+  [DeviceType.Socket]: 'Розетка',
   [DeviceType.Other]: 'Неизвестно',
 };
 
@@ -58,7 +60,7 @@ export function formatDeviceFields<Field extends AddDevicePayloadField>(
 ): Markdown {
   return Markdown.join(
     fields.map((field) => {
-      return formatDeviceField(field, data[field]);
+      return formatDeviceField(field, data[field] as AddDevicePayload[Field]);
     }),
     '\n',
   );
@@ -88,7 +90,9 @@ export function formatDeviceField<Field extends AddDevicePayloadField>(
           ? value === DeviceManufacturer.Other
             ? Markdown.italic('Неизвестно')
             : value
-          : value;
+          : field === 'address'
+            ? value || Markdown.italic('Отсутствует')
+            : value;
 
   return Markdown.create`${icon} ${Markdown.bold(name)}: ${formattedValue}`;
 }

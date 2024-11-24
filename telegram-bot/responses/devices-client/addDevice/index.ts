@@ -3,3 +3,4 @@ import './setType';
 import './setManufacturer';
 import './setMac';
 import './setAddress';
+import './setMatterPairingCode';

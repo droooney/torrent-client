@@ -5,6 +5,7 @@ import prisma from 'db/prisma';
 
 import { AddDevicePayload } from 'devices-client/types/device';
 
+import MatterClient from 'devices-client/utilities/MatterClient';
 import YeelightClient from 'devices-client/utilities/YeelightClient';
 import { wakeOnLan } from 'devices-client/utilities/wol';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
@@ -13,6 +14,7 @@ import { isDefined } from 'utilities/is';
 const DEVICE_STRING: Record<DeviceType, string[]> = {
   [DeviceType.Tv]: ['телевизор', 'телек', 'телик'],
   [DeviceType.Lightbulb]: ['лампочка', 'лампочку', 'лампа', 'лампу'],
+  [DeviceType.Socket]: ['розетка', 'розетку'],
   [DeviceType.Other]: [],
 };
 
@@ -30,19 +32,35 @@ export default class DevicesClient {
     type: DeviceType.Other,
     manufacturer: DeviceManufacturer.Other,
     mac: null,
-    address: '',
+    address: null,
+    matterPairingCode: null,
   };
 
   private readonly yeelightClient: YeelightClient;
+  private readonly matterClient: MatterClient;
 
   constructor() {
     this.yeelightClient = new YeelightClient();
+    this.matterClient = new MatterClient();
   }
 
-  async addDevice(data: AddDevicePayload): Promise<Device> {
+  async addDevice(payload: AddDevicePayload & { matterNodeId?: bigint | null }): Promise<Device> {
+    const { matterPairingCode, matterNodeId, ...data } = payload;
+
     return prisma.device.create({
-      data,
+      data: {
+        ...data,
+        matterNodeId: String(matterNodeId),
+      },
     });
+  }
+
+  async commissionMatterDevice(pairingCode: string): Promise<bigint> {
+    return this.matterClient.commissionDevice(pairingCode);
+  }
+
+  async decommissionMatterDevice(matterNodeId: bigint): Promise<void> {
+    await this.matterClient.removeNode(matterNodeId);
   }
 
   async getDevice(deviceId: number): Promise<Device> {
@@ -69,7 +87,15 @@ export default class DevicesClient {
       },
     };
 
-    if (device.type === DeviceType.Lightbulb && device.manufacturer === DeviceManufacturer.Yeelight) {
+    if (device.matterNodeId) {
+      const nodeState = await this.matterClient.getNodeState(BigInt(device.matterNodeId));
+
+      deviceInfo.state.power = nodeState.power;
+    } else if (
+      device.type === DeviceType.Lightbulb &&
+      device.manufacturer === DeviceManufacturer.Yeelight &&
+      device.address
+    ) {
       const deviceState = await this.yeelightClient.getState(device.address, timeout);
 
       if (deviceState?.power) {
@@ -81,6 +107,12 @@ export default class DevicesClient {
   }
 
   async deleteDevice(deviceId: number): Promise<void> {
+    const device = await this.getDevice(deviceId);
+
+    if (device.matterNodeId) {
+      await this.matterClient.removeNode(BigInt(device.matterNodeId));
+    }
+
     await prisma.device.delete({
       where: {
         id: deviceId,
@@ -155,9 +187,17 @@ export default class DevicesClient {
   async turnOffDevice(deviceId: number): Promise<void> {
     const device = await this.getDevice(deviceId);
 
+    if (device.matterNodeId) {
+      await this.matterClient.turnOffNode(BigInt(device.matterNodeId));
+
+      return;
+    }
+
     if (device.type === DeviceType.Lightbulb) {
       if (device.manufacturer === DeviceManufacturer.Yeelight) {
-        await this.yeelightClient.turnOffDevice(device.address);
+        if (device.address) {
+          await this.yeelightClient.turnOffDevice(device.address);
+        }
       }
 
       return;
@@ -167,9 +207,17 @@ export default class DevicesClient {
   async turnOnDevice(deviceId: number): Promise<void> {
     const device = await this.getDevice(deviceId);
 
+    if (device.matterNodeId) {
+      await this.matterClient.turnOnNode(BigInt(device.matterNodeId));
+
+      return;
+    }
+
     if (device.type === DeviceType.Lightbulb) {
       if (device.manufacturer === DeviceManufacturer.Yeelight) {
-        await this.yeelightClient.turnOnDevice(device.address);
+        if (device.address) {
+          await this.yeelightClient.turnOnDevice(device.address);
+        }
       }
 
       return;
@@ -181,6 +229,10 @@ export default class DevicesClient {
   private async wakeDevice(device: Device): Promise<void> {
     if (!isDefined(device.mac)) {
       throw new CustomError(ErrorCode.NO_MAC, 'Отсутствует MAC устройства');
+    }
+
+    if (!isDefined(device.address)) {
+      throw new CustomError(ErrorCode.NO_ADDRESS, 'Отсутствует адрес устройства');
     }
 
     await wakeOnLan({

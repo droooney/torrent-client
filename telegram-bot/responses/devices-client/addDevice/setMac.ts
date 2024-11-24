@@ -32,22 +32,24 @@ messageUserDataProvider.handle(TelegramUserState.AddDeviceSetMac, async (ctx) =>
     mac = null;
   }
 
-  if (isDefined(mac) && !isMac(mac)) {
-    return ctx.respondWith(
-      new MessageResponse({
-        content: Markdown.create`Введите валидный MAC-адрес (пример: ${Markdown.fixedWidth('12:23:56:9f:aa:bb')})`,
-        replyMarkup: await getSetMacKeyboard(),
-      }),
-    );
-  }
+  if (isDefined(mac)) {
+    if (!isMac(mac)) {
+      return ctx.respondWith(
+        new MessageResponse({
+          content: Markdown.create`Введите валидный MAC-адрес (пример: ${Markdown.fixedWidth('12:23:56:9f:aa:bb')})`,
+          replyMarkup: await getSetMacKeyboard(),
+        }),
+      );
+    }
 
-  if (isDefined(mac) && !(await devicesClient.isMacAllowed(mac))) {
-    return ctx.respondWith(
-      new MessageResponse({
-        content: 'MAC-адрес должен быть уникальным',
-        replyMarkup: await getSetMacKeyboard(),
-      }),
-    );
+    if (!(await devicesClient.isMacAllowed(mac))) {
+      return ctx.respondWith(
+        new MessageResponse({
+          content: 'MAC-адрес должен быть уникальным',
+          replyMarkup: await getSetMacKeyboard(),
+        }),
+      );
+    }
   }
 
   const newPayload: AddDevicePayload = {

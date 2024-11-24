@@ -1,7 +1,10 @@
 import cp, { ExecOptions } from 'node:child_process';
 
+import { MaybePromise } from 'types/common';
+
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { prepareErrorForLogging } from 'utilities/error';
+import { delay } from 'utilities/promise';
 
 export function runMain(main: () => unknown): void {
   (async () => {
@@ -43,4 +46,10 @@ export async function exec(command: string, options?: ExecOptions): Promise<stri
       },
     );
   });
+}
+
+export async function poll(ms: number, check: () => MaybePromise<boolean>): Promise<void> {
+  while (!(await check())) {
+    await delay(ms);
+  }
 }

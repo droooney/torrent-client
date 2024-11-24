@@ -2,6 +2,9 @@ import os from 'node:os';
 
 import isWsl from 'is-wsl';
 
+import { SECOND } from 'constants/date';
+
+import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { exec } from 'utilities/process';
 import { delay } from 'utilities/promise';
 
@@ -14,6 +17,11 @@ interface CpuUsageAllInfo {
   process: number;
   idle: number;
   total: number;
+}
+
+interface WifiNetworkInfo {
+  ssid: string;
+  password: string;
 }
 
 const DEFAULT_MEASURE_CPU_INTERVAL = 1000;
@@ -58,6 +66,20 @@ export default class SystemClient {
     return process.uptime() * 1000;
   }
 
+  getWifiNetworkInfo(): WifiNetworkInfo {
+    const ssid = process.env.WIFI_SSID;
+    const password = process.env.WIFI_PASSWORD;
+
+    if (!ssid || password === undefined) {
+      throw new CustomError(ErrorCode.WIFI_NETWORK_NOT_SET, 'WiFi-сеть не задана');
+    }
+
+    return {
+      ssid,
+      password,
+    };
+  }
+
   isWsl(): boolean {
     return isWsl;
   }
@@ -78,5 +100,15 @@ export default class SystemClient {
       idle: idleSum,
       total: totalSum,
     };
+  }
+
+  scheduleProcessShutdown(): void {
+    setTimeout(() => {
+      process.exit(0);
+    }, 5 * SECOND);
+  }
+
+  async scheduleSystemReboot(): Promise<void> {
+    await exec('sudo shutdown -r 1');
   }
 }

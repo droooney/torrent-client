@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "preserve",
     "target": "es2020",
     "strict": true,
     "outDir": "./dist",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "sourceMap": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "baseUrl": ".",

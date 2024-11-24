@@ -84,6 +84,7 @@ enum TelegramUserState {
   AddDeviceSetManufacturer
   AddDeviceSetMac
   AddDeviceSetAddress
+  AddDeviceEnterMatterPairingCode
   EditDeviceName
   EditDeviceMac
   EditDeviceAddress
@@ -117,6 +118,7 @@ model TelegramCallbackData {
 enum DeviceType {
   Tv
   Lightbulb
+  Socket
   Other
 
   @@map("device_type")
@@ -125,6 +127,7 @@ enum DeviceType {
 enum DeviceManufacturer {
   Haier
   Yeelight
+  Yandex
   Other
 
   @@map("device_manufacturer")
@@ -135,8 +138,9 @@ model Device {
   name         String             @unique
   type         DeviceType
   mac          String?            @unique
-  address      String             @unique
+  address      String?            @unique
   manufacturer DeviceManufacturer @default(Other)
+  matterNodeId String?
   createdAt    DateTime           @default(now()) @map("created_at")
 
   @@map("device")

@@ -114,6 +114,10 @@ callbackDataProvider.use(async (ctx, next) => {
       );
     }
   } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(err);
+    }
+
     await ctx.respondWith(
       new NotificationResponse({
         text: prepareErrorForHuman(err),
@@ -140,6 +144,10 @@ userUpdates.handle('message', async (ctx, next) => {
   try {
     await next();
   } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(err);
+    }
+
     await ctx.respondWith(
       new MessageResponse({
         content: prepareErrorForHuman(err),

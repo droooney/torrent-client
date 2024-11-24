@@ -10,12 +10,13 @@ export const addDevicePayloadSchema = z.object({
   type: deviceTypeSchema,
   manufacturer: deviceManufacturerSchema,
   mac: z.nullable(z.string()),
-  address: z.string(),
+  address: z.nullable(z.string()),
+  matterPairingCode: z.nullable(z.string()),
 });
 
 export type AddDevicePayload = z.TypeOf<typeof addDevicePayloadSchema>;
 
-export type AddDevicePayloadField = keyof AddDevicePayload;
+export type AddDevicePayloadField = Exclude<keyof AddDevicePayload, 'matterPairingCode'>;
 
 export const editDevicePayloadSchema = z.object({
   deviceId: z.number(),

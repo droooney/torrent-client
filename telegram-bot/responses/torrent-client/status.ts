@@ -43,10 +43,9 @@ callbackDataProvider.handle(TorrentClientCallbackButtonType.PauseClient, async (
 
 // TODO: add keyboard (settings, set limits)
 async function getStatusResponse(): Promise<MessageResponse> {
-  const [clientState, downloadSpeed, uploadSpeed, notFinishedTorrents, { _sum: allTorrentsSum }] = await Promise.all([
+  const [clientState, downloadSpeed, notFinishedTorrents, { _sum: allTorrentsSum }] = await Promise.all([
     torrentClient.getState(),
     torrentClient.getDownloadSpeed(),
-    torrentClient.getUploadSpeed(),
     prisma.torrent.findMany({
       where: {
         state: {
@@ -74,10 +73,6 @@ async function getStatusResponse(): Promise<MessageResponse> {
   status.add`${Markdown.bold('⚡️ Скорость загрузки')}: ${formatSpeed(downloadSpeed)}${
     clientState.downloadSpeedLimit !== null &&
     Markdown.create` (ограничение: ${formatSpeed(clientState.downloadSpeedLimit)})`
-  }
-${Markdown.bold('⚡️ Скорость отдачи')}: ${formatSpeed(uploadSpeed)}${
-    clientState.uploadSpeedLimit !== null &&
-    Markdown.create` (ограничение: ${formatSpeed(clientState.uploadSpeedLimit)})`
   }
 ${Markdown.bold('💾 Размер всех торрентов')}: ${formatSize(allTorrentsSize)}
 

@@ -1,8 +1,6 @@
 import { TelegramUserState } from '@prisma/client';
-import { InlineKeyboard, Markdown, MessageResponse, ResponsesStreamResponse } from '@tg-sensei/bot';
+import { InlineKeyboard, Markdown, MessageResponse } from '@tg-sensei/bot';
 import devicesClient from 'devices-client/client';
-
-import { SECOND } from 'constants/date';
 
 import { AddDevicePayload } from 'devices-client/types/device';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
@@ -10,55 +8,60 @@ import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/dev
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
 import { backToCallbackButton } from 'telegram-bot/utilities/keyboard';
 import { formatDeviceEnteredFields } from 'telegram-bot/utilities/responses/devices-client';
+import { isDefined } from 'utilities/is';
 
 import { callbackDataProvider, messageUserDataProvider } from 'telegram-bot/bot';
-import { getDeviceResponse } from 'telegram-bot/responses/devices-client/devices/device/status';
+import { getAddDeviceSetMatterPairingCodeResponse } from 'telegram-bot/responses/devices-client/addDevice/setMatterPairingCode';
 
-messageUserDataProvider.handle(TelegramUserState.AddDeviceSetAddress, async (ctx) => {
-  const {
-    message: { text: address },
-    user,
-  } = ctx;
-
-  if (!address) {
-    return ctx.respondWith(
-      new MessageResponse({
-        content: 'Адрес устройства должно содержать как минимум 1 символ',
-        replyMarkup: await getSetAddressKeyboard(),
-      }),
-    );
-  }
-
-  if (!(await devicesClient.isAddressAllowed(address))) {
-    return ctx.respondWith(
-      new MessageResponse({
-        content: 'Адрес устройства должен быть уникальным',
-        replyMarkup: await getSetAddressKeyboard(),
-      }),
-    );
-  }
-
-  const device = await devicesClient.addDevice({
-    ...getAddDevicePayload(user.data.addDevicePayload),
-    address,
-  });
+callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetAddress, async (ctx) => {
+  const { user } = ctx;
 
   await user.updateData({
-    state: TelegramUserState.Waiting,
-    addDevicePayload: null,
+    state: TelegramUserState.AddDeviceSetAddress,
   });
 
-  await ctx.respondWith(
-    new ResponsesStreamResponse(async function* () {
-      yield new MessageResponse({
-        content: 'Устройство добавлено!',
-      });
+  await ctx.respondWith(await getAddDeviceSetAddressResponse(getAddDevicePayload(user.data.addDevicePayload)));
+});
 
-      yield getDeviceResponse(device.id, {
-        timeout: SECOND,
-      });
-    }),
-  );
+messageUserDataProvider.handle(TelegramUserState.AddDeviceSetAddress, async (ctx) => {
+  const { message, user } = ctx;
+  let address: string | null = message.text ?? '';
+
+  if (address === '-') {
+    address = null;
+  }
+
+  if (isDefined(address)) {
+    if (!address) {
+      return ctx.respondWith(
+        new MessageResponse({
+          content: 'Адрес устройства должно содержать как минимум 1 символ',
+          replyMarkup: await getSetAddressKeyboard(),
+        }),
+      );
+    }
+
+    if (!(await devicesClient.isAddressAllowed(address))) {
+      return ctx.respondWith(
+        new MessageResponse({
+          content: 'Адрес устройства должен быть уникальным',
+          replyMarkup: await getSetAddressKeyboard(),
+        }),
+      );
+    }
+  }
+
+  const newPayload: AddDevicePayload = {
+    ...getAddDevicePayload(user.data.addDevicePayload),
+    address,
+  };
+
+  await user.updateData({
+    state: TelegramUserState.AddDeviceEnterMatterPairingCode,
+    addDevicePayload: newPayload,
+  });
+
+  await ctx.respondWith(await getAddDeviceSetMatterPairingCodeResponse(newPayload));
 });
 
 export async function getAddDeviceSetAddressResponse(addDevicePayload: AddDevicePayload): Promise<MessageResponse> {
@@ -66,7 +69,7 @@ export async function getAddDeviceSetAddressResponse(addDevicePayload: AddDevice
     content: Markdown.create`${formatDeviceEnteredFields(addDevicePayload, ['name', 'type', 'manufacturer', 'mac'])}
 
 
-${Markdown.italic('Введите адрес устройства')}`,
+${Markdown.italic('Введите адрес устройства. Вбейте "-", чтобы пропустить')}`,
     replyMarkup: await getSetAddressKeyboard(),
   });
 }
