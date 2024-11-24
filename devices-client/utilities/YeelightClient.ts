@@ -118,6 +118,13 @@ export default class YeelightClient {
     });
   }
 
+  async toggle(deviceIp: string): Promise<void> {
+    await this.executeCommand({
+      deviceIp,
+      command: (device) => device.command(CommandLibrary.toggle),
+    });
+  }
+
   async turnOffDevice(deviceIp: string): Promise<void> {
     await this.executeCommand({
       deviceIp,

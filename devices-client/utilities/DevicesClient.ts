@@ -5,7 +5,7 @@ import prisma from 'db/prisma';
 
 import { AddDevicePayload } from 'devices-client/types/device';
 
-import MatterClient from 'devices-client/utilities/MatterClient';
+import MatterClient, { CommissionedNodeInfo } from 'devices-client/utilities/MatterClient';
 import YeelightClient from 'devices-client/utilities/YeelightClient';
 import { wakeOnLan } from 'devices-client/utilities/wol';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
@@ -55,7 +55,7 @@ export default class DevicesClient {
     });
   }
 
-  async commissionMatterDevice(pairingCode: string): Promise<bigint> {
+  async commissionMatterDevice(pairingCode: string): Promise<CommissionedNodeInfo> {
     return this.matterClient.commissionDevice(pairingCode);
   }
 

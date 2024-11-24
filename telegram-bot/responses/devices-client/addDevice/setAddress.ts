@@ -5,6 +5,7 @@ import devicesClient from 'devices-client/client';
 import { AddDevicePayload } from 'devices-client/types/device';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
+import { isIp } from 'devices-client/utilities/is';
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
 import { backToCallbackButton } from 'telegram-bot/utilities/keyboard';
 import { formatDeviceEnteredFields } from 'telegram-bot/utilities/responses/devices-client';
@@ -32,10 +33,10 @@ messageUserDataProvider.handle(TelegramUserState.AddDeviceSetAddress, async (ctx
   }
 
   if (isDefined(address)) {
-    if (!address) {
+    if (!isIp(address)) {
       return ctx.respondWith(
         new MessageResponse({
-          content: 'Адрес устройства должно содержать как минимум 1 символ',
+          content: Markdown.create`Введите валидный ip-адрес (пример: ${Markdown.fixedWidth('192.168.1.120')})`,
           replyMarkup: await getSetAddressKeyboard(),
         }),
       );
@@ -69,7 +70,7 @@ export async function getAddDeviceSetAddressResponse(addDevicePayload: AddDevice
     content: Markdown.create`${formatDeviceEnteredFields(addDevicePayload, ['name', 'type', 'manufacturer', 'mac'])}
 
 
-${Markdown.italic('Введите адрес устройства. Вбейте "-", чтобы пропустить')}`,
+${Markdown.italic('Введите ip-адрес устройства. Вбейте "-", чтобы пропустить')}`,
     replyMarkup: await getSetAddressKeyboard(),
   });
 }

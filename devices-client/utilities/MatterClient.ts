@@ -10,6 +10,7 @@ import { MINUTE } from 'constants/date';
 
 import { ManualPairingCodeCodec, ManualPairingData } from '@matter/types';
 
+import { isIp } from 'devices-client/utilities/is';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { poll } from 'utilities/process';
 import { timed } from 'utilities/promise';
@@ -18,6 +19,11 @@ export type NodePower = boolean | 'unknown';
 
 export type NodeState = {
   power: NodePower;
+};
+
+export type CommissionedNodeInfo = {
+  nodeId: bigint;
+  address: string | null;
 };
 
 export default class MatterClient {
@@ -49,7 +55,7 @@ export default class MatterClient {
     })();
   }
 
-  async commissionDevice(pairingCode: string): Promise<NodeId> {
+  async commissionDevice(pairingCode: string): Promise<CommissionedNodeInfo> {
     const commissioningController = await this.getCommissioningController();
     const pairingData = MatterClient.parsePairingCode(pairingCode);
     const wifiNetworkInfo = systemClient.getWifiNetworkInfo();
@@ -57,9 +63,10 @@ export default class MatterClient {
       ble: true,
       onIpNetwork: true,
     };
+    let nodeId: NodeId | null = null;
 
     try {
-      const nodeId = await timed(MINUTE, async () =>
+      nodeId = await timed(MINUTE, async () =>
         commissioningController.commissionNode(
           {
             commissioning: {
@@ -83,9 +90,33 @@ export default class MatterClient {
         throw new CustomError(ErrorCode.TIMEOUT, 'Подключение к устройству заняло слишком долго');
       }
 
-      return nodeId;
+      const commissionedNodeDetails = commissioningController
+        .getCommissionedNodesDetails()
+        .find((details) => details.nodeId === nodeId);
+      let address: string | null = null;
+
+      try {
+        if (commissionedNodeDetails?.operationalAddress) {
+          const url = new URL(commissionedNodeDetails.operationalAddress);
+
+          if (isIp(url.hostname)) {
+            address = url.hostname;
+          }
+        }
+      } catch {
+        /* empty */
+      }
+
+      return {
+        nodeId,
+        address,
+      };
     } catch (err) {
       commissioningController.cancelCommissionableDeviceDiscovery(pairingData, discoveryCapabilities);
+
+      if (nodeId) {
+        await this.removeNode(nodeId);
+      }
 
       throw err;
     }
@@ -113,8 +144,13 @@ export default class MatterClient {
   async getPairedNode(nodeId: bigint): Promise<PairedNode> {
     const commissioningController = await this.getCommissioningController();
     const branded = NodeId(nodeId);
+    const node = commissioningController.getPairedNode(branded) ?? (await commissioningController.connectNode(branded));
 
-    return commissioningController.getPairedNode(branded) ?? (await commissioningController.connectNode(branded));
+    if (!node.initialized) {
+      await node.events.initialized;
+    }
+
+    return node;
   }
 
   async getPower(nodeId: bigint): Promise<NodePower> {
@@ -134,9 +170,7 @@ export default class MatterClient {
     }
 
     try {
-      const pairedNode = commissioningController.getPairedNode(branded);
-
-      await pairedNode?.decommission();
+      await commissioningController.getPairedNode(branded)?.decommission();
     } catch (err) {
       try {
         await commissioningController.removeNode(branded);
@@ -144,6 +178,10 @@ export default class MatterClient {
         /* empty */
       }
     }
+  }
+
+  async toggle(nodeId: bigint): Promise<void> {
+    await (await this.getOnOff(nodeId))?.toggle();
   }
 
   async turnOffNode(nodeId: bigint): Promise<void> {

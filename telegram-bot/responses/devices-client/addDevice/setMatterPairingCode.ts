@@ -26,6 +26,7 @@ messageUserDataProvider.handle(TelegramUserState.AddDeviceEnterMatterPairingCode
   }
 
   let matterNodeId: bigint | null = null;
+  let address: string | null = null;
   let device: Device;
 
   try {
@@ -44,11 +45,14 @@ messageUserDataProvider.handle(TelegramUserState.AddDeviceEnterMatterPairingCode
         }),
       );
 
-      matterNodeId = await devicesClient.commissionMatterDevice(matterPairingCode);
+      ({ nodeId: matterNodeId, address } = await devicesClient.commissionMatterDevice(matterPairingCode));
     }
+
+    const payload = getAddDevicePayload(user.data.addDevicePayload);
 
     device = await devicesClient.addDevice({
       ...getAddDevicePayload(user.data.addDevicePayload),
+      address: payload.address ?? address,
       matterNodeId,
     });
   } catch (err) {
