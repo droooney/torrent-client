@@ -42,7 +42,7 @@ const ADD_DEVICE_FIELDS_INFO: Record<AddDevicePayloadField, { icon: string; name
   },
   address: {
     icon: '🌐',
-    name: 'Адрес',
+    name: 'IP-адрес',
   },
 };
 

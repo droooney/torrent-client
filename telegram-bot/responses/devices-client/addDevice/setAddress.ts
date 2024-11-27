@@ -5,6 +5,7 @@ import devicesClient from 'devices-client/client';
 import { AddDevicePayload } from 'devices-client/types/device';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
+import DevicesClient from 'devices-client/utilities/DevicesClient';
 import { isIp } from 'devices-client/utilities/is';
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
 import { backToCallbackButton } from 'telegram-bot/utilities/keyboard';
@@ -36,7 +37,7 @@ messageUserDataProvider.handle(TelegramUserState.AddDeviceSetAddress, async (ctx
     if (!isIp(address)) {
       return ctx.respondWith(
         new MessageResponse({
-          content: Markdown.create`Введите валидный ip-адрес (пример: ${Markdown.fixedWidth('192.168.1.120')})`,
+          content: Markdown.create`Введите валидный IP-адрес (пример: ${Markdown.fixedWidth('192.168.1.120')})`,
           replyMarkup: await getSetAddressKeyboard(),
         }),
       );
@@ -45,16 +46,17 @@ messageUserDataProvider.handle(TelegramUserState.AddDeviceSetAddress, async (ctx
     if (!(await devicesClient.isAddressAllowed(address))) {
       return ctx.respondWith(
         new MessageResponse({
-          content: 'Адрес устройства должен быть уникальным',
+          content: 'IP-адрес устройства должен быть уникальным',
           replyMarkup: await getSetAddressKeyboard(),
         }),
       );
     }
   }
 
+  const prevPayload = getAddDevicePayload(user.data.addDevicePayload);
   const newPayload: AddDevicePayload = {
-    ...getAddDevicePayload(user.data.addDevicePayload),
-    address,
+    ...prevPayload,
+    ...(await DevicesClient.getDeviceAddressAndMac({ mac: prevPayload.mac, address })),
   };
 
   await user.updateData({
@@ -70,7 +72,7 @@ export async function getAddDeviceSetAddressResponse(addDevicePayload: AddDevice
     content: Markdown.create`${formatDeviceEnteredFields(addDevicePayload, ['name', 'type', 'manufacturer', 'mac'])}
 
 
-${Markdown.italic('Введите ip-адрес устройства. Вбейте "-", чтобы пропустить')}`,
+${Markdown.italic('Введите IP-адрес устройства. Вбейте "-", чтобы пропустить')}`,
     replyMarkup: await getSetAddressKeyboard(),
   });
 }

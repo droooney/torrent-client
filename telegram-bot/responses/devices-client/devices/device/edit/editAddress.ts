@@ -29,7 +29,7 @@ callbackDataProvider.handle(DevicesClientCallbackButtonType.EditDeviceAddress, a
 
   await ctx.respondWith(
     new MessageResponse({
-      content: 'Введите новый ip-адрес. Вбейте "-", чтобы удалить',
+      content: 'Введите новый IP-адрес. Вбейте "-", чтобы удалить',
       replyMarkup: await getBackToEditDeviceKeyboard(deviceId),
     }),
   );
@@ -54,7 +54,7 @@ messageUserDataProvider.handle(TelegramUserState.EditDeviceAddress, async (ctx) 
     if (!isIp(address)) {
       return ctx.respondWith(
         new MessageResponse({
-          content: Markdown.create`Введите валидный ip-адрес (пример: ${Markdown.fixedWidth('192.168.1.120')})`,
+          content: Markdown.create`Введите валидный IP-адрес (пример: ${Markdown.fixedWidth('192.168.1.120')})`,
           replyMarkup: await getBackToEditDeviceKeyboard(deviceId),
         }),
       );
@@ -63,7 +63,7 @@ messageUserDataProvider.handle(TelegramUserState.EditDeviceAddress, async (ctx) 
     if (!(await devicesClient.isAddressAllowed(address))) {
       return ctx.respondWith(
         new MessageResponse({
-          content: 'Адрес устройства должен быть уникальным',
+          content: 'IP-адрес устройства должен быть уникальным',
           replyMarkup: await getBackToEditDeviceKeyboard(deviceId),
         }),
       );
@@ -82,7 +82,7 @@ messageUserDataProvider.handle(TelegramUserState.EditDeviceAddress, async (ctx) 
   await ctx.respondWith(
     new ResponsesStreamResponse(async function* () {
       yield new MessageResponse({
-        content: 'Адрес изменен',
+        content: 'IP-адрес изменен',
       });
 
       yield getEditDeviceResponse(deviceId);

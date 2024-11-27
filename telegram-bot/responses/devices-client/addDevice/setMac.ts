@@ -5,6 +5,7 @@ import devicesClient from 'devices-client/client';
 import { AddDevicePayload } from 'devices-client/types/device';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
+import DevicesClient from 'devices-client/utilities/DevicesClient';
 import { isMac } from 'devices-client/utilities/is';
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
 import { backToCallbackButton } from 'telegram-bot/utilities/keyboard';
@@ -13,6 +14,7 @@ import { isDefined } from 'utilities/is';
 
 import { callbackDataProvider, messageUserDataProvider } from 'telegram-bot/bot';
 import { getAddDeviceSetAddressResponse } from 'telegram-bot/responses/devices-client/addDevice/setAddress';
+import { getAddDeviceSetMatterPairingCodeResponse } from 'telegram-bot/responses/devices-client/addDevice/setMatterPairingCode';
 
 callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetMac, async (ctx) => {
   const { user } = ctx;
@@ -54,15 +56,24 @@ messageUserDataProvider.handle(TelegramUserState.AddDeviceSetMac, async (ctx) =>
 
   const newPayload: AddDevicePayload = {
     ...getAddDevicePayload(user.data.addDevicePayload),
-    mac,
+    ...(await DevicesClient.getDeviceAddressAndMac({
+      address: null,
+      mac,
+    })),
   };
 
   await user.updateData({
-    state: TelegramUserState.AddDeviceSetAddress,
+    state: newPayload.address
+      ? TelegramUserState.AddDeviceEnterMatterPairingCode
+      : TelegramUserState.AddDeviceSetAddress,
     addDevicePayload: newPayload,
   });
 
-  await ctx.respondWith(await getAddDeviceSetAddressResponse(newPayload));
+  await ctx.respondWith(
+    newPayload.address
+      ? await getAddDeviceSetMatterPairingCodeResponse(newPayload)
+      : await getAddDeviceSetAddressResponse(newPayload),
+  );
 });
 
 export async function getAddDeviceSetMacResponse(addDevicePayload: AddDevicePayload): Promise<MessageResponse> {

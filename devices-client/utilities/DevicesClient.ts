@@ -1,9 +1,11 @@
+import routerClient from '@/router-client/client';
 import { Device, DeviceManufacturer, DeviceType } from '@prisma/client';
 import findKey from 'lodash/findKey';
 
 import prisma from 'db/prisma';
 
 import { AddDevicePayload } from 'devices-client/types/device';
+import { RouterDevice } from 'router-client/types';
 
 import MatterClient, { CommissionedNodeInfo } from 'devices-client/utilities/MatterClient';
 import YeelightClient from 'devices-client/utilities/YeelightClient';
@@ -26,7 +28,33 @@ export type DeviceInfo = Device & {
   state: DeviceState;
 };
 
+export type DeviceAddressAndMac = {
+  address: string | null;
+  mac: string | null;
+};
+
 export default class DevicesClient {
+  static async getDeviceAddressAndMac(addressAndMac: DeviceAddressAndMac): Promise<DeviceAddressAndMac> {
+    let routerDevices: RouterDevice[];
+
+    try {
+      routerDevices = await routerClient.getDevices();
+    } catch {
+      routerDevices = [];
+    }
+
+    const routerDevice = routerDevices.find(({ ip, mac }) =>
+      isDefined(addressAndMac.mac)
+        ? mac.toUpperCase() === addressAndMac.mac
+        : isDefined(addressAndMac.address) && ip === addressAndMac.address,
+    );
+
+    return {
+      address: routerDevice?.ip ?? addressAndMac.address,
+      mac: routerDevice?.mac.toUpperCase() ?? addressAndMac.mac,
+    };
+  }
+
   static readonly defaultDevicePayload: AddDevicePayload = {
     name: '',
     type: DeviceType.Other,
@@ -50,7 +78,8 @@ export default class DevicesClient {
     return prisma.device.create({
       data: {
         ...data,
-        matterNodeId: String(matterNodeId),
+        ...(await DevicesClient.getDeviceAddressAndMac(payload)),
+        matterNodeId: isDefined(matterNodeId) ? String(matterNodeId) : null,
       },
     });
   }
@@ -91,15 +120,15 @@ export default class DevicesClient {
       const nodeState = await this.matterClient.getNodeState(BigInt(device.matterNodeId));
 
       deviceInfo.state.power = nodeState.power;
-    } else if (
-      device.type === DeviceType.Lightbulb &&
-      device.manufacturer === DeviceManufacturer.Yeelight &&
-      device.address
-    ) {
-      const deviceState = await this.yeelightClient.getState(device.address, timeout);
+    } else if (device.type === DeviceType.Lightbulb && device.manufacturer === DeviceManufacturer.Yeelight) {
+      const { address: deviceIp } = await DevicesClient.getDeviceAddressAndMac(device);
 
-      if (deviceState?.power) {
-        deviceInfo.state.power = deviceState.power === 'on';
+      if (isDefined(deviceIp)) {
+        const deviceState = await this.yeelightClient.getState(deviceIp, timeout);
+
+        if (deviceState?.power) {
+          deviceInfo.state.power = deviceState.power === 'on';
+        }
       }
     }
 
@@ -188,56 +217,54 @@ export default class DevicesClient {
     const device = await this.getDevice(deviceId);
 
     if (device.matterNodeId) {
-      await this.matterClient.turnOffNode(BigInt(device.matterNodeId));
-
-      return;
+      return this.matterClient.turnOffNode(BigInt(device.matterNodeId));
     }
 
     if (device.type === DeviceType.Lightbulb) {
       if (device.manufacturer === DeviceManufacturer.Yeelight) {
-        if (device.address) {
-          await this.yeelightClient.turnOffDevice(device.address);
+        const { address: deviceIp } = await DevicesClient.getDeviceAddressAndMac(device);
+
+        if (isDefined(deviceIp)) {
+          return this.yeelightClient.turnOffDevice(deviceIp);
         }
       }
-
-      return;
     }
+
+    throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
   }
 
   async turnOnDevice(deviceId: number): Promise<void> {
     const device = await this.getDevice(deviceId);
 
     if (device.matterNodeId) {
-      await this.matterClient.turnOnNode(BigInt(device.matterNodeId));
-
-      return;
+      return this.matterClient.turnOnNode(BigInt(device.matterNodeId));
     }
 
     if (device.type === DeviceType.Lightbulb) {
       if (device.manufacturer === DeviceManufacturer.Yeelight) {
-        if (device.address) {
-          await this.yeelightClient.turnOnDevice(device.address);
+        const { address: deviceIp } = await DevicesClient.getDeviceAddressAndMac(device);
+
+        if (isDefined(deviceIp)) {
+          return this.yeelightClient.turnOnDevice(deviceIp);
         }
       }
 
-      return;
+      throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
     }
 
     await this.wakeDevice(device);
   }
 
   private async wakeDevice(device: Device): Promise<void> {
-    if (!isDefined(device.mac)) {
-      throw new CustomError(ErrorCode.NO_MAC, 'Отсутствует MAC устройства');
-    }
+    const { address: deviceIp, mac: deviceMac } = await DevicesClient.getDeviceAddressAndMac(device);
 
-    if (!isDefined(device.address)) {
-      throw new CustomError(ErrorCode.NO_ADDRESS, 'Отсутствует адрес устройства');
+    if (!deviceIp || !deviceMac) {
+      throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
     }
 
     await wakeOnLan({
-      mac: device.mac,
-      address: device.address,
+      mac: deviceMac,
+      address: deviceIp,
     });
   }
 }

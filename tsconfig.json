@@ -18,6 +18,7 @@
       "db/*": ["./prisma/*"],
       "devices-client/*": ["./devices-client/*"],
       "github-client/*": ["./github-client/*"],
+      "router-client/*": ["./router-client/*"],
       "rutracker-client/*": ["./rutracker-client/*"],
       "scenarios-manager/*": ["./scenarios-manager/*"],
       "scheduler/*": ["./scheduler/*"],
