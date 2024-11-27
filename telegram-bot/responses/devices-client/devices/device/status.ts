@@ -88,13 +88,6 @@ export async function getDeviceResponse(
       [
         formatDeviceFields(deviceInfo, ['name']),
         formatDeviceStateFields(deviceInfo.state, ['online', 'power']),
-        Markdown.create`${Markdown.bold('⚡ Питание:')} ${
-          deviceState.power === 'unknown'
-            ? Markdown.italic('Неизвестно')
-            : deviceState.power
-              ? '🟢 Включено'
-              : '🔴 Выключено'
-        }`,
         formatDeviceFields(deviceInfo, ['type', 'manufacturer', 'mac', 'address']),
       ],
       '\n',

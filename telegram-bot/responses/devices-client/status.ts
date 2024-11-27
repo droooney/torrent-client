@@ -45,7 +45,7 @@ async function getStatusResponse(): Promise<MessageResponse> {
               return Markdown.join(
                 [
                   formatDeviceField('name', deviceInfo.name),
-                  formatDeviceStateFields(deviceInfo.state, ['online', 'power']),
+                  formatDeviceStateFields(deviceInfo.state, ['power']),
                   formatDeviceField('type', deviceInfo.type),
                 ],
                 '\n',
