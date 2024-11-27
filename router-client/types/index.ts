@@ -9,6 +9,6 @@ export type RouterDevice = {
   name: string;
   ip: string;
   mac: string;
-  active: boolean;
+  online: boolean;
   uptime: number;
 };

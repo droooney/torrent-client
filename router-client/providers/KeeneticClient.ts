@@ -102,7 +102,10 @@ export default class KeeneticClient implements RouterProvider {
   async getDevices(): Promise<RouterDevice[]> {
     const clientsList = await this.rci(GetClientsList);
 
-    return clientsList.host;
+    return clientsList.host.map(({ active, ...device }) => ({
+      ...device,
+      online: active,
+    }));
   }
 
   private async rci<T>(command: KeeneticCommand<T>): Promise<T> {

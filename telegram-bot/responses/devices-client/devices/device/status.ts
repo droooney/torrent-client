@@ -13,7 +13,7 @@ import {
   refreshCallbackButton,
 } from 'telegram-bot/utilities/keyboard';
 import MessageWithNotificationResponse from 'telegram-bot/utilities/responses/MessageWithNotificationResponse';
-import { formatDeviceFields } from 'telegram-bot/utilities/responses/devices-client';
+import { formatDeviceFields, formatDeviceStateFields } from 'telegram-bot/utilities/responses/devices-client';
 
 import { callbackDataProvider } from 'telegram-bot/bot';
 import { getDevicesListResponse } from 'telegram-bot/responses/devices-client/devices/list';
@@ -78,19 +78,27 @@ export async function getDeviceResponse(
   options: GetDeviceResponseOptions = {},
 ): Promise<MessageResponse> {
   const { withDeleteConfirm = false, timeout } = options;
-  const deviceInfo = await devicesClient.getDeviceInfo(deviceId, timeout);
+  const deviceInfo = await devicesClient.getDeviceInfo(deviceId, {
+    timeout,
+  });
   const { state: deviceState } = deviceInfo;
 
   return new MessageResponse({
-    content: Markdown.create`${formatDeviceFields(deviceInfo, ['name', 'type', 'manufacturer', 'mac', 'address'])}
-
-${Markdown.bold('⚡ Питание:')} ${
-      deviceState.power === 'unknown'
-        ? Markdown.italic('Неизвестно')
-        : deviceState.power
-          ? '🟢 Включено'
-          : '🔴 Выключено'
-    }`,
+    content: Markdown.join(
+      [
+        formatDeviceFields(deviceInfo, ['name']),
+        formatDeviceStateFields(deviceInfo.state, ['online', 'power']),
+        Markdown.create`${Markdown.bold('⚡ Питание:')} ${
+          deviceState.power === 'unknown'
+            ? Markdown.italic('Неизвестно')
+            : deviceState.power
+              ? '🟢 Включено'
+              : '🔴 Выключено'
+        }`,
+        formatDeviceFields(deviceInfo, ['type', 'manufacturer', 'mac', 'address']),
+      ],
+      '\n',
+    ),
     replyMarkup: await callbackDataProvider.buildInlineKeyboard([
       [
         refreshCallbackButton({

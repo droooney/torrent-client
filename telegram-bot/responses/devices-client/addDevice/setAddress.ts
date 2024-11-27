@@ -5,7 +5,6 @@ import devicesClient from 'devices-client/client';
 import { AddDevicePayload } from 'devices-client/types/device';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
-import DevicesClient from 'devices-client/utilities/DevicesClient';
 import { isIp } from 'devices-client/utilities/is';
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
 import { backToCallbackButton } from 'telegram-bot/utilities/keyboard';
@@ -56,7 +55,7 @@ messageUserDataProvider.handle(TelegramUserState.AddDeviceSetAddress, async (ctx
   const prevPayload = getAddDevicePayload(user.data.addDevicePayload);
   const newPayload: AddDevicePayload = {
     ...prevPayload,
-    ...(await DevicesClient.getDeviceAddressAndMac({ mac: prevPayload.mac, address })),
+    ...(await devicesClient.getDeviceAddressAndMac({ mac: prevPayload.mac, address })),
   };
 
   await user.updateData({

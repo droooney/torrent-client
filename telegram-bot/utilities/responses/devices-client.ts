@@ -5,6 +5,7 @@ import { AddDevicePayload, AddDevicePayloadField } from 'devices-client/types/de
 import { InlineKeyboardButtons } from 'telegram-bot/types/keyboard';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
+import { DeviceState } from 'devices-client/utilities/DevicesClient';
 import { backToCallbackButton } from 'telegram-bot/utilities/keyboard';
 
 import { callbackDataProvider } from 'telegram-bot/bot';
@@ -45,6 +46,17 @@ const ADD_DEVICE_FIELDS_INFO: Record<AddDevicePayloadField, { icon: string; name
   address: {
     icon: '🌐',
     name: 'IP-адрес',
+  },
+};
+
+const DEVICE_STATE_FIELDS_INFO: Record<keyof DeviceState, { icon: string; name: string }> = {
+  online: {
+    icon: '📶',
+    name: 'Статус',
+  },
+  power: {
+    icon: '⚡',
+    name: 'Питание',
   },
 };
 
@@ -111,6 +123,37 @@ export function formatDeviceField<Field extends AddDevicePayloadField>(
 
 export function formatDevice(device: Device): Markdown {
   return formatDeviceFields(device, ['name', 'type']);
+}
+
+export function formatDeviceStateFields<Field extends keyof DeviceState>(
+  state: DeviceState,
+  fields: Field[],
+): Markdown {
+  return Markdown.join(
+    fields.map((field) => {
+      return formatDeviceStateField(field, state[field]);
+    }),
+    '\n',
+  );
+}
+
+export function formatDeviceStateField<Field extends keyof DeviceState>(
+  field: Field,
+  value: DeviceState[Field],
+): Markdown {
+  const { icon, name } = DEVICE_STATE_FIELDS_INFO[field];
+  const formattedValue =
+    field === 'online'
+      ? `${value ? '🟢 Онлайн' : '🔴 Оффлайн'}`
+      : field === 'power'
+        ? value === 'unknown'
+          ? Markdown.italic('Неизвестно')
+          : value
+            ? '🟢 Включено'
+            : '🔴 Выключено'
+        : '';
+
+  return Markdown.create`${icon} ${Markdown.bold(name)}: ${formattedValue}`;
 }
 
 export function getBackToEditDeviceKeyboardButtons(deviceId: number): InlineKeyboardButtons {

@@ -22,11 +22,17 @@ const DEVICE_STRING: Record<DeviceType, string[]> = {
 };
 
 export type DeviceState = {
+  online: boolean;
   power: boolean | 'unknown';
 };
 
 export type DeviceInfo = Device & {
   state: DeviceState;
+};
+
+type GetDeviceInfoOptions = {
+  timeout?: number;
+  routerDevices?: RouterDevice[];
 };
 
 export type DeviceAddressAndMac = {
@@ -35,38 +41,6 @@ export type DeviceAddressAndMac = {
 };
 
 export default class DevicesClient {
-  static fromRouterDevice(routerDevice: RouterDevice): Device {
-    return {
-      id: 0,
-      name: routerDevice.name || routerDevice.hostname,
-      type: DeviceType.Unknown,
-      mac: routerDevice.mac,
-      address: routerDevice.ip,
-      manufacturer: DeviceManufacturer.Unknown,
-      matterNodeId: null,
-      createdAt: new Date(Date.now() - routerDevice.uptime),
-    };
-  }
-
-  static async getDeviceAddressAndMac(addressAndMac: DeviceAddressAndMac): Promise<DeviceAddressAndMac> {
-    let routerDevices: RouterDevice[];
-
-    try {
-      routerDevices = await routerClient.getDevices();
-    } catch {
-      routerDevices = [];
-    }
-
-    const routerDevice = routerDevices.find(
-      ({ ip, mac }) => mac.toUpperCase() === addressAndMac.mac || ip === addressAndMac.address,
-    );
-
-    return {
-      address: routerDevice?.ip ?? addressAndMac.address,
-      mac: routerDevice?.mac.toUpperCase() ?? addressAndMac.mac,
-    };
-  }
-
   static readonly defaultDevicePayload: AddDevicePayload = {
     name: '',
     type: DeviceType.Other,
@@ -90,7 +64,7 @@ export default class DevicesClient {
     return prisma.device.create({
       data: {
         ...data,
-        ...(await DevicesClient.getDeviceAddressAndMac(payload)),
+        ...(await this.getDeviceAddressAndMac(payload)),
         matterNodeId: isDefined(matterNodeId) ? String(matterNodeId) : null,
       },
     });
@@ -102,53 +76,6 @@ export default class DevicesClient {
 
   async decommissionMatterDevice(matterNodeId: bigint): Promise<void> {
     await this.matterClient.removeNode(matterNodeId);
-  }
-
-  async getDevice(deviceId: number): Promise<Device> {
-    const device = await prisma.device.findUnique({
-      where: {
-        id: deviceId,
-      },
-    });
-
-    if (!device) {
-      throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
-    }
-
-    return device;
-  }
-
-  async getDevices(): Promise<Device[]> {
-    return prisma.device.findMany();
-  }
-
-  async getDeviceInfo(deviceId: number, timeout?: number): Promise<DeviceInfo> {
-    const device = await this.getDevice(deviceId);
-
-    const deviceInfo: DeviceInfo = {
-      ...device,
-      state: {
-        power: 'unknown',
-      },
-    };
-
-    if (device.matterNodeId) {
-      const nodeState = await this.matterClient.getNodeState(BigInt(device.matterNodeId));
-
-      deviceInfo.state.power = nodeState.power;
-    } else if (device.type === DeviceType.Lightbulb && device.manufacturer === DeviceManufacturer.Yeelight) {
-      const { address: deviceIp } = await DevicesClient.getDeviceAddressAndMac(device);
-
-      if (isDefined(deviceIp)) {
-        const deviceState = await this.yeelightClient.getState(deviceIp, timeout);
-
-        if (deviceState?.power) {
-          deviceInfo.state.power = deviceState.power === 'on';
-        }
-      }
-    }
-
-    return deviceInfo;
   }
 
   async deleteDevice(deviceId: number): Promise<void> {
@@ -205,6 +132,99 @@ export default class DevicesClient {
     return device;
   }
 
+  fromRouterDevice(routerDevice: RouterDevice): Device {
+    return {
+      id: 0,
+      name: routerDevice.name || routerDevice.hostname,
+      type: DeviceType.Unknown,
+      mac: routerDevice.mac,
+      address: routerDevice.ip,
+      manufacturer: DeviceManufacturer.Unknown,
+      matterNodeId: null,
+      createdAt: new Date(Date.now() - routerDevice.uptime),
+    };
+  }
+
+  async getDevice(deviceId: number): Promise<Device> {
+    const device = await prisma.device.findUnique({
+      where: {
+        id: deviceId,
+      },
+    });
+
+    if (!device) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
+    }
+
+    return device;
+  }
+
+  async getDeviceAddressAndMac(addressAndMac: DeviceAddressAndMac): Promise<DeviceAddressAndMac> {
+    const routerDevices = await this.getRouterDevices();
+    const routerDevice = routerDevices.find(
+      ({ ip, mac }) => mac.toUpperCase() === addressAndMac.mac || ip === addressAndMac.address,
+    );
+
+    return {
+      address: routerDevice?.ip ?? addressAndMac.address,
+      mac: routerDevice?.mac.toUpperCase() ?? addressAndMac.mac,
+    };
+  }
+
+  async getDevices(): Promise<Device[]> {
+    return prisma.device.findMany();
+  }
+
+  async getDeviceInfo(deviceId: number, options: GetDeviceInfoOptions = {}): Promise<DeviceInfo> {
+    const { timeout } = options;
+
+    const [device, routerDevices] = await Promise.all([
+      this.getDevice(deviceId),
+      options.routerDevices ?? this.getRouterDevices(),
+    ]);
+    const routerDevice = await this.getRouterDevice(device, routerDevices);
+
+    const deviceInfo: DeviceInfo = {
+      ...device,
+      state: {
+        online: routerDevice?.online ?? false,
+        power: 'unknown',
+      },
+    };
+
+    if (device.matterNodeId) {
+      const nodeState = await this.matterClient.getNodeState(BigInt(device.matterNodeId));
+
+      deviceInfo.state.power = nodeState.power;
+    } else if (device.type === DeviceType.Lightbulb && device.manufacturer === DeviceManufacturer.Yeelight) {
+      const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
+
+      if (isDefined(deviceIp)) {
+        const deviceState = await this.yeelightClient.getState(deviceIp, timeout);
+
+        if (deviceState?.power) {
+          deviceInfo.state.power = deviceState.power === 'on';
+        }
+      }
+    }
+
+    return deviceInfo;
+  }
+
+  async getRouterDevice(device: Device, routerDevices?: RouterDevice[]): Promise<RouterDevice | null> {
+    routerDevices ??= await routerClient.getDevices();
+
+    return routerDevices.find(({ ip, mac }) => device.address === ip || device.mac === mac) ?? null;
+  }
+
+  async getRouterDevices(): Promise<RouterDevice[]> {
+    try {
+      return await routerClient.getDevices();
+    } catch {
+      return [];
+    }
+  }
+
   async isAddressAllowed(address: string): Promise<boolean> {
     return !(await prisma.device.findFirst({
       where: {
@@ -238,7 +258,7 @@ export default class DevicesClient {
 
     if (device.type === DeviceType.Lightbulb) {
       if (device.manufacturer === DeviceManufacturer.Yeelight) {
-        const { address: deviceIp } = await DevicesClient.getDeviceAddressAndMac(device);
+        const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
 
         if (isDefined(deviceIp)) {
           return this.yeelightClient.turnOffDevice(deviceIp);
@@ -258,7 +278,7 @@ export default class DevicesClient {
 
     if (device.type === DeviceType.Lightbulb) {
       if (device.manufacturer === DeviceManufacturer.Yeelight) {
-        const { address: deviceIp } = await DevicesClient.getDeviceAddressAndMac(device);
+        const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
 
         if (isDefined(deviceIp)) {
           return this.yeelightClient.turnOnDevice(deviceIp);
@@ -272,7 +292,7 @@ export default class DevicesClient {
   }
 
   private async wakeDevice(device: Device): Promise<void> {
-    const { address: deviceIp, mac: deviceMac } = await DevicesClient.getDeviceAddressAndMac(device);
+    const { address: deviceIp, mac: deviceMac } = await this.getDeviceAddressAndMac(device);
 
     if (!deviceIp || !deviceMac) {
       throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
