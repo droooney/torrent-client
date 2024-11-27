@@ -18,6 +18,7 @@ const DEVICE_STRING: Record<DeviceType, string[]> = {
   [DeviceType.Lightbulb]: ['лампочка', 'лампочку', 'лампа', 'лампу'],
   [DeviceType.Socket]: ['розетка', 'розетку'],
   [DeviceType.Other]: [],
+  [DeviceType.Unknown]: [],
 };
 
 export type DeviceState = {
@@ -34,6 +35,19 @@ export type DeviceAddressAndMac = {
 };
 
 export default class DevicesClient {
+  static fromRouterDevice(routerDevice: RouterDevice): Device {
+    return {
+      id: 0,
+      name: routerDevice.name || routerDevice.hostname,
+      type: DeviceType.Unknown,
+      mac: routerDevice.mac,
+      address: routerDevice.ip,
+      manufacturer: DeviceManufacturer.Unknown,
+      matterNodeId: null,
+      createdAt: new Date(Date.now() - routerDevice.uptime),
+    };
+  }
+
   static async getDeviceAddressAndMac(addressAndMac: DeviceAddressAndMac): Promise<DeviceAddressAndMac> {
     let routerDevices: RouterDevice[];
 
@@ -43,10 +57,8 @@ export default class DevicesClient {
       routerDevices = [];
     }
 
-    const routerDevice = routerDevices.find(({ ip, mac }) =>
-      isDefined(addressAndMac.mac)
-        ? mac.toUpperCase() === addressAndMac.mac
-        : isDefined(addressAndMac.address) && ip === addressAndMac.address,
+    const routerDevice = routerDevices.find(
+      ({ ip, mac }) => mac.toUpperCase() === addressAndMac.mac || ip === addressAndMac.address,
     );
 
     return {
@@ -104,6 +116,10 @@ export default class DevicesClient {
     }
 
     return device;
+  }
+
+  async getDevices(): Promise<Device[]> {
+    return prisma.device.findMany();
   }
 
   async getDeviceInfo(deviceId: number, timeout?: number): Promise<DeviceInfo> {

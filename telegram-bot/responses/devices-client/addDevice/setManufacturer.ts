@@ -1,12 +1,16 @@
 import { DeviceManufacturer, DeviceType, TelegramUserState } from '@prisma/client';
 import { Markdown, MessageResponse } from '@tg-sensei/bot';
+import chunk from 'lodash/chunk';
 
 import { AddDevicePayload } from 'devices-client/types/device';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
 
 import { getAddDevicePayload } from 'devices-client/utilities/payload';
 import { backToCallbackButton, callbackButton } from 'telegram-bot/utilities/keyboard';
-import { formatDeviceEnteredFields } from 'telegram-bot/utilities/responses/devices-client';
+import {
+  formatDeviceEnteredFields,
+  getDeviceManufacturerString,
+} from 'telegram-bot/utilities/responses/devices-client';
 
 import { callbackDataProvider, messageUserDataProvider } from 'telegram-bot/bot';
 import { getAddDeviceSetMacResponse } from 'telegram-bot/responses/devices-client/addDevice/setMac';
@@ -54,14 +58,15 @@ export async function getAddDeviceSetManufacturerResponse(
 
 ${Markdown.italic('Выберите производителя устройства')}`,
     replyMarkup: await callbackDataProvider.buildInlineKeyboard([
-      [
-        ...Object.values(DeviceManufacturer).map((manufacturer) =>
-          callbackButton('', manufacturer === DeviceType.Other ? 'Другой' : manufacturer, {
+      ...chunk(
+        Object.values(DeviceManufacturer).map((manufacturer) =>
+          callbackButton('', getDeviceManufacturerString(manufacturer), {
             type: DevicesClientCallbackButtonType.AddDeviceManufacturer,
             manufacturer,
           }),
         ),
-      ],
+        3,
+      ),
       [
         backToCallbackButton('К выбору типа', {
           type: DevicesClientCallbackButtonType.AddDeviceSetType,

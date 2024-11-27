@@ -14,13 +14,15 @@ const DEVICE_TYPE_ICON_MAP: Record<DeviceType, string> = {
   [DeviceType.Lightbulb]: '💡',
   [DeviceType.Socket]: '🔌',
   [DeviceType.Other]: '❓',
+  [DeviceType.Unknown]: '❓',
 };
 
 const DEVICE_TYPE_NAME_MAP: Record<DeviceType, string> = {
   [DeviceType.Tv]: 'Телевизор',
   [DeviceType.Lightbulb]: 'Лампочка',
   [DeviceType.Socket]: 'Розетка',
-  [DeviceType.Other]: 'Неизвестно',
+  [DeviceType.Other]: 'Другой',
+  [DeviceType.Unknown]: 'Неизвестно',
 };
 
 const ADD_DEVICE_FIELDS_INFO: Record<AddDevicePayloadField, { icon: string; name: string }> = {
@@ -52,6 +54,18 @@ export function getDeviceIcon(deviceType: DeviceType): string {
 
 export function getDeviceTypeString(deviceType: DeviceType): string {
   return DEVICE_TYPE_NAME_MAP[deviceType];
+}
+
+export function getDeviceManufacturerString(manufacturer: DeviceManufacturer): string {
+  if (manufacturer === DeviceManufacturer.Other) {
+    return 'Другой';
+  }
+
+  if (manufacturer === DeviceManufacturer.Unknown) {
+    return 'Неизвестно';
+  }
+
+  return manufacturer;
 }
 
 export function formatDeviceFields<Field extends AddDevicePayloadField>(
@@ -87,9 +101,7 @@ export function formatDeviceField<Field extends AddDevicePayloadField>(
           ? Markdown.fixedWidth(value)
           : Markdown.italic('Отсутствует')
         : field === 'manufacturer'
-          ? value === DeviceManufacturer.Other
-            ? Markdown.italic('Неизвестно')
-            : value
+          ? getDeviceManufacturerString(value as DeviceManufacturer)
           : field === 'address'
             ? value || Markdown.italic('Отсутствует')
             : value;

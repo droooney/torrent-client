@@ -1,5 +1,6 @@
 import { DeviceType, TelegramUserState } from '@prisma/client';
 import { Markdown, MessageResponse } from '@tg-sensei/bot';
+import chunk from 'lodash/chunk';
 
 import { AddDevicePayload } from 'devices-client/types/device';
 import { DevicesClientCallbackButtonType } from 'telegram-bot/types/keyboard/devices-client';
@@ -56,16 +57,17 @@ export async function getAddDeviceSetTypeResponse(addDevicePayload: AddDevicePay
 
 ${Markdown.italic('Выберите тип устройства')}`,
     replyMarkup: await callbackDataProvider.buildInlineKeyboard([
-      [
-        ...Object.values(DeviceType)
-          .filter((type) => type !== DeviceType.Other)
+      ...chunk(
+        Object.values(DeviceType)
+          .filter((type) => type !== DeviceType.Unknown)
           .map((deviceType) =>
             callbackButton(getDeviceIcon(deviceType), getDeviceTypeString(deviceType), {
               type: DevicesClientCallbackButtonType.AddDeviceType,
               deviceType,
             }),
           ),
-      ],
+        3,
+      ),
       [
         backToCallbackButton('К выбору названия', {
           type: DevicesClientCallbackButtonType.AddDeviceSetName,

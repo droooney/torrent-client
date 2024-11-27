@@ -11,6 +11,7 @@ export default new KeeneticCommand(
         ip: z.string(),
         mac: z.string(),
         active: z.boolean(),
+        uptime: z.number(),
       }),
     ),
   }),

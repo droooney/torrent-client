@@ -20,7 +20,7 @@ callbackDataProvider.handle(DevicesClientCallbackButtonType.EditDeviceManufactur
       replyMarkup: await callbackDataProvider.buildInlineKeyboard([
         [
           ...Object.values(DeviceManufacturer).map((manufacturer) =>
-            callbackButton('', manufacturer === DeviceType.Other ? 'Другой' : manufacturer, {
+            callbackButton('', manufacturer === DeviceManufacturer.Other ? 'Другой' : manufacturer, {
               type: DevicesClientCallbackButtonType.EditDeviceSetManufacturer,
               deviceId,
               manufacturer,

@@ -120,6 +120,7 @@ enum DeviceType {
   Lightbulb
   Socket
   Other
+  Unknown
 
   @@map("device_type")
 }
@@ -129,6 +130,7 @@ enum DeviceManufacturer {
   Yeelight
   Yandex
   Other
+  Unknown
 
   @@map("device_manufacturer")
 }
