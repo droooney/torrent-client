@@ -2,6 +2,7 @@
 
 - Install Node.JS
 - Install Postgres
+- Steps from https://github.com/stoprocent/noble?tab=readme-ov-file#ubuntu-debian-raspbian
 
 ```bash
 cp .example.env .env

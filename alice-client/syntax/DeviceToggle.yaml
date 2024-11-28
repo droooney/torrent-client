@@ -1,0 +1,7 @@
+root:
+  %lemma
+  переключить $Target
+
+slots:
+  target:
+    source: $Target

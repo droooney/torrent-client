@@ -104,32 +104,34 @@ export default class DevicesClient {
   async findDevice(query: string): Promise<Device> {
     const deviceType = findKey(DEVICE_STRING, (strings) => strings.includes(query)) as DeviceType | undefined;
 
-    const device = await prisma.device.findFirst({
+    const deviceByName = await prisma.device.findFirst({
       where: {
-        OR: [
-          {
-            name: {
-              contains: query,
-            },
-          },
-          ...(deviceType
-            ? [
-                {
-                  type: {
-                    in: [deviceType],
-                  },
-                },
-              ]
-            : []),
-        ],
+        name: {
+          contains: query,
+          mode: 'insensitive',
+        },
       },
     });
 
-    if (!device) {
-      throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
+    if (deviceByName) {
+      return deviceByName;
     }
 
-    return device;
+    if (deviceType) {
+      const deviceByType = await prisma.device.findFirst({
+        where: {
+          type: {
+            in: [deviceType],
+          },
+        },
+      });
+
+      if (deviceByType) {
+        return deviceByType;
+      }
+    }
+
+    throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
   }
 
   fromRouterDevice(routerDevice: RouterDevice): Device {
@@ -247,6 +249,26 @@ export default class DevicesClient {
         name,
       },
     }));
+  }
+
+  async toggleDevicePower(deviceId: number): Promise<void> {
+    const device = await this.getDevice(deviceId);
+
+    if (device.matterNodeId) {
+      return this.matterClient.toggle(BigInt(device.matterNodeId));
+    }
+
+    if (device.type === DeviceType.Lightbulb) {
+      if (device.manufacturer === DeviceManufacturer.Yeelight) {
+        const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
+
+        if (isDefined(deviceIp)) {
+          return this.yeelightClient.toggle(deviceIp);
+        }
+      }
+    }
+
+    throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
   }
 
   async turnOffDevice(deviceId: number): Promise<void> {

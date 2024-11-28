@@ -7,7 +7,7 @@ import VoiceResponse from 'alice-client/utilities/VoiceResponse';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { runTask } from 'utilities/process';
 
-aliceClient.handleIntent(IntentType.TURN_ON, async ({ slots }) => {
+aliceClient.handleIntent(IntentType.TurnOn, async ({ slots }) => {
   const { target } = slots;
 
   if (target?.type !== 'YANDEX.STRING') {
@@ -25,7 +25,7 @@ aliceClient.handleIntent(IntentType.TURN_ON, async ({ slots }) => {
   });
 });
 
-aliceClient.handleIntent(IntentType.TURN_OFF, async ({ slots }) => {
+aliceClient.handleIntent(IntentType.TurnOff, async ({ slots }) => {
   const { target } = slots;
 
   if (target?.type !== 'YANDEX.STRING') {
@@ -40,5 +40,23 @@ aliceClient.handleIntent(IntentType.TURN_OFF, async ({ slots }) => {
 
   return new VoiceResponse({
     text: `Выключаю ${device.name}`,
+  });
+});
+
+aliceClient.handleIntent(IntentType.Toggle, async ({ slots }) => {
+  const { target } = slots;
+
+  if (target?.type !== 'YANDEX.STRING') {
+    throw new CustomError(ErrorCode.UNSUPPORTED, 'Неизвестное устройство');
+  }
+
+  const device = await devicesClient.findDevice(target.value);
+
+  runTask(async () => {
+    await devicesClient.toggleDevicePower(device.id);
+  });
+
+  return new VoiceResponse({
+    text: `Переключаю ${device.name}`,
   });
 });

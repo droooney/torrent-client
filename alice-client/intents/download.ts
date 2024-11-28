@@ -12,7 +12,7 @@ import { timed } from 'utilities/promise';
 
 const SEARCH_RUTRACKER_TIMEOUT = 4 * SECOND;
 
-aliceClient.handleIntent(IntentType.DOWNLOAD, async ({ slots }) => {
+aliceClient.handleIntent(IntentType.Download, async ({ slots }) => {
   const { query, ultraHd, fullHd } = slots;
 
   if (query?.type !== 'YANDEX.STRING') {
