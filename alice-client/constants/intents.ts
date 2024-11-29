@@ -3,4 +3,5 @@ export enum IntentType {
   TurnOff = 'TurnOff',
   Toggle = 'Toggle',
   Download = 'Download',
+  Run = 'Run',
 }

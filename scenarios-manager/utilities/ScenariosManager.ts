@@ -397,6 +397,23 @@ export default class ScenariosManager {
     this.registerTrigger(newTrigger);
   }
 
+  async findScenario(query: string): Promise<Scenario> {
+    const scenario = await prisma.scenario.findFirst({
+      where: {
+        name: {
+          contains: query,
+          mode: 'insensitive',
+        },
+      },
+    });
+
+    if (!scenario) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Сценарий не найден');
+    }
+
+    return scenario;
+  }
+
   async getActiveScenarios(): Promise<Scenario[]> {
     return prisma.scenario.findMany({
       where: {
