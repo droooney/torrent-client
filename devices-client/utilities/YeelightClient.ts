@@ -118,6 +118,10 @@ export default class YeelightClient {
     });
   }
 
+  removeDevice(deviceIp: string): void {
+    this.devices.delete(deviceIp);
+  }
+
   async toggle(deviceIp: string): Promise<void> {
     await this.executeCommand({
       deviceIp,

@@ -23,11 +23,17 @@ export const turnOffDeviceStepRunParamsSchema = z.object({
   deviceId: z.number(),
 });
 
+export const toggleDeviceStepRunParamsSchema = z.object({
+  type: z.literal(ScenarioStepType.ToggleDevice),
+  deviceId: z.number(),
+});
+
 export const stepRunParamsSchema = z.union([
   runScenarioStepRunParamsSchema,
   waitPeriodStepRunParamsSchema,
   turnOnDeviceStepRunParamsSchema,
   turnOffDeviceStepRunParamsSchema,
+  toggleDeviceStepRunParamsSchema,
 ]);
 
 export type StepRunParams = z.TypeOf<typeof stepRunParamsSchema>;

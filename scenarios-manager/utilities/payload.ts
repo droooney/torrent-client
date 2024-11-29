@@ -1,5 +1,6 @@
-import { ScenarioStep, ScenarioTrigger } from '@prisma/client';
+import { ScenarioCondition, ScenarioStep, ScenarioStepCondition, ScenarioTrigger } from '@prisma/client';
 
+import { ConditionParams, conditionParamsSchema } from 'scenarios-manager/types/condition';
 import { EditScenarioPayload, editScenarioPayloadSchema } from 'scenarios-manager/types/scenario';
 import {
   AddScenarioStepPayload,
@@ -47,6 +48,15 @@ export function getTriggerParams(scenarioTrigger: ScenarioTrigger): TriggerParam
   const parsedPayload = triggerParamsSchema.safeParse({
     type: scenarioTrigger.type,
     ...(typeof scenarioTrigger.payload === 'object' ? scenarioTrigger.payload : null),
+  });
+
+  return parsedPayload.success ? parsedPayload.data : null;
+}
+
+export function getConditionParams(condition: ScenarioCondition | ScenarioStepCondition): ConditionParams | null {
+  const parsedPayload = conditionParamsSchema.safeParse({
+    type: condition.type,
+    ...(typeof condition.payload === 'object' ? condition.payload : null),
   });
 
   return parsedPayload.success ? parsedPayload.data : null;

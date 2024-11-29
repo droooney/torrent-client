@@ -34,7 +34,8 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepDe
 
   if (
     addStepPayload.runParams.type !== ScenarioStepType.TurnOnDevice &&
-    addStepPayload.runParams.type !== ScenarioStepType.TurnOffDevice
+    addStepPayload.runParams.type !== ScenarioStepType.TurnOffDevice &&
+    addStepPayload.runParams.type !== ScenarioStepType.ToggleDevice
   ) {
     throw new CustomError(ErrorCode.UNSUPPORTED, 'Неизвестное действие');
   }

@@ -49,7 +49,11 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepTy
       period: 0,
     };
     newState = TelegramUserState.AddScenarioStepSetWaitPeriod;
-  } else if (stepType === ScenarioStepType.TurnOnDevice || stepType === ScenarioStepType.TurnOffDevice) {
+  } else if (
+    stepType === ScenarioStepType.TurnOnDevice ||
+    stepType === ScenarioStepType.TurnOffDevice ||
+    stepType === ScenarioStepType.ToggleDevice
+  ) {
     runParams = {
       type: stepType,
       deviceId: 0,

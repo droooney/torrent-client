@@ -1,6 +1,7 @@
 import routerClient from '@/router-client/client';
 import { Device, DeviceManufacturer, DeviceType } from '@prisma/client';
 import findKey from 'lodash/findKey';
+import scenariosManager from 'scenarios-manager/manager';
 
 import prisma from 'db/prisma';
 
@@ -81,14 +82,30 @@ export default class DevicesClient {
   async deleteDevice(deviceId: number): Promise<void> {
     const device = await this.getDevice(deviceId);
 
+    if (!device) {
+      return;
+    }
+
     if (device.matterNodeId) {
       await this.matterClient.removeNode(BigInt(device.matterNodeId));
     }
 
-    await prisma.device.delete({
-      where: {
-        id: deviceId,
-      },
+    if (device.type === DeviceType.Lightbulb && device.manufacturer === DeviceManufacturer.Yeelight) {
+      const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
+
+      if (isDefined(deviceIp)) {
+        this.yeelightClient.removeDevice(deviceIp);
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.device.delete({
+        where: {
+          id: deviceId,
+        },
+      });
+
+      await scenariosManager.deleteScenarioRelatedDeviceData(deviceId, tx);
     });
   }
 

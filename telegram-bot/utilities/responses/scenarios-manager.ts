@@ -13,6 +13,7 @@ const SCENARIO_TYPE_ICON_MAP: Record<ScenarioStepType, string> = {
   [ScenarioStepType.Wait]: '⏳',
   [ScenarioStepType.TurnOnDevice]: '🟢',
   [ScenarioStepType.TurnOffDevice]: '🔴',
+  [ScenarioStepType.ToggleDevice]: '🟡',
 };
 
 const SCENARIO_TYPE_NAME_MAP: Record<ScenarioStepType, string> = {
@@ -20,6 +21,7 @@ const SCENARIO_TYPE_NAME_MAP: Record<ScenarioStepType, string> = {
   [ScenarioStepType.Wait]: 'Ожидание',
   [ScenarioStepType.TurnOnDevice]: 'Включение устройства',
   [ScenarioStepType.TurnOffDevice]: 'Выключение устройства',
+  [ScenarioStepType.ToggleDevice]: 'Переключение устройства',
 };
 
 const ADD_SCENARIO_STEP_FIELDS_INFO: Record<AddScenarioStepPayloadField, { icon: string; name: string }> = {

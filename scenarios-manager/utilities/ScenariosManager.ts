@@ -1,6 +1,8 @@
 import {
+  LogicalOperator,
   Scenario,
   ScenarioCondition,
+  ScenarioConditionType,
   ScenarioStep,
   ScenarioStepCondition,
   ScenarioStepType,
@@ -9,15 +11,17 @@ import {
 } from '@prisma/client';
 import { CronJob } from 'cron';
 import devicesClient from 'devices-client/client';
+import isEqual from 'lodash/isEqual';
 import omit from 'lodash/omit';
 import scheduler from 'scheduler/scheduler';
 
 import prisma from 'db/prisma';
+import { PrismaTransaction, runInTransaction } from 'db/utilities/transaction';
 
 import { AddScenarioStepPayload } from 'scenarios-manager/types/step';
 import { AddScenarioTriggerPayload } from 'scenarios-manager/types/trigger';
 
-import { getStepRunParams, getTriggerParams } from 'scenarios-manager/utilities/payload';
+import { getConditionParams, getStepRunParams, getTriggerParams } from 'scenarios-manager/utilities/payload';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { prepareErrorForLogging } from 'utilities/error';
 import { delay } from 'utilities/promise';
@@ -69,7 +73,7 @@ export default class ScenariosManager {
 
       scenarios.forEach((scenario) => {
         scenario.triggers.forEach((trigger) => {
-          this.tryRegisterTrigger(trigger);
+          this.registerTrigger(trigger);
         });
       });
     })().catch((err) => {
@@ -118,36 +122,175 @@ export default class ScenariosManager {
       },
     });
 
-    this.tryRegisterTrigger(trigger);
+    this.registerTrigger(trigger);
 
     return trigger;
   }
 
-  async areConditionsMet(conditions: (ScenarioCondition | ScenarioStepCondition)[]): Promise<boolean> {
+  async areConditionsMet(
+    conditions: (ScenarioCondition | ScenarioStepCondition)[],
+    conditionsOperator: LogicalOperator,
+  ): Promise<boolean> {
     return (
       await Promise.all(
-        conditions.map(async ({ isActive }) => {
-          if (!isActive) {
+        conditions.map(async (condition) => {
+          if (!condition.isActive) {
             return true;
           }
 
-          // TODO: implement
+          const params = getConditionParams(condition);
+
+          if (!params) {
+            return false;
+          }
+
+          if (params.type === ScenarioConditionType.Time) {
+            // TODO: implement
+
+            return true;
+          }
+
+          if (params.type === ScenarioConditionType.EmptyHome) {
+            // TODO: implement
+
+            return true;
+          }
+
+          if (params.type === ScenarioConditionType.NonEmptyHome) {
+            // TODO: implement
+
+            return true;
+          }
+
+          if (params.type === ScenarioConditionType.DeviceOnline) {
+            return (await devicesClient.getDeviceInfo(params.deviceId)).state.online;
+          }
+
+          if (params.type === ScenarioConditionType.DeviceOffline) {
+            return !(await devicesClient.getDeviceInfo(params.deviceId)).state.online;
+          }
+
+          if (params.type === ScenarioConditionType.DevicePowerOn) {
+            return (await devicesClient.getDeviceInfo(params.deviceId)).state.power === true;
+          }
+
+          if (params.type === ScenarioConditionType.DevicePowerOff) {
+            return (await devicesClient.getDeviceInfo(params.deviceId)).state.power === false;
+          }
+
           return true;
         }),
       )
-    ).every(Boolean);
+    )[conditionsOperator === LogicalOperator.And ? 'every' : 'some'](Boolean);
   }
 
   async deleteScenario(scenarioId: number): Promise<void> {
-    await prisma.scenario.delete({
-      where: {
-        id: scenarioId,
-      },
+    await prisma.$transaction(async (tx) => {
+      const scenario = await tx.scenario.findUnique({
+        where: {
+          id: scenarioId,
+        },
+      });
+
+      if (!scenario) {
+        return;
+      }
+
+      const scenarioSteps = await tx.scenarioStep.findMany({
+        where: {
+          type: ScenarioStepType.RunScenario,
+          payload: {
+            path: ['scenarioId'],
+            equals: scenarioId,
+          },
+        },
+      });
+
+      for (const scenarioStep of scenarioSteps) {
+        await this.deleteScenarioStep(scenarioStep.id, tx);
+      }
+
+      await tx.scenario.delete({
+        where: {
+          id: scenarioId,
+        },
+      });
     });
   }
 
-  async deleteScenarioStep(scenarioStepId: number): Promise<void> {
-    await prisma.$transaction(async (tx) => {
+  async deleteScenarioCondition(scenarioConditionId: number, tx?: PrismaTransaction): Promise<void> {
+    await runInTransaction(tx, async () => {
+      await prisma.scenarioCondition.delete({
+        where: {
+          id: scenarioConditionId,
+        },
+      });
+    });
+  }
+
+  async deleteScenarioRelatedDeviceData(deviceId: number, tx: PrismaTransaction): Promise<void> {
+    const findConditionParams = {
+      where: {
+        type: {
+          in: [
+            ScenarioConditionType.DeviceOnline,
+            ScenarioConditionType.DeviceOffline,
+            ScenarioConditionType.DevicePowerOn,
+            ScenarioConditionType.DevicePowerOff,
+          ],
+        },
+        payload: {
+          path: ['deviceId'],
+          equals: deviceId,
+        },
+      },
+    };
+
+    const [steps, triggers, scenarioConditions, scenarioStepConditions] = await Promise.all([
+      tx.scenarioStep.findMany({
+        where: {
+          type: {
+            in: [ScenarioStepType.TurnOnDevice, ScenarioStepType.TurnOffDevice, ScenarioStepType.ToggleDevice],
+          },
+          payload: {
+            path: ['deviceId'],
+            equals: deviceId,
+          },
+        },
+      }),
+      tx.scenarioTrigger.findMany({
+        where: {
+          type: {
+            in: [
+              ScenarioTriggerType.DeviceOnline,
+              ScenarioTriggerType.DeviceOffline,
+              ScenarioTriggerType.DevicePowerOn,
+              ScenarioTriggerType.DevicePowerOff,
+            ],
+          },
+          payload: {
+            path: ['deviceId'],
+            equals: deviceId,
+          },
+        },
+      }),
+      tx.scenarioCondition.findMany(findConditionParams),
+      tx.scenarioStepCondition.findMany(findConditionParams),
+    ]);
+
+    for (const step of steps) {
+      await this.deleteScenarioStep(step.id, tx);
+    }
+
+    await Promise.all([
+      ...triggers.map(({ id }) => this.deleteScenarioTrigger(id, tx)),
+      ...scenarioConditions.map(({ id }) => this.deleteScenarioCondition(id, tx)),
+      ...scenarioStepConditions.map(({ id }) => this.deleteScenarioStepCondition(id, tx)),
+    ]);
+  }
+
+  async deleteScenarioStep(scenarioStepId: number, tx?: PrismaTransaction): Promise<void> {
+    await runInTransaction(tx, async (tx) => {
       const scenarioStep = await tx.scenarioStep.findUnique({
         where: {
           id: scenarioStepId,
@@ -155,7 +298,7 @@ export default class ScenariosManager {
       });
 
       if (!scenarioStep) {
-        throw new CustomError(ErrorCode.NOT_FOUND, 'Шаг не найден');
+        return;
       }
 
       await Promise.all([
@@ -181,18 +324,36 @@ export default class ScenariosManager {
     });
   }
 
-  async deleteScenarioTrigger(triggerId: number): Promise<void> {
-    await prisma.scenarioTrigger.delete({
-      where: {
-        id: triggerId,
-      },
+  async deleteScenarioStepCondition(scenarioStepConditionId: number, tx?: PrismaTransaction): Promise<void> {
+    await runInTransaction(tx, async () => {
+      await prisma.scenarioStepCondition.delete({
+        where: {
+          id: scenarioStepConditionId,
+        },
+      });
     });
+  }
 
-    const scheduledScenario = this._scheduledScenarios.get(triggerId);
+  async deleteScenarioTrigger(triggerId: number, tx?: PrismaTransaction): Promise<void> {
+    await runInTransaction(tx, async (tx) => {
+      const trigger = await tx.scenarioTrigger.findUnique({
+        where: {
+          id: triggerId,
+        },
+      });
 
-    scheduledScenario?.cronJob.stop();
+      if (!trigger) {
+        return;
+      }
 
-    this._scheduledScenarios.delete(triggerId);
+      await tx.scenarioTrigger.delete({
+        where: {
+          id: triggerId,
+        },
+      });
+
+      this.unregisterTrigger(trigger);
+    });
   }
 
   async editScenario(scenarioId: number, data: Partial<Scenario>): Promise<void> {
@@ -217,7 +378,8 @@ export default class ScenariosManager {
   }
 
   async editScenarioTrigger(scenarioTriggerId: number, data: Partial<ScenarioTrigger>): Promise<void> {
-    const trigger = await prisma.scenarioTrigger.update({
+    const oldTrigger = await this.getScenarioTrigger(scenarioTriggerId);
+    const newTrigger = await prisma.scenarioTrigger.update({
       where: {
         id: scenarioTriggerId,
       },
@@ -227,23 +389,12 @@ export default class ScenariosManager {
       },
     });
 
-    const triggerParams = getTriggerParams(trigger);
-
-    if (triggerParams?.type !== ScenarioTriggerType.Schedule) {
+    if (isEqual(getTriggerParams(oldTrigger), getTriggerParams(newTrigger))) {
       return;
     }
 
-    const scheduledScenario = this._scheduledScenarios.get(trigger.id);
-
-    if (scheduledScenario?.cronJob.cronTime.toString() === triggerParams.schedule) {
-      return;
-    }
-
-    scheduledScenario?.cronJob.stop();
-
-    this._scheduledScenarios.delete(trigger.id);
-
-    this.tryRegisterTrigger(trigger);
+    this.unregisterTrigger(oldTrigger);
+    this.registerTrigger(newTrigger);
   }
 
   async getActiveScenarios(): Promise<Scenario[]> {
@@ -282,6 +433,20 @@ export default class ScenariosManager {
     return scenarioStep;
   }
 
+  async getScenarioTrigger(triggerId: number): Promise<ScenarioTrigger> {
+    const trigger = await prisma.scenarioTrigger.findUnique({
+      where: {
+        id: triggerId,
+      },
+    });
+
+    if (!trigger) {
+      throw new CustomError(ErrorCode.NOT_FOUND, 'Триггер не найден');
+    }
+
+    return trigger;
+  }
+
   async isNameAllowed(name: string): Promise<boolean> {
     return !(await prisma.scenario.findFirst({
       where: {
@@ -297,6 +462,22 @@ export default class ScenariosManager {
         name,
       },
     }));
+  }
+
+  registerTrigger(trigger: ScenarioTrigger): void {
+    const triggerParams = getTriggerParams(trigger);
+
+    if (triggerParams?.type !== ScenarioTriggerType.Schedule || this._scheduledScenarios.has(trigger.id)) {
+      return;
+    }
+
+    this._scheduledScenarios.set(trigger.id, {
+      scenarioId: trigger.scenarioId,
+      cronJob: scheduler.addJob({
+        schedule: triggerParams.schedule,
+        callback: () => this.runScenario(trigger.scenarioId),
+      }),
+    });
   }
 
   async runScenario(scenarioId: number): Promise<void> {
@@ -325,7 +506,7 @@ export default class ScenariosManager {
       throw new CustomError(ErrorCode.NOT_ACTIVE, 'Сценарий не активен');
     }
 
-    if (!(await this.areConditionsMet(scenario.conditions))) {
+    if (!(await this.areConditionsMet(scenario.conditions, scenario.conditionsOperator))) {
       throw new CustomError(ErrorCode.CONDITIONS_NOT_MET, 'Условия не выполнены');
     }
 
@@ -335,7 +516,7 @@ export default class ScenariosManager {
   }
 
   async runScenarioStep(step: ScenarioStep & { conditions: ScenarioStepCondition[] }): Promise<void> {
-    if (!step.isActive || !(await this.areConditionsMet(step.conditions))) {
+    if (!step.isActive || !(await this.areConditionsMet(step.conditions, step.conditionsOperator))) {
       return;
     }
 
@@ -353,22 +534,26 @@ export default class ScenariosManager {
       await devicesClient.turnOnDevice(runParams.deviceId);
     } else if (runParams.type === ScenarioStepType.TurnOffDevice) {
       await devicesClient.turnOffDevice(runParams.deviceId);
+    } else if (runParams.type === ScenarioStepType.ToggleDevice) {
+      await devicesClient.toggleDevicePower(runParams.deviceId);
     }
   }
 
-  tryRegisterTrigger(trigger: ScenarioTrigger): void {
+  unregisterTrigger(trigger: ScenarioTrigger): void {
     const triggerParams = getTriggerParams(trigger);
 
     if (triggerParams?.type !== ScenarioTriggerType.Schedule) {
       return;
     }
 
-    this._scheduledScenarios.set(trigger.id, {
-      scenarioId: trigger.scenarioId,
-      cronJob: scheduler.addJob({
-        schedule: triggerParams.schedule,
-        callback: () => this.runScenario(trigger.scenarioId),
-      }),
-    });
+    const scheduledScenario = this._scheduledScenarios.get(trigger.id);
+
+    if (!scheduledScenario) {
+      return;
+    }
+
+    scheduledScenario?.cronJob.stop();
+
+    this._scheduledScenarios.delete(trigger.id);
   }
 }

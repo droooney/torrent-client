@@ -16,6 +16,26 @@ export const nonEmptyHomeTriggerParamsSchema = z.object({
   type: z.literal(ScenarioTriggerType.NonEmptyHome),
 });
 
+export const deviceOnlineTriggerParamsSchema = z.object({
+  type: z.literal(ScenarioTriggerType.DeviceOnline),
+  deviceId: z.number(),
+});
+
+export const deviceOfflineTriggerParamsSchema = z.object({
+  type: z.literal(ScenarioTriggerType.DeviceOffline),
+  deviceId: z.number(),
+});
+
+export const devicePowerOnTriggerParamsSchema = z.object({
+  type: z.literal(ScenarioTriggerType.DevicePowerOn),
+  deviceId: z.number(),
+});
+
+export const devicePowerOffTriggerParamsSchema = z.object({
+  type: z.literal(ScenarioTriggerType.DevicePowerOff),
+  deviceId: z.number(),
+});
+
 export const aliceCommandTriggerParamsSchema = z.object({
   type: z.literal(ScenarioTriggerType.AliceCommand),
   command: z.string(),
@@ -31,6 +51,10 @@ export const triggerParamsSchema = z.union([
   scheduleTriggerParamsSchema,
   emptyHomeTriggerParamsSchema,
   nonEmptyHomeTriggerParamsSchema,
+  deviceOnlineTriggerParamsSchema,
+  deviceOfflineTriggerParamsSchema,
+  devicePowerOnTriggerParamsSchema,
+  devicePowerOffTriggerParamsSchema,
   aliceCommandTriggerParamsSchema,
   telegramCommandTriggerParamsSchema,
 ]);
