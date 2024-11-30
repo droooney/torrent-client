@@ -19,22 +19,7 @@ callbackDataProvider.handle(DevicesClientCallbackButtonType.OpenStatus, async (c
 });
 
 async function getStatusResponse(): Promise<MessageResponse> {
-  const [knownDevices, allRouterDevices] = await Promise.all([
-    devicesClient.getDevices(),
-    devicesClient.getRouterDevices(),
-  ]);
-  const routerDevices = await Promise.all(
-    knownDevices.map((device) => devicesClient.getRouterDevice(device, allRouterDevices)),
-  );
-  const onlineDevicesInfo = await Promise.all(
-    knownDevices
-      .filter((_device, index) => routerDevices.at(index)?.online)
-      .map((device) =>
-        devicesClient.getDeviceInfo(device.id, {
-          routerDevices: allRouterDevices,
-        }),
-      ),
-  );
+  const onlineDevicesInfo = await devicesClient.getOnlineDevicesInfo();
 
   return new MessageResponse({
     content:

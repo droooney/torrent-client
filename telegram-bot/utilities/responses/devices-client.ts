@@ -47,6 +47,10 @@ const ADD_DEVICE_FIELDS_INFO: Record<AddDevicePayloadField, { icon: string; name
     icon: '🌐',
     name: 'IP-адрес',
   },
+  usedForAtHomeDetection: {
+    icon: '🏠',
+    name: 'Используется для определения местоположения',
+  },
 };
 
 const DEVICE_STATE_FIELDS_INFO: Record<keyof DeviceState, { icon: string; name: string }> = {
@@ -86,7 +90,7 @@ export function formatDeviceFields<Field extends AddDevicePayloadField>(
 ): Markdown {
   return Markdown.join(
     fields.map((field) => {
-      return formatDeviceField(field, data[field] as AddDevicePayload[Field]);
+      return formatDeviceField(field, data[field] as any as AddDevicePayload[Field]);
     }),
     '\n',
   );
@@ -110,13 +114,19 @@ export function formatDeviceField<Field extends AddDevicePayloadField>(
       ? Markdown.create`${getDeviceIcon(value as DeviceType)} ${getDeviceTypeString(value as DeviceType)}`
       : field === 'mac'
         ? value
-          ? Markdown.fixedWidth(value)
+          ? Markdown.fixedWidth(value as string)
           : Markdown.italic('Отсутствует')
         : field === 'manufacturer'
           ? getDeviceManufacturerString(value as DeviceManufacturer)
           : field === 'address'
-            ? value || Markdown.italic('Отсутствует')
-            : value;
+            ? value
+              ? String(value)
+              : Markdown.italic('Отсутствует')
+            : field === 'usedForAtHomeDetection'
+              ? value
+                ? 'Да'
+                : 'Нет'
+              : String(value);
 
   return Markdown.create`${icon} ${Markdown.bold(name)}: ${formattedValue}`;
 }

@@ -12,7 +12,7 @@ import { formatDeviceEnteredFields } from 'telegram-bot/utilities/responses/devi
 import { isDefined } from 'utilities/is';
 
 import { callbackDataProvider, messageUserDataProvider } from 'telegram-bot/bot';
-import { getAddDeviceSetMatterPairingCodeResponse } from 'telegram-bot/responses/devices-client/addDevice/setMatterPairingCode';
+import { getAddDeviceSetUsedForAtHomeDetectionResponse } from 'telegram-bot/responses/devices-client/addDevice/setUsedForAtHomeDetection';
 
 callbackDataProvider.handle(DevicesClientCallbackButtonType.AddDeviceSetAddress, async (ctx) => {
   const { user } = ctx;
@@ -59,11 +59,11 @@ messageUserDataProvider.handle(TelegramUserState.AddDeviceSetAddress, async (ctx
   };
 
   await user.updateData({
-    state: TelegramUserState.AddDeviceEnterMatterPairingCode,
+    state: TelegramUserState.AddDeviceSetUsedForAtHomeDetection,
     addDevicePayload: newPayload,
   });
 
-  await ctx.respondWith(await getAddDeviceSetMatterPairingCodeResponse(newPayload));
+  await ctx.respondWith(await getAddDeviceSetUsedForAtHomeDetectionResponse(newPayload));
 });
 
 export async function getAddDeviceSetAddressResponse(addDevicePayload: AddDevicePayload): Promise<MessageResponse> {

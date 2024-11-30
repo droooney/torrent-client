@@ -84,6 +84,7 @@ enum TelegramUserState {
   AddDeviceSetManufacturer
   AddDeviceSetMac
   AddDeviceSetAddress
+  AddDeviceSetUsedForAtHomeDetection
   AddDeviceEnterMatterPairingCode
   EditDeviceName
   EditDeviceMac
@@ -136,14 +137,15 @@ enum DeviceManufacturer {
 }
 
 model Device {
-  id           Int                @id @default(autoincrement())
-  name         String             @unique
-  type         DeviceType
-  mac          String?            @unique
-  address      String?            @unique
-  manufacturer DeviceManufacturer @default(Other)
-  matterNodeId String?
-  createdAt    DateTime           @default(now()) @map("created_at")
+  id                     Int                @id @default(autoincrement())
+  name                   String             @unique
+  type                   DeviceType
+  mac                    String?            @unique
+  address                String?            @unique
+  manufacturer           DeviceManufacturer @default(Other)
+  matterNodeId           String?
+  usedForAtHomeDetection Boolean            @default(false)
+  createdAt              DateTime           @default(now()) @map("created_at")
 
   @@map("device")
 }

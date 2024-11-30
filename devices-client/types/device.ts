@@ -11,6 +11,7 @@ export const addDevicePayloadSchema = z.object({
   manufacturer: deviceManufacturerSchema,
   mac: z.nullable(z.string()),
   address: z.nullable(z.string()),
+  usedForAtHomeDetection: z.boolean(),
   matterPairingCode: z.nullable(z.string()),
 });
 

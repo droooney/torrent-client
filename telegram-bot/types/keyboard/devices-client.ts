@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { deviceManufacturerSchema, deviceTypeSchema } from 'devices-client/types/device';
 
-// next number is 28
+// next number is 30
 export enum DevicesClientCallbackButtonType {
   // Status
   OpenStatus = 'd2',
@@ -18,6 +18,8 @@ export enum DevicesClientCallbackButtonType {
   AddDeviceManufacturer = 'd16',
   AddDeviceSetMac = 'd6',
   AddDeviceSetAddress = 'd27',
+  AddDeviceUsedForAtHomeDetection = 'd28',
+  AddDeviceSetUsedForAtHomeDetection = 'd29',
 
   // Device
   OpenDevice = 'd11',
@@ -75,6 +77,15 @@ export const devicesClientCallbackDataSchema = z.union([
 
   z.object({
     type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetAddress),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceUsedForAtHomeDetection),
+    used: z.boolean(),
+  }),
+
+  z.object({
+    type: z.literal(DevicesClientCallbackButtonType.AddDeviceSetUsedForAtHomeDetection),
   }),
 
   z.object({

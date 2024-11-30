@@ -48,6 +48,7 @@ export default class DevicesClient {
     manufacturer: DeviceManufacturer.Other,
     mac: null,
     address: null,
+    usedForAtHomeDetection: false,
     matterPairingCode: null,
   };
 
@@ -160,6 +161,7 @@ export default class DevicesClient {
       address: routerDevice.ip,
       manufacturer: DeviceManufacturer.Unknown,
       matterNodeId: null,
+      usedForAtHomeDetection: false,
       createdAt: new Date(Date.now() - routerDevice.uptime),
     };
   }
@@ -228,6 +230,23 @@ export default class DevicesClient {
     }
 
     return deviceInfo;
+  }
+
+  async getOnlineDevicesInfo(): Promise<DeviceInfo[]> {
+    const [knownDevices, allRouterDevices] = await Promise.all([this.getDevices(), this.getRouterDevices()]);
+    const routerDevices = await Promise.all(
+      knownDevices.map((device) => this.getRouterDevice(device, allRouterDevices)),
+    );
+
+    return Promise.all(
+      knownDevices
+        .filter((_device, index) => routerDevices.at(index)?.online)
+        .map((device) =>
+          this.getDeviceInfo(device.id, {
+            routerDevices: allRouterDevices,
+          }),
+        ),
+    );
   }
 
   async getRouterDevice(device: Device, routerDevices?: RouterDevice[]): Promise<RouterDevice | null> {

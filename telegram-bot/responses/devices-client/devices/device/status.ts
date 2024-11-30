@@ -88,7 +88,7 @@ export async function getDeviceResponse(
       [
         formatDeviceFields(deviceInfo, ['name']),
         formatDeviceStateFields(deviceInfo.state, ['online', 'power']),
-        formatDeviceFields(deviceInfo, ['type', 'manufacturer', 'mac', 'address']),
+        formatDeviceFields(deviceInfo, ['type', 'manufacturer', 'mac', 'address', 'usedForAtHomeDetection']),
       ],
       '\n',
     ),

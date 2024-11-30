@@ -91,6 +91,7 @@ export async function getAddDeviceSetMatterPairingCodeResponse(
       'manufacturer',
       'mac',
       'address',
+      'usedForAtHomeDetection',
     ])}
 
 
@@ -104,8 +105,8 @@ ${Markdown.italic(
 async function getSetMatterPairingCodeKeyboard(): Promise<InlineKeyboard> {
   return callbackDataProvider.buildInlineKeyboard([
     [
-      backToCallbackButton('К вводу адреса', {
-        type: DevicesClientCallbackButtonType.AddDeviceSetAddress,
+      backToCallbackButton('К определению местоположения', {
+        type: DevicesClientCallbackButtonType.AddDeviceSetUsedForAtHomeDetection,
       }),
     ],
     [

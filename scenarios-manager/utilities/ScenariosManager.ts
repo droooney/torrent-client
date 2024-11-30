@@ -151,15 +151,15 @@ export default class ScenariosManager {
           }
 
           if (params.type === ScenarioConditionType.EmptyHome) {
-            // TODO: implement
+            const onlineDevicesInfo = await devicesClient.getOnlineDevicesInfo();
 
-            return true;
+            return onlineDevicesInfo.every(({ usedForAtHomeDetection }) => !usedForAtHomeDetection);
           }
 
           if (params.type === ScenarioConditionType.NonEmptyHome) {
-            // TODO: implement
+            const onlineDevicesInfo = await devicesClient.getOnlineDevicesInfo();
 
-            return true;
+            return onlineDevicesInfo.some(({ usedForAtHomeDetection }) => usedForAtHomeDetection);
           }
 
           if (params.type === ScenarioConditionType.DeviceOnline) {
