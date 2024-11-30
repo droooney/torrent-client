@@ -3,6 +3,8 @@ import { Device, DeviceManufacturer, DeviceType } from '@prisma/client';
 import findKey from 'lodash/findKey';
 import scenariosManager from 'scenarios-manager/manager';
 
+import { SECOND } from 'constants/date';
+
 import prisma from 'db/prisma';
 
 import { AddDevicePayload } from 'devices-client/types/device';
@@ -13,6 +15,7 @@ import YeelightClient from 'devices-client/utilities/YeelightClient';
 import { wakeOnLan } from 'devices-client/utilities/wol';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { isDefined } from 'utilities/is';
+import { timed } from 'utilities/promise';
 
 const DEVICE_STRING: Record<DeviceType, string[]> = {
   [DeviceType.Tv]: ['телевизор', 'телек', 'телик'],
@@ -40,6 +43,8 @@ export type DeviceAddressAndMac = {
   address: string | null;
   mac: string | null;
 };
+
+const DEFAULT_TIMEOUT = 5 * SECOND;
 
 export default class DevicesClient {
   static readonly defaultDevicePayload: AddDevicePayload = {
@@ -197,39 +202,44 @@ export default class DevicesClient {
   }
 
   async getDeviceInfo(deviceId: number, options: GetDeviceInfoOptions = {}): Promise<DeviceInfo> {
-    const { timeout } = options;
+    const { timeout = DEFAULT_TIMEOUT } = options;
 
-    const [device, routerDevices] = await Promise.all([
-      this.getDevice(deviceId),
-      options.routerDevices ?? this.getRouterDevices(),
-    ]);
-    const routerDevice = await this.getRouterDevice(device, routerDevices);
+    return timed({
+      time: timeout,
+      task: async (signal) => {
+        const [device, routerDevices] = await Promise.all([
+          this.getDevice(deviceId),
+          options.routerDevices ?? this.getRouterDevices(),
+        ]);
+        const routerDevice = await this.getRouterDevice(device, routerDevices);
 
-    const deviceInfo: DeviceInfo = {
-      ...device,
-      state: {
-        online: routerDevice?.online ?? false,
-        power: 'unknown',
-      },
-    };
+        const deviceInfo: DeviceInfo = {
+          ...device,
+          state: {
+            online: routerDevice?.online ?? false,
+            power: 'unknown',
+          },
+        };
 
-    if (device.matterNodeId) {
-      const nodeState = await this.matterClient.getNodeState(BigInt(device.matterNodeId));
+        if (device.matterNodeId) {
+          const nodeState = await this.matterClient.getNodeState(BigInt(device.matterNodeId));
 
-      deviceInfo.state.power = nodeState.power;
-    } else if (device.type === DeviceType.Lightbulb && device.manufacturer === DeviceManufacturer.Yeelight) {
-      const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
+          deviceInfo.state.power = nodeState.power;
+        } else if (device.type === DeviceType.Lightbulb && device.manufacturer === DeviceManufacturer.Yeelight) {
+          const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
 
-      if (isDefined(deviceIp)) {
-        const deviceState = await this.yeelightClient.getState(deviceIp, timeout);
+          if (isDefined(deviceIp)) {
+            const deviceState = await this.yeelightClient.getState(deviceIp, signal);
 
-        if (deviceState?.power) {
-          deviceInfo.state.power = deviceState.power === 'on';
+            if (deviceState?.power) {
+              deviceInfo.state.power = deviceState.power === 'on';
+            }
+          }
         }
-      }
-    }
 
-    return deviceInfo;
+        return deviceInfo;
+      },
+    });
   }
 
   async getOnlineDevicesInfo(): Promise<DeviceInfo[]> {
@@ -288,65 +298,80 @@ export default class DevicesClient {
   }
 
   async toggleDevicePower(deviceId: number): Promise<void> {
-    const device = await this.getDevice(deviceId);
+    await timed({
+      time: DEFAULT_TIMEOUT,
+      task: async (signal) => {
+        const device = await this.getDevice(deviceId);
 
-    if (device.matterNodeId) {
-      return this.matterClient.toggle(BigInt(device.matterNodeId));
-    }
-
-    if (device.type === DeviceType.Lightbulb) {
-      if (device.manufacturer === DeviceManufacturer.Yeelight) {
-        const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
-
-        if (isDefined(deviceIp)) {
-          return this.yeelightClient.toggle(deviceIp);
+        if (device.matterNodeId) {
+          return this.matterClient.toggle(BigInt(device.matterNodeId));
         }
-      }
-    }
 
-    throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
+        if (device.type === DeviceType.Lightbulb) {
+          if (device.manufacturer === DeviceManufacturer.Yeelight) {
+            const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
+
+            if (isDefined(deviceIp)) {
+              return this.yeelightClient.toggle(deviceIp, signal);
+            }
+          }
+        }
+
+        throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
+      },
+    });
   }
 
   async turnOffDevice(deviceId: number): Promise<void> {
-    const device = await this.getDevice(deviceId);
+    await timed({
+      time: DEFAULT_TIMEOUT,
+      task: async (signal) => {
+        const device = await this.getDevice(deviceId);
 
-    if (device.matterNodeId) {
-      return this.matterClient.turnOffNode(BigInt(device.matterNodeId));
-    }
-
-    if (device.type === DeviceType.Lightbulb) {
-      if (device.manufacturer === DeviceManufacturer.Yeelight) {
-        const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
-
-        if (isDefined(deviceIp)) {
-          return this.yeelightClient.turnOffDevice(deviceIp);
+        if (device.matterNodeId) {
+          return this.matterClient.turnOffNode(BigInt(device.matterNodeId), signal);
         }
-      }
-    }
 
-    throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
+        if (device.type === DeviceType.Lightbulb) {
+          if (device.manufacturer === DeviceManufacturer.Yeelight) {
+            const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
+
+            if (isDefined(deviceIp)) {
+              return this.yeelightClient.turnOffDevice(deviceIp, signal);
+            }
+          }
+        }
+
+        throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
+      },
+    });
   }
 
   async turnOnDevice(deviceId: number): Promise<void> {
-    const device = await this.getDevice(deviceId);
+    await timed({
+      time: DEFAULT_TIMEOUT,
+      task: async (signal) => {
+        const device = await this.getDevice(deviceId);
 
-    if (device.matterNodeId) {
-      return this.matterClient.turnOnNode(BigInt(device.matterNodeId));
-    }
-
-    if (device.type === DeviceType.Lightbulb) {
-      if (device.manufacturer === DeviceManufacturer.Yeelight) {
-        const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
-
-        if (isDefined(deviceIp)) {
-          return this.yeelightClient.turnOnDevice(deviceIp);
+        if (device.matterNodeId) {
+          return this.matterClient.turnOnNode(BigInt(device.matterNodeId), signal);
         }
-      }
 
-      throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
-    }
+        if (device.type === DeviceType.Lightbulb) {
+          if (device.manufacturer === DeviceManufacturer.Yeelight) {
+            const { address: deviceIp } = await this.getDeviceAddressAndMac(device);
 
-    await this.wakeDevice(device);
+            if (isDefined(deviceIp)) {
+              return this.yeelightClient.turnOnDevice(deviceIp, signal);
+            }
+          }
+
+          throw new CustomError(ErrorCode.UNSUPPORTED, 'Операция не поддерживается');
+        }
+
+        await this.wakeDevice(device);
+      },
+    });
   }
 
   private async wakeDevice(device: Device): Promise<void> {

@@ -19,13 +19,11 @@ aliceClient.handleIntent(IntentType.Download, async ({ slots }) => {
     throw new CustomError(ErrorCode.WRONG_FORMAT, 'Неверный формат запроса');
   }
 
-  const results = await timed(SEARCH_RUTRACKER_TIMEOUT, () =>
-    rutrackerClient.search(`${query.value}${ultraHd ? ' 2160p' : fullHd ? ' 1080p' : ''}`),
-  );
-
-  if (!results) {
-    throw new CustomError(ErrorCode.TIMEOUT, 'Поиск занял слишком долгое время, попробуйте еще раз');
-  }
+  const results = await timed({
+    time: SEARCH_RUTRACKER_TIMEOUT,
+    errorMessage: 'Поиск занял слишком долгое время, попробуйте еще раз',
+    task: () => rutrackerClient.search(`${query.value}${ultraHd ? ' 2160p' : fullHd ? ' 1080p' : ''}`),
+  });
 
   const firstResult = results.at(0);
 

@@ -1,14 +1,5 @@
 import { CommandLibrary, Device, DeviceState, Yeelight } from 'yeelight-control';
 
-import { SECOND } from 'constants/date';
-
-import CustomError, { ErrorCode } from 'utilities/CustomError';
-import { timed } from 'utilities/promise';
-
-export type YeelightClientOptions = {
-  timeout?: number;
-};
-
 type StateChangedEvent = {
   device: Device;
   state: DeviceState;
@@ -16,35 +7,32 @@ type StateChangedEvent = {
 
 type ExecuteCommandOptions = {
   deviceIp: string;
-  timeout?: number;
-  throwOnTimeout?: boolean;
+  signal: AbortSignal;
   command: (device: Device) => unknown;
 };
-
-const DEFAULT_TIMEOUT = 5 * SECOND;
 
 export default class YeelightClient {
   private _stateChangePromiseWithResolvers?: PromiseWithResolvers<StateChangedEvent>;
   private devices = new Map<string, Device>();
 
   readonly yeelight: Yeelight;
-  readonly timeout: number;
 
-  constructor(options: YeelightClientOptions = {}) {
+  constructor() {
     this.yeelight = new Yeelight();
-    this.timeout = options.timeout ?? DEFAULT_TIMEOUT;
   }
 
   async executeCommand(options: ExecuteCommandOptions): Promise<DeviceState | null> {
-    const { deviceIp, timeout = this.timeout, throwOnTimeout, command } = options;
+    const { deviceIp, signal, command } = options;
     const device = this.getDevice(deviceIp);
 
     device.connect();
 
     command(device);
 
-    const state = await timed(timeout, async (timeoutInfo) => {
-      while (!timeoutInfo.timedOut) {
+    const state = await (async () => {
+      while (true) {
+        signal?.throwIfAborted();
+
         const newPromise = Promise.withResolvers<StateChangedEvent>();
         const currentPromise = this._stateChangePromiseWithResolvers;
         const { promise } = (this._stateChangePromiseWithResolvers = currentPromise
@@ -71,15 +59,9 @@ export default class YeelightClient {
           return state;
         }
       }
-
-      return null;
-    });
+    })();
 
     device.disconnect();
-
-    if (throwOnTimeout && !state) {
-      throw new CustomError(ErrorCode.TIMEOUT, 'Долгое ожидание ответа от лампочки');
-    }
 
     return state;
   }
@@ -109,11 +91,10 @@ export default class YeelightClient {
     return device;
   }
 
-  async getState(deviceIp: string, timeout?: number): Promise<DeviceState | null> {
+  async getState(deviceIp: string, signal: AbortSignal): Promise<DeviceState | null> {
     return this.executeCommand({
       deviceIp,
-      timeout,
-      throwOnTimeout: false,
+      signal,
       command: (device) => device.requestState(),
     });
   }
@@ -122,23 +103,26 @@ export default class YeelightClient {
     this.devices.delete(deviceIp);
   }
 
-  async toggle(deviceIp: string): Promise<void> {
+  async toggle(deviceIp: string, signal: AbortSignal): Promise<void> {
     await this.executeCommand({
       deviceIp,
+      signal,
       command: (device) => device.command(CommandLibrary.toggle),
     });
   }
 
-  async turnOffDevice(deviceIp: string): Promise<void> {
+  async turnOffDevice(deviceIp: string, signal: AbortSignal): Promise<void> {
     await this.executeCommand({
       deviceIp,
+      signal,
       command: (device) => device.command(CommandLibrary.powerOff),
     });
   }
 
-  async turnOnDevice(deviceIp: string): Promise<void> {
+  async turnOnDevice(deviceIp: string, signal: AbortSignal): Promise<void> {
     await this.executeCommand({
       deviceIp,
+      signal,
       command: (device) => device.command(CommandLibrary.powerOn()),
     });
   }

@@ -48,8 +48,22 @@ export async function exec(command: string, options?: ExecOptions): Promise<stri
   });
 }
 
-export async function poll(ms: number, check: () => MaybePromise<boolean>): Promise<void> {
-  while (!(await check())) {
-    await delay(ms);
+export type PollOptions = {
+  time: number;
+  check: () => MaybePromise<boolean>;
+  signal?: AbortSignal;
+};
+
+export async function poll(options: PollOptions): Promise<void> {
+  const { time, signal, check } = options;
+
+  while (true) {
+    signal?.throwIfAborted();
+
+    if (await check()) {
+      break;
+    }
+
+    await delay(time);
   }
 }

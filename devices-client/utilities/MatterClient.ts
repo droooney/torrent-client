@@ -11,7 +11,6 @@ import { MINUTE } from 'constants/date';
 import { ManualPairingCodeCodec, ManualPairingData } from '@matter/types';
 
 import { isIp } from 'devices-client/utilities/is';
-import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { poll } from 'utilities/process';
 import { timed } from 'utilities/promise';
 
@@ -66,29 +65,28 @@ export default class MatterClient {
     let nodeId: NodeId | null = null;
 
     try {
-      nodeId = await timed(MINUTE, async () =>
-        commissioningController.commissionNode(
-          {
-            commissioning: {
-              wifiNetwork: {
-                wifiSsid: wifiNetworkInfo.ssid,
-                wifiCredentials: wifiNetworkInfo.password,
+      nodeId = await timed({
+        time: MINUTE,
+        errorMessage: 'Подключение к устройству заняло слишком долго',
+        task: async () =>
+          commissioningController.commissionNode(
+            {
+              commissioning: {
+                wifiNetwork: {
+                  wifiSsid: wifiNetworkInfo.ssid,
+                  wifiCredentials: wifiNetworkInfo.password,
+                },
               },
+              discovery: {
+                identifierData: pairingData,
+                discoveryCapabilities,
+                timeoutSeconds: 5,
+              },
+              passcode: pairingData.passcode,
             },
-            discovery: {
-              identifierData: pairingData,
-              discoveryCapabilities,
-              timeoutSeconds: 5,
-            },
-            passcode: pairingData.passcode,
-          },
-          false,
-        ),
-      );
-
-      if (!nodeId) {
-        throw new CustomError(ErrorCode.TIMEOUT, 'Подключение к устройству заняло слишком долго');
-      }
+            false,
+          ),
+      });
 
       const commissionedNodeDetails = commissioningController
         .getCommissionedNodesDetails()
@@ -184,19 +182,27 @@ export default class MatterClient {
     await (await this.getOnOff(nodeId))?.toggle();
   }
 
-  async turnOffNode(nodeId: bigint): Promise<void> {
+  async turnOffNode(nodeId: bigint, signal: AbortSignal): Promise<void> {
     const onOff = await this.getOnOff(nodeId);
 
     await onOff?.off();
 
-    await poll(100, async () => (await this.getPower(nodeId)) === false);
+    await poll({
+      time: 100,
+      signal,
+      check: async () => (await this.getPower(nodeId)) === false,
+    });
   }
 
-  async turnOnNode(nodeId: bigint): Promise<void> {
+  async turnOnNode(nodeId: bigint, signal: AbortSignal): Promise<void> {
     const onOff = await this.getOnOff(nodeId);
 
     await onOff?.on();
 
-    await poll(100, async () => (await this.getPower(nodeId)) === true);
+    await poll({
+      time: 100,
+      signal,
+      check: async () => (await this.getPower(nodeId)) === true,
+    });
   }
 }
