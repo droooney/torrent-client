@@ -222,20 +222,6 @@ export default class DevicesClient {
       time: timeout,
       throwOnTimeout: false,
       task: async (signal) => {
-        const [device, routerDevices] = await Promise.all([
-          this.getDevice(deviceId),
-          options.routerDevices ?? this.getRouterDevices(),
-        ]);
-        const routerDevice = await this.getRouterDevice(device, routerDevices);
-
-        const deviceInfo: DeviceInfo = {
-          ...device,
-          state: {
-            online: routerDevice?.online ?? false,
-            power: 'unknown',
-          },
-        };
-
         if (device.matterNodeId) {
           const nodeState = await this.matterClient.getNodeState(BigInt(device.matterNodeId));
 
