@@ -7,6 +7,7 @@
     "runPrismaStudio": "BROWSER=none prisma studio",
     "startDev": "prisma migrate dev && tsx watch --inspect main.ts",
     "start": "NODE_ENV=production prisma migrate deploy && NODE_ENV=production prisma generate && NODE_ENV=production tsx main.ts",
+    "demo": "tsx demo.ts",
     "typecheck": "tsc --noEmit",
     "formatPrisma": "prisma format",
     "eslint": "eslint . --ext .js,.jsx,.ts,.tsx",

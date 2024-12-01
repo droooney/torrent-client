@@ -21,7 +21,7 @@ export default class YeelightClient {
     this.yeelight = new Yeelight();
   }
 
-  async executeCommand(options: ExecuteCommandOptions): Promise<DeviceState | null> {
+  async executeCommand(options: ExecuteCommandOptions): Promise<DeviceState> {
     const { deviceIp, signal, command } = options;
     const device = this.getDevice(deviceIp);
 
@@ -91,7 +91,7 @@ export default class YeelightClient {
     return device;
   }
 
-  async getState(deviceIp: string, signal: AbortSignal): Promise<DeviceState | null> {
+  async getState(deviceIp: string, signal: AbortSignal): Promise<DeviceState> {
     return this.executeCommand({
       deviceIp,
       signal,

@@ -204,8 +204,23 @@ export default class DevicesClient {
   async getDeviceInfo(deviceId: number, options: GetDeviceInfoOptions = {}): Promise<DeviceInfo> {
     const { timeout = DEFAULT_TIMEOUT } = options;
 
-    return timed({
+    const [device, routerDevices] = await Promise.all([
+      this.getDevice(deviceId),
+      options.routerDevices ?? this.getRouterDevices(),
+    ]);
+    const routerDevice = await this.getRouterDevice(device, routerDevices);
+
+    const deviceInfo: DeviceInfo = {
+      ...device,
+      state: {
+        online: routerDevice?.online ?? false,
+        power: 'unknown',
+      },
+    };
+
+    await timed({
       time: timeout,
+      throwOnTimeout: false,
       task: async (signal) => {
         const [device, routerDevices] = await Promise.all([
           this.getDevice(deviceId),
@@ -231,15 +246,15 @@ export default class DevicesClient {
           if (isDefined(deviceIp)) {
             const deviceState = await this.yeelightClient.getState(deviceIp, signal);
 
-            if (deviceState?.power) {
+            if (deviceState.power) {
               deviceInfo.state.power = deviceState.power === 'on';
             }
           }
         }
-
-        return deviceInfo;
       },
     });
+
+    return deviceInfo;
   }
 
   async getOnlineDevicesInfo(): Promise<DeviceInfo[]> {

@@ -17,3 +17,5 @@ assets-storage/torrents/*
 !.secret.example.env
 
 !.gitkeep
+
+demo.ts
