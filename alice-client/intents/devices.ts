@@ -14,7 +14,7 @@ aliceClient.handleIntent(IntentType.TurnOn, async ({ slots }) => {
     throw new CustomError(ErrorCode.UNSUPPORTED, 'Неизвестное устройство');
   }
 
-  const device = await devicesClient.findDevice(target.value);
+  const device = await devicesClient.findDeviceByQuery(target.value);
 
   runTask(async () => {
     await devicesClient.turnOnDevice(device.id);
@@ -32,7 +32,7 @@ aliceClient.handleIntent(IntentType.TurnOff, async ({ slots }) => {
     throw new CustomError(ErrorCode.UNSUPPORTED, 'Неизвестное устройство');
   }
 
-  const device = await devicesClient.findDevice(target.value);
+  const device = await devicesClient.findDeviceByQuery(target.value);
 
   runTask(async () => {
     await devicesClient.turnOffDevice(device.id);
@@ -50,7 +50,7 @@ aliceClient.handleIntent(IntentType.Toggle, async ({ slots }) => {
     throw new CustomError(ErrorCode.UNSUPPORTED, 'Неизвестное устройство');
   }
 
-  const device = await devicesClient.findDevice(target.value);
+  const device = await devicesClient.findDeviceByQuery(target.value);
 
   runTask(async () => {
     await devicesClient.toggleDevicePower(device.id);

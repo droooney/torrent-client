@@ -36,11 +36,6 @@ export const devicePowerOffTriggerParamsSchema = z.object({
   deviceId: z.number(),
 });
 
-export const aliceCommandTriggerParamsSchema = z.object({
-  type: z.literal(ScenarioTriggerType.AliceCommand),
-  command: z.string(),
-});
-
 export const telegramCommandTriggerParamsSchema = z.object({
   type: z.literal(ScenarioTriggerType.TelegramCommand),
   command: z.string(),
@@ -55,7 +50,6 @@ export const triggerParamsSchema = z.union([
   deviceOfflineTriggerParamsSchema,
   devicePowerOnTriggerParamsSchema,
   devicePowerOffTriggerParamsSchema,
-  aliceCommandTriggerParamsSchema,
   telegramCommandTriggerParamsSchema,
 ]);
 

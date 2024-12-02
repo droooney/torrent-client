@@ -134,7 +134,7 @@ export default class MatterClient {
     return (
       (await this.getPairedNode(nodeId))
         .getDevices()
-        .find((device) => device.name === 'MA-onoffpluginunit')
+        .find((device) => device.getClusterClient(OnOff.Complete))
         ?.getClusterClient(OnOff.Complete) ?? null
     );
   }

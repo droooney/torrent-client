@@ -14,7 +14,9 @@ import MatterClient, { CommissionedNodeInfo } from 'devices-client/utilities/Mat
 import YeelightClient from 'devices-client/utilities/YeelightClient';
 import { wakeOnLan } from 'devices-client/utilities/wol';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
+import EventEmitter from 'utilities/EventEmitter';
 import { isDefined } from 'utilities/is';
+import { runTask } from 'utilities/process';
 import { timed } from 'utilities/promise';
 
 const DEVICE_STRING: Record<DeviceType, string[]> = {
@@ -36,7 +38,6 @@ export type DeviceInfo = Device & {
 
 type GetDeviceInfoOptions = {
   timeout?: number;
-  routerDevices?: RouterDevice[];
 };
 
 export type DeviceAddressAndMac = {
@@ -46,7 +47,14 @@ export type DeviceAddressAndMac = {
 
 const DEFAULT_TIMEOUT = 5 * SECOND;
 
-export default class DevicesClient {
+export type DevicesClientEvents = {
+  emptyHome: [];
+  nonEmptyHome: [];
+  deviceOnline: [device: Device];
+  deviceOffline: [device: Device];
+};
+
+export default class DevicesClient extends EventEmitter<DevicesClientEvents> {
   static readonly defaultDevicePayload: AddDevicePayload = {
     name: '',
     type: DeviceType.Other,
@@ -59,10 +67,55 @@ export default class DevicesClient {
 
   private readonly yeelightClient: YeelightClient;
   private readonly matterClient: MatterClient;
+  private readonly offRouterDeviceOnline: () => void;
+  private readonly offRouterDeviceOffline: () => void;
 
   constructor() {
+    super();
+
     this.yeelightClient = new YeelightClient();
     this.matterClient = new MatterClient();
+
+    this.offRouterDeviceOnline = routerClient.listen('deviceOnline', (routerDevice: RouterDevice): void => {
+      runTask(async () => {
+        const device = await this.findDeviceByRouterDevice(routerDevice);
+
+        if (!device) {
+          return;
+        }
+
+        this.emit('deviceOnline', device);
+
+        if (device.usedForAtHomeDetection) {
+          const onlineDevicesInfo = await this.getOnlineDevicesInfo();
+
+          if (
+            onlineDevicesInfo.every(({ id, usedForAtHomeDetection }) => !usedForAtHomeDetection && id !== device.id)
+          ) {
+            this.emit('nonEmptyHome');
+          }
+        }
+      });
+    });
+    this.offRouterDeviceOffline = routerClient.listen('deviceOffline', (routerDevice: RouterDevice): void => {
+      runTask(async () => {
+        const device = await this.findDeviceByRouterDevice(routerDevice);
+
+        if (!device) {
+          return;
+        }
+
+        this.emit('deviceOffline', device);
+
+        if (device.usedForAtHomeDetection) {
+          const onlineDevicesInfo = await this.getOnlineDevicesInfo();
+
+          if (onlineDevicesInfo.every(({ usedForAtHomeDetection }) => !usedForAtHomeDetection)) {
+            this.emit('emptyHome');
+          }
+        }
+      });
+    });
   }
 
   async addDevice(payload: AddDevicePayload & { matterNodeId?: bigint | null }): Promise<Device> {
@@ -115,6 +168,11 @@ export default class DevicesClient {
     });
   }
 
+  destroy(): void {
+    this.offRouterDeviceOnline();
+    this.offRouterDeviceOffline();
+  }
+
   async editDevice(deviceId: number, data: Partial<Device>): Promise<void> {
     await prisma.device.update({
       where: {
@@ -124,7 +182,7 @@ export default class DevicesClient {
     });
   }
 
-  async findDevice(query: string): Promise<Device> {
+  async findDeviceByQuery(query: string): Promise<Device> {
     const deviceType = findKey(DEVICE_STRING, (strings) => strings.includes(query)) as DeviceType | undefined;
 
     const deviceByName = await prisma.device.findFirst({
@@ -157,6 +215,21 @@ export default class DevicesClient {
     throw new CustomError(ErrorCode.NOT_FOUND, 'Устройство не найдено');
   }
 
+  async findDeviceByRouterDevice(routerDevice: RouterDevice): Promise<Device | null> {
+    return prisma.device.findFirst({
+      where: {
+        OR: [
+          {
+            mac: routerDevice.mac,
+          },
+          {
+            address: routerDevice.ip,
+          },
+        ],
+      },
+    });
+  }
+
   fromRouterDevice(routerDevice: RouterDevice): Device {
     return {
       id: 0,
@@ -186,8 +259,7 @@ export default class DevicesClient {
   }
 
   async getDeviceAddressAndMac(addressAndMac: DeviceAddressAndMac): Promise<DeviceAddressAndMac> {
-    const routerDevices = await this.getRouterDevices();
-    const routerDevice = routerDevices.find(
+    const routerDevice = routerClient.devices.find(
       ({ ip, mac }) => mac.toUpperCase() === addressAndMac.mac || ip === addressAndMac.address,
     );
 
@@ -204,11 +276,8 @@ export default class DevicesClient {
   async getDeviceInfo(deviceId: number, options: GetDeviceInfoOptions = {}): Promise<DeviceInfo> {
     const { timeout = DEFAULT_TIMEOUT } = options;
 
-    const [device, routerDevices] = await Promise.all([
-      this.getDevice(deviceId),
-      options.routerDevices ?? this.getRouterDevices(),
-    ]);
-    const routerDevice = await this.getRouterDevice(device, routerDevices);
+    const device = await this.getDevice(deviceId);
+    const routerDevice = this.getRouterDevice(device);
 
     const deviceInfo: DeviceInfo = {
       ...device,
@@ -244,34 +313,17 @@ export default class DevicesClient {
   }
 
   async getOnlineDevicesInfo(): Promise<DeviceInfo[]> {
-    const [knownDevices, allRouterDevices] = await Promise.all([this.getDevices(), this.getRouterDevices()]);
-    const routerDevices = await Promise.all(
-      knownDevices.map((device) => this.getRouterDevice(device, allRouterDevices)),
-    );
+    const knownDevices = await this.getDevices();
 
     return Promise.all(
       knownDevices
-        .filter((_device, index) => routerDevices.at(index)?.online)
-        .map((device) =>
-          this.getDeviceInfo(device.id, {
-            routerDevices: allRouterDevices,
-          }),
-        ),
+        .filter((device) => this.getRouterDevice(device)?.online)
+        .map((device) => this.getDeviceInfo(device.id)),
     );
   }
 
-  async getRouterDevice(device: Device, routerDevices?: RouterDevice[]): Promise<RouterDevice | null> {
-    routerDevices ??= await routerClient.getDevices();
-
-    return routerDevices.find(({ ip, mac }) => device.address === ip || device.mac === mac) ?? null;
-  }
-
-  async getRouterDevices(): Promise<RouterDevice[]> {
-    try {
-      return await routerClient.getDevices();
-    } catch {
-      return [];
-    }
+  getRouterDevice(device: Device): RouterDevice | null {
+    return routerClient.devices.find(({ ip, mac }) => device.address === ip || device.mac === mac) ?? null;
   }
 
   async isAddressAllowed(address: string): Promise<boolean> {

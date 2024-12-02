@@ -224,9 +224,6 @@ enum ScenarioTriggerType {
   DevicePowerOn
   DevicePowerOff
 
-  // Alice
-  AliceCommand
-
   // Telegram
   TelegramCommand
 }

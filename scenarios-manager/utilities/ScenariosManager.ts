@@ -1,4 +1,5 @@
 import {
+  Device,
   LogicalOperator,
   Scenario,
   ScenarioCondition,
@@ -9,7 +10,6 @@ import {
   ScenarioTrigger,
   ScenarioTriggerType,
 } from '@prisma/client';
-import { CronJob } from 'cron';
 import devicesClient from 'devices-client/client';
 import isEqual from 'lodash/isEqual';
 import omit from 'lodash/omit';
@@ -24,15 +24,15 @@ import { AddScenarioTriggerPayload } from 'scenarios-manager/types/trigger';
 import { getConditionParams, getStepRunParams, getTriggerParams } from 'scenarios-manager/utilities/payload';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 import { prepareErrorForLogging } from 'utilities/error';
+import { runTask } from 'utilities/process';
 import { delay } from 'utilities/promise';
 
 export type AddScenarioOptions = {
   name: string;
 };
 
-type ScheduledScenario = {
-  scenarioId: number;
-  cronJob: CronJob;
+type RegisteredTrigger = {
+  unregister: () => unknown;
 };
 
 export default class ScenariosManager {
@@ -54,7 +54,7 @@ export default class ScenariosManager {
     },
   };
 
-  private _scheduledScenarios = new Map<number, ScheduledScenario>();
+  private _registeredTriggers = new Map<number, RegisteredTrigger>();
 
   constructor() {
     (async () => {
@@ -484,17 +484,69 @@ export default class ScenariosManager {
   registerTrigger(trigger: ScenarioTrigger): void {
     const triggerParams = getTriggerParams(trigger);
 
-    if (triggerParams?.type !== ScenarioTriggerType.Schedule || this._scheduledScenarios.has(trigger.id)) {
+    if (!triggerParams || this._registeredTriggers.has(trigger.id)) {
       return;
     }
 
-    this._scheduledScenarios.set(trigger.id, {
-      scenarioId: trigger.scenarioId,
-      cronJob: scheduler.addJob({
+    const callback = (): void => {
+      runTask(async () => {
+        await this.runScenario(trigger.scenarioId);
+      });
+    };
+    let registeredTrigger: RegisteredTrigger | null = null;
+
+    if (triggerParams.type === ScenarioTriggerType.Schedule) {
+      const cronJob = scheduler.addJob({
         schedule: triggerParams.schedule,
-        callback: () => this.runScenario(trigger.scenarioId),
-      }),
-    });
+        callback,
+      });
+
+      registeredTrigger = {
+        unregister: () => {
+          cronJob.stop();
+        },
+      };
+    } else if (triggerParams.type === ScenarioTriggerType.EmptyHome) {
+      registeredTrigger = {
+        unregister: devicesClient.listen('emptyHome', callback),
+      };
+    } else if (triggerParams.type === ScenarioTriggerType.NonEmptyHome) {
+      registeredTrigger = {
+        unregister: devicesClient.listen('nonEmptyHome', callback),
+      };
+    } else if (triggerParams.type === ScenarioTriggerType.DeviceOnline) {
+      registeredTrigger = {
+        unregister: devicesClient.listen('deviceOnline', (device: Device) => {
+          if (device.id !== triggerParams.deviceId) {
+            return;
+          }
+
+          callback();
+        }),
+      };
+    } else if (triggerParams.type === ScenarioTriggerType.DeviceOffline) {
+      registeredTrigger = {
+        unregister: devicesClient.listen('deviceOffline', (device: Device) => {
+          if (device.id !== triggerParams.deviceId) {
+            return;
+          }
+
+          callback();
+        }),
+      };
+    } else if (triggerParams.type === ScenarioTriggerType.DevicePowerOn) {
+      // TODO: add support for power on
+    } else if (triggerParams.type === ScenarioTriggerType.DevicePowerOff) {
+      // TODO: add support for power off
+    } else if (triggerParams.type === ScenarioTriggerType.TelegramCommand) {
+      // TODO: add support for telegram command
+    }
+
+    // TODO: add support for all triggers
+
+    if (registeredTrigger) {
+      this._registeredTriggers.set(trigger.id, registeredTrigger);
+    }
   }
 
   async runScenario(scenarioId: number): Promise<void> {
@@ -557,20 +609,7 @@ export default class ScenariosManager {
   }
 
   unregisterTrigger(trigger: ScenarioTrigger): void {
-    const triggerParams = getTriggerParams(trigger);
-
-    if (triggerParams?.type !== ScenarioTriggerType.Schedule) {
-      return;
-    }
-
-    const scheduledScenario = this._scheduledScenarios.get(trigger.id);
-
-    if (!scheduledScenario) {
-      return;
-    }
-
-    scheduledScenario?.cronJob.stop();
-
-    this._scheduledScenarios.delete(trigger.id);
+    this._registeredTriggers.get(trigger.id)?.unregister();
+    this._registeredTriggers.delete(trigger.id);
   }
 }
