@@ -1,4 +1,4 @@
-import { Device, ScenarioStepType, TelegramUserState } from '@prisma/client';
+import { Device, ScenarioTriggerType } from '@prisma/client';
 import { Markdown, MessageResponse, ResponsesStreamResponse } from '@tg-sensei/bot';
 import scenariosManager from 'scenarios-manager/manager';
 
@@ -6,67 +6,64 @@ import { getPaginationInfo } from 'db/utilities/pagination';
 
 import { ScenariosManagerCallbackButtonType } from 'telegram-bot/types/keyboard/scenarios-manager';
 
-import { getAddStepPayload } from 'scenarios-manager/utilities/payload';
+import { getAddTriggerPayload } from 'scenarios-manager/utilities/payload';
 import { callbackButton, refreshCallbackButton } from 'telegram-bot/utilities/keyboard';
 import PaginationMessageResponse from 'telegram-bot/utilities/responses/PaginationMessageResponse';
 import { formatDevice, getDeviceIcon } from 'telegram-bot/utilities/responses/devices-client';
-import { getBackToAddStepSetTypeKeyboardButtons } from 'telegram-bot/utilities/responses/scenarios-manager';
+import { getBackToAddTriggerSetTypeKeyboardButtons } from 'telegram-bot/utilities/responses/scenarios-manager';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 import { callbackDataProvider } from 'telegram-bot/bot';
-import { getScenarioStepResponse } from 'telegram-bot/responses/scenarios-manager/scenarios/scenario/steps/item';
+import { getScenarioTriggerResponse } from 'telegram-bot/responses/scenarios-manager/scenarios/scenario/triggers/item';
 
-callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepDevicesList, async (ctx) => {
+callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioTriggerDevicesList, async (ctx) => {
   const {
     user,
     callbackData: { page },
   } = ctx;
-  const addStepPayload = getAddStepPayload(user.data.addScenarioStepPayload);
+  const addTriggerPayload = getAddTriggerPayload(user.data.addScenarioTriggerPayload);
 
-  await ctx.respondWith(getAddScenarioStepSetDeviceResponse(addStepPayload.scenarioId, page));
+  await ctx.respondWith(getAddScenarioTriggerSetDeviceResponse(addTriggerPayload.scenarioId, page));
 });
 
-callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepDevice, async (ctx) => {
+callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioTriggerDevice, async (ctx) => {
   const {
     user,
     callbackData: { deviceId },
   } = ctx;
-  const addStepPayload = getAddStepPayload(user.data.addScenarioStepPayload);
+  const addTriggerPayload = getAddTriggerPayload(user.data.addScenarioTriggerPayload);
 
   if (
-    addStepPayload.runParams.type !== ScenarioStepType.TurnOnDevice &&
-    addStepPayload.runParams.type !== ScenarioStepType.TurnOffDevice &&
-    addStepPayload.runParams.type !== ScenarioStepType.ToggleDevice
+    addTriggerPayload.params.type !== ScenarioTriggerType.DeviceOnline &&
+    addTriggerPayload.params.type !== ScenarioTriggerType.DeviceOffline &&
+    addTriggerPayload.params.type !== ScenarioTriggerType.DevicePowerOn &&
+    addTriggerPayload.params.type !== ScenarioTriggerType.DevicePowerOff
   ) {
     throw new CustomError(ErrorCode.UNSUPPORTED, 'Неизвестное действие');
   }
 
-  const scenarioStep = await scenariosManager.addScenarioStep({
-    ...addStepPayload,
-    runParams: {
-      ...addStepPayload.runParams,
+  const trigger = await scenariosManager.addScenarioTrigger({
+    ...addTriggerPayload,
+    params: {
+      ...addTriggerPayload.params,
       deviceId,
     },
-  });
-
-  await user.updateData({
-    state: TelegramUserState.Waiting,
   });
 
   await ctx.respondWith(
     new ResponsesStreamResponse(async function* () {
       yield new MessageResponse({
-        content: 'Шаг добавлен!',
+        content: 'Триггер добавлен!',
       });
 
-      yield getScenarioStepResponse(scenarioStep.id, {
+      yield getScenarioTriggerResponse(trigger.id, {
         mode: 'separate',
       });
     }),
   );
 });
 
-export function getAddScenarioStepSetDeviceResponse(
+export function getAddScenarioTriggerSetDeviceResponse(
   currentScenarioId: number,
   page: number = 0,
 ): PaginationMessageResponse<Device> {
@@ -88,25 +85,25 @@ ${pageText}`,
         pagination: options,
       }),
     getPageButtonCallbackData: (page) => ({
-      type: ScenariosManagerCallbackButtonType.AddScenarioStepDevicesList,
+      type: ScenariosManagerCallbackButtonType.AddScenarioTriggerDevicesList,
       page,
     }),
     getItemButton: (device) =>
       callbackButton(getDeviceIcon(device.type), device.name, {
-        type: ScenariosManagerCallbackButtonType.AddScenarioStepDevice,
+        type: ScenariosManagerCallbackButtonType.AddScenarioTriggerDevice,
         deviceId: device.id,
       }),
     getItemText: (device) => formatDevice(device),
     getKeyboard: (paginationButtons) => [
       [
         refreshCallbackButton({
-          type: ScenariosManagerCallbackButtonType.AddScenarioStepDevicesList,
+          type: ScenariosManagerCallbackButtonType.AddScenarioTriggerDevicesList,
           page,
           isRefresh: true,
         }),
       ],
       ...paginationButtons,
-      ...getBackToAddStepSetTypeKeyboardButtons(currentScenarioId),
+      ...getBackToAddTriggerSetTypeKeyboardButtons(currentScenarioId),
     ],
   });
 }

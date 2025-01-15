@@ -30,6 +30,7 @@ export function getUserDataProvider<InputContext extends AnyUpdateContext>(): Js
           ...data,
           editScenarioPayload: data.editScenarioPayload ?? Prisma.DbNull,
           addScenarioStepPayload: data.addScenarioStepPayload ?? Prisma.DbNull,
+          addScenarioTriggerPayload: data.addScenarioTriggerPayload ?? Prisma.DbNull,
           addDevicePayload: data.addDevicePayload ?? Prisma.DbNull,
           editDevicePayload: data.editDevicePayload ?? Prisma.DbNull,
         },

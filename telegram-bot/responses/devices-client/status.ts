@@ -25,19 +25,21 @@ async function getStatusResponse(): Promise<MessageResponse> {
     content:
       onlineDevicesInfo.length === 0
         ? Markdown.italic('Нет устройств онлайн')
-        : Markdown.join(
-            onlineDevicesInfo.map((deviceInfo) => {
-              return Markdown.join(
-                [
-                  formatDeviceField('name', deviceInfo.name),
-                  formatDeviceStateFields(deviceInfo.state, ['power']),
-                  formatDeviceField('type', deviceInfo.type),
-                ],
-                '\n',
-              );
-            }),
-            '\n\n',
-          ),
+        : Markdown.create`${Markdown.bold('📺 Устройства онлайн')}
+
+${Markdown.join(
+  onlineDevicesInfo.map((deviceInfo) => {
+    return Markdown.join(
+      [
+        formatDeviceField('name', deviceInfo.name),
+        formatDeviceStateFields(deviceInfo.state, ['power']),
+        formatDeviceField('type', deviceInfo.type),
+      ],
+      '\n',
+    );
+  }),
+  '\n\n',
+)}`,
     replyMarkup: await callbackDataProvider.buildInlineKeyboard([
       [
         refreshCallbackButton({

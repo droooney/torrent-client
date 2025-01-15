@@ -20,7 +20,7 @@ import { CallbackData, callbackDataSchema } from 'telegram-bot/types/keyboard';
 
 import { getUserDataProvider } from 'telegram-bot/utilities/providers';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
-import { prepareErrorForHuman } from 'utilities/error';
+import { prepareErrorForHuman, prepareErrorForLogging } from 'utilities/error';
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
   console.error('No telegram bot token');
@@ -103,38 +103,24 @@ commandsProvider.use(async ({ user, commands }, next) => {
 });
 
 callbackDataProvider.use(async (ctx, next) => {
-  try {
-    await next();
+  await next();
 
-    if ('isRefresh' in ctx.callbackData && ctx.callbackData.isRefresh) {
+  if ('isRefresh' in ctx.callbackData && ctx.callbackData.isRefresh) {
+    await ctx.respondWith(
+      new NotificationResponse({
+        text: 'Данные обновлены',
+      }),
+    );
+  } else {
+    try {
       await ctx.respondWith(
         new NotificationResponse({
-          text: 'Данные обновлены',
+          text: '',
         }),
       );
+    } catch {
+      /* empty */
     }
-  } catch (err) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(err);
-    }
-
-    await ctx.respondWith(
-      new NotificationResponse({
-        text: prepareErrorForHuman(err),
-      }),
-    );
-
-    return;
-  }
-
-  try {
-    await ctx.respondWith(
-      new NotificationResponse({
-        text: '',
-      }),
-    );
-  } catch {
-    /* empty */
   }
 });
 
@@ -145,7 +131,7 @@ userUpdates.handle('message', async (ctx, next) => {
     await next();
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') {
-      console.log(err);
+      console.log(prepareErrorForLogging(err));
     }
 
     await ctx.respondWith(
@@ -156,6 +142,21 @@ userUpdates.handle('message', async (ctx, next) => {
   }
 });
 userUpdates.handle('message', messageUserDataProvider);
+userUpdates.handle('callback_query', async (ctx, next) => {
+  try {
+    await next();
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(prepareErrorForLogging(err));
+    }
+
+    await ctx.respondWith(
+      new NotificationResponse({
+        text: prepareErrorForHuman(err),
+      }),
+    );
+  }
+});
 userUpdates.handle(
   'callback_query',
   callbackQueryMessageProvider.use(callbackQueryUserDataProvider.use(callbackDataProvider)),

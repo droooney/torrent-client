@@ -15,9 +15,9 @@ import {
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 import { callbackDataProvider, messageUserDataProvider } from 'telegram-bot/bot';
-import { getAddScenarioSetDeviceResponse } from 'telegram-bot/responses/scenarios-manager/scenarios/scenario/steps/addStep/setDevice';
-import { getAddScenarioSetScenarioResponse } from 'telegram-bot/responses/scenarios-manager/scenarios/scenario/steps/addStep/setScenario';
-import { getAddScenarioSetWaitPeriodResponse } from 'telegram-bot/responses/scenarios-manager/scenarios/scenario/steps/addStep/setWaitPeriod';
+import { getAddScenarioStepSetDeviceResponse } from 'telegram-bot/responses/scenarios-manager/scenarios/scenario/steps/addStep/setDevice';
+import { getAddScenarioStepSetScenarioResponse } from 'telegram-bot/responses/scenarios-manager/scenarios/scenario/steps/addStep/setScenario';
+import { getAddScenarioStepSetWaitPeriodResponse } from 'telegram-bot/responses/scenarios-manager/scenarios/scenario/steps/addStep/setWaitPeriod';
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepSetType, async (ctx) => {
   const { user } = ctx;
@@ -26,7 +26,7 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepSe
     state: TelegramUserState.AddScenarioStepSetType,
   });
 
-  await ctx.respondWith(await getAddScenarioSetTypeResponse(getAddStepPayload(user.data.addScenarioStepPayload)));
+  await ctx.respondWith(await getAddScenarioStepSetTypeResponse(getAddStepPayload(user.data.addScenarioStepPayload)));
 });
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepType, async (ctx) => {
@@ -76,11 +76,11 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepTy
   let nextResponse: Response;
 
   if (stepType === ScenarioStepType.RunScenario) {
-    nextResponse = getAddScenarioSetScenarioResponse(newPayload.scenarioId);
+    nextResponse = getAddScenarioStepSetScenarioResponse(newPayload.scenarioId);
   } else if (stepType === ScenarioStepType.Wait) {
-    nextResponse = await getAddScenarioSetWaitPeriodResponse(newPayload.scenarioId);
+    nextResponse = await getAddScenarioStepSetWaitPeriodResponse(newPayload.scenarioId);
   } else {
-    nextResponse = getAddScenarioSetDeviceResponse(newPayload.scenarioId);
+    nextResponse = getAddScenarioStepSetDeviceResponse(newPayload.scenarioId);
   }
 
   await ctx.respondWith(nextResponse);
@@ -89,17 +89,17 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepTy
 messageUserDataProvider.handle(TelegramUserState.AddScenarioStepSetType, async (ctx) => {
   const { user } = ctx;
 
-  await ctx.respondWith(await getAddScenarioSetTypeResponse(getAddStepPayload(user.data.addScenarioStepPayload)));
+  await ctx.respondWith(await getAddScenarioStepSetTypeResponse(getAddStepPayload(user.data.addScenarioStepPayload)));
 });
 
-export async function getAddScenarioSetTypeResponse(
+export async function getAddScenarioStepSetTypeResponse(
   addScenarioStepPayload: AddScenarioStepPayload,
 ): Promise<MessageResponse> {
   return new MessageResponse({
     content: Markdown.create`${formatScenarioStepEnteredFields(addScenarioStepPayload, ['name'])}
 
 
-${Markdown.italic('Выберите тип сценария')}`,
+${Markdown.italic('Выберите тип шага')}`,
     replyMarkup: await callbackDataProvider.buildInlineKeyboard([
       ...chunk(
         [

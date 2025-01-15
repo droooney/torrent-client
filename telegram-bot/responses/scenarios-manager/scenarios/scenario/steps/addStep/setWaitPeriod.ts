@@ -1,16 +1,14 @@
 import { ScenarioStepType, TelegramUserState } from '@prisma/client';
-import { InlineKeyboard, MessageResponse, ResponsesStreamResponse } from '@tg-sensei/bot';
+import { MessageResponse, ResponsesStreamResponse } from '@tg-sensei/bot';
 import scenariosManager from 'scenarios-manager/manager';
 
 import { SECOND } from 'constants/date';
 
-import { ScenariosManagerCallbackButtonType } from 'telegram-bot/types/keyboard/scenarios-manager';
-
 import { getAddStepPayload } from 'scenarios-manager/utilities/payload';
-import { backToCallbackButton } from 'telegram-bot/utilities/keyboard';
+import { getBackToAddStepSetTypeKeyboard } from 'telegram-bot/utilities/responses/scenarios-manager';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
-import { callbackDataProvider, messageUserDataProvider } from 'telegram-bot/bot';
+import { messageUserDataProvider } from 'telegram-bot/bot';
 import { getScenarioStepResponse } from 'telegram-bot/responses/scenarios-manager/scenarios/scenario/steps/item';
 
 messageUserDataProvider.handle(TelegramUserState.AddScenarioStepSetWaitPeriod, async (ctx) => {
@@ -27,7 +25,7 @@ messageUserDataProvider.handle(TelegramUserState.AddScenarioStepSetWaitPeriod, a
     return ctx.respondWith(
       new MessageResponse({
         content: 'Время ожидания должно быть положительным числом',
-        replyMarkup: await getSetWaitPeriodKeyboard(addStepPayload.scenarioId),
+        replyMarkup: await getBackToAddStepSetTypeKeyboard(addStepPayload.scenarioId),
       }),
     );
   }
@@ -38,6 +36,10 @@ messageUserDataProvider.handle(TelegramUserState.AddScenarioStepSetWaitPeriod, a
       ...addStepPayload.runParams,
       period: waitPeriod * SECOND,
     },
+  });
+
+  await user.updateData({
+    state: TelegramUserState.Waiting,
   });
 
   await ctx.respondWith(
@@ -51,25 +53,9 @@ messageUserDataProvider.handle(TelegramUserState.AddScenarioStepSetWaitPeriod, a
   );
 });
 
-async function getSetWaitPeriodKeyboard(currentScenarioId: number): Promise<InlineKeyboard> {
-  return callbackDataProvider.buildInlineKeyboard([
-    [
-      backToCallbackButton('К выбору типа', {
-        type: ScenariosManagerCallbackButtonType.AddScenarioStepSetType,
-      }),
-    ],
-    [
-      backToCallbackButton('К шагам', {
-        type: ScenariosManagerCallbackButtonType.OpenScenarioSteps,
-        scenarioId: currentScenarioId,
-      }),
-    ],
-  ]);
-}
-
-export async function getAddScenarioSetWaitPeriodResponse(currentScenarioId: number): Promise<MessageResponse> {
+export async function getAddScenarioStepSetWaitPeriodResponse(currentScenarioId: number): Promise<MessageResponse> {
   return new MessageResponse({
     content: 'Введите время ожидания в секундах',
-    replyMarkup: await getSetWaitPeriodKeyboard(currentScenarioId),
+    replyMarkup: await getBackToAddStepSetTypeKeyboard(currentScenarioId),
   });
 }

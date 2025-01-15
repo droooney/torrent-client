@@ -75,6 +75,7 @@ export async function getScenarioStepResponse(
         refreshCallbackButton({
           type: ScenariosManagerCallbackButtonType.OpenScenarioStep,
           stepId,
+          isRefresh: true,
         }),
         activateCallbackButton(scenarioStep.isActive, (isActive) => ({
           type: ScenariosManagerCallbackButtonType.ScenarioStepSetActive,

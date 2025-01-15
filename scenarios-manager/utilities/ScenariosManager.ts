@@ -481,6 +481,15 @@ export default class ScenariosManager {
     }));
   }
 
+  async isTriggerNameAllowed(scenarioId: number, name: string): Promise<boolean> {
+    return !(await prisma.scenarioTrigger.findFirst({
+      where: {
+        scenarioId,
+        name,
+      },
+    }));
+  }
+
   registerTrigger(trigger: ScenarioTrigger): void {
     const triggerParams = getTriggerParams(trigger);
 

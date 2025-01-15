@@ -1,4 +1,4 @@
-import { Scenario, ScenarioStepType } from '@prisma/client';
+import { Scenario, ScenarioStepType, TelegramUserState } from '@prisma/client';
 import { Markdown, MessageResponse, ResponsesStreamResponse } from '@tg-sensei/bot';
 import scenariosManager from 'scenarios-manager/manager';
 
@@ -7,9 +7,12 @@ import { getPaginationInfo } from 'db/utilities/pagination';
 import { ScenariosManagerCallbackButtonType } from 'telegram-bot/types/keyboard/scenarios-manager';
 
 import { getAddStepPayload } from 'scenarios-manager/utilities/payload';
-import { backToCallbackButton, callbackButton, refreshCallbackButton } from 'telegram-bot/utilities/keyboard';
+import { callbackButton, refreshCallbackButton } from 'telegram-bot/utilities/keyboard';
 import PaginationMessageResponse from 'telegram-bot/utilities/responses/PaginationMessageResponse';
-import { formatScenario } from 'telegram-bot/utilities/responses/scenarios-manager';
+import {
+  formatScenario,
+  getBackToAddStepSetTypeKeyboardButtons,
+} from 'telegram-bot/utilities/responses/scenarios-manager';
 import CustomError, { ErrorCode } from 'utilities/CustomError';
 
 import { callbackDataProvider } from 'telegram-bot/bot';
@@ -22,7 +25,7 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepSc
   } = ctx;
   const addStepPayload = getAddStepPayload(user.data.addScenarioStepPayload);
 
-  await ctx.respondWith(getAddScenarioSetScenarioResponse(addStepPayload.scenarioId, page));
+  await ctx.respondWith(getAddScenarioStepSetScenarioResponse(addStepPayload.scenarioId, page));
 });
 
 callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepScenario, async (ctx) => {
@@ -44,6 +47,10 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepSc
     },
   });
 
+  await user.updateData({
+    state: TelegramUserState.Waiting,
+  });
+
   await ctx.respondWith(
     new ResponsesStreamResponse(async function* () {
       yield new MessageResponse({
@@ -57,7 +64,7 @@ callbackDataProvider.handle(ScenariosManagerCallbackButtonType.AddScenarioStepSc
   );
 });
 
-export function getAddScenarioSetScenarioResponse(
+export function getAddScenarioStepSetScenarioResponse(
   currentScenarioId: number,
   page: number = 0,
 ): PaginationMessageResponse<Scenario> {
@@ -105,17 +112,7 @@ ${pageText}`,
         }),
       ],
       ...paginationButtons,
-      [
-        backToCallbackButton('К выбору типа', {
-          type: ScenariosManagerCallbackButtonType.AddScenarioStepSetType,
-        }),
-      ],
-      [
-        backToCallbackButton('К шагам', {
-          type: ScenariosManagerCallbackButtonType.OpenScenarioSteps,
-          scenarioId: currentScenarioId,
-        }),
-      ],
+      ...getBackToAddStepSetTypeKeyboardButtons(currentScenarioId),
     ],
   });
 }

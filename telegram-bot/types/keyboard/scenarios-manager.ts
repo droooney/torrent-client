@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
 import { scenarioStepTypeSchema } from 'scenarios-manager/types/step';
+import { scenarioTriggerTypeSchema } from 'scenarios-manager/types/trigger';
 
-// next number is 26
+// next number is 35
 export enum ScenariosManagerCallbackButtonType {
   // Status
   OpenStatus = 'sc4',
@@ -39,6 +40,21 @@ export enum ScenariosManagerCallbackButtonType {
   OpenScenarioStep = 'sc15',
   ScenarioStepSetActive = 'sc23',
   ScenarioStepDeleteConfirm = 'sc24',
+
+  // Scenario triggers
+  OpenScenarioTriggers = 'sc26',
+
+  // Add scenario trigger
+  AddScenarioTriggerSetName = 'sc27',
+  AddScenarioTriggerSetType = 'sc28',
+  AddScenarioTriggerType = 'sc29',
+  AddScenarioTriggerDevicesList = 'sc34',
+  AddScenarioTriggerDevice = 'sc30',
+
+  // Scenario trigger
+  OpenScenarioTrigger = 'sc31',
+  ScenarioTriggerSetActive = 'sc32',
+  ScenarioTriggerDeleteConfirm = 'sc33',
 }
 
 export const scenariosManagerCallbackDataSchema = z.union([
@@ -150,5 +166,56 @@ export const scenariosManagerCallbackDataSchema = z.union([
   z.object({
     type: z.literal(ScenariosManagerCallbackButtonType.ScenarioStepDeleteConfirm),
     stepId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.OpenScenarioTriggers),
+    scenarioId: z.number(),
+    page: z.optional(z.number()),
+    isRefresh: z.optional(z.boolean()),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioTriggerSetName),
+    scenarioId: z.number(),
+    isBack: z.optional(z.boolean()),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioTriggerSetType),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioTriggerType),
+    triggerType: scenarioTriggerTypeSchema,
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioTriggerDevicesList),
+    page: z.optional(z.number()),
+    isRefresh: z.optional(z.boolean()),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.AddScenarioTriggerDevice),
+    deviceId: z.number(),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.OpenScenarioTrigger),
+    triggerId: z.number(),
+    withDeleteConfirm: z.optional(z.boolean()),
+    isRefresh: z.optional(z.boolean()),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.ScenarioTriggerSetActive),
+    triggerId: z.number(),
+    isActive: z.boolean(),
+  }),
+
+  z.object({
+    type: z.literal(ScenariosManagerCallbackButtonType.ScenarioTriggerDeleteConfirm),
+    triggerId: z.number(),
   }),
 ]);

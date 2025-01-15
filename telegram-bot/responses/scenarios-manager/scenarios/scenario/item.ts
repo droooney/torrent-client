@@ -112,6 +112,12 @@ export async function getScenarioResponse(
         }),
       ],
       [
+        callbackButton('🔫', 'Триггеры', {
+          type: ScenariosManagerCallbackButtonType.OpenScenarioTriggers,
+          scenarioId,
+        }),
+      ],
+      [
         editCallbackButton({
           type: ScenariosManagerCallbackButtonType.EditScenario,
           scenarioId,

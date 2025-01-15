@@ -77,6 +77,10 @@ enum TelegramUserState {
   AddScenarioStepSetScenario
   AddScenarioStepSetDevice
   AddScenarioStepSetWaitPeriod
+  AddScenarioTriggerSetName
+  AddScenarioTriggerSetType
+  AddScenarioTriggerSetDevice
+  AddScenarioTriggerSetTelegramCommand
 
   // Devices client
   AddDeviceSetName
@@ -100,12 +104,13 @@ enum TelegramUserState {
 }
 
 model TelegramUserData {
-  telegramUserId         Int               @unique() @map("telegram_user_id")
-  state                  TelegramUserState
-  editScenarioPayload    Json?             @map("edit_scenario_payload")
-  addScenarioStepPayload Json?             @map("add_scenario_step_payload")
-  addDevicePayload       Json?             @map("add_device_payload")
-  editDevicePayload      Json?             @map("edit_device_payload")
+  telegramUserId            Int               @unique() @map("telegram_user_id")
+  state                     TelegramUserState
+  editScenarioPayload       Json?             @map("edit_scenario_payload")
+  addScenarioStepPayload    Json?             @map("add_scenario_step_payload")
+  addScenarioTriggerPayload Json?             @map("add_scenario_trigger_payload")
+  addDevicePayload          Json?             @map("add_device_payload")
+  editDevicePayload         Json?             @map("edit_device_payload")
 
   @@map("telegram_user_data")
 }
@@ -169,14 +174,15 @@ enum LogicalOperator {
 }
 
 model ScenarioStepCondition {
-  id        Int                   @id @default(autoincrement())
-  name      String
-  stepId    Int                   @map("step_id")
-  isActive  Boolean               @map("is_active")
-  type      ScenarioConditionType
-  payload   Json
-  createdAt DateTime              @default(now()) @map("created_at")
-  step      ScenarioStep          @relation("step", fields: [stepId], references: [id], onDelete: Cascade)
+  id          Int                   @id @default(autoincrement())
+  name        String
+  description String                @default("")
+  stepId      Int                   @map("step_id")
+  isActive    Boolean               @map("is_active")
+  type        ScenarioConditionType
+  payload     Json
+  createdAt   DateTime              @default(now()) @map("created_at")
+  step        ScenarioStep          @relation("step", fields: [stepId], references: [id], onDelete: Cascade)
 
   @@unique([stepId, name])
   @@map("scenario_step_condition")
@@ -198,6 +204,7 @@ enum ScenarioStepType {
 model ScenarioStep {
   id                 Int                     @id @default(autoincrement())
   name               String
+  description        String                  @default("")
   scenarioId         Int                     @map("scenario_id")
   position           Int
   isActive           Boolean                 @map("is_active")
@@ -229,28 +236,30 @@ enum ScenarioTriggerType {
 }
 
 model ScenarioTrigger {
-  id         Int                 @id @default(autoincrement())
-  name       String
-  scenarioId Int                 @map("scenario_id")
-  isActive   Boolean             @map("is_active")
-  type       ScenarioTriggerType
-  payload    Json
-  createdAt  DateTime            @default(now()) @map("created_at")
-  scenario   Scenario            @relation("scenario", fields: [scenarioId], references: [id], onDelete: Cascade)
+  id          Int                 @id @default(autoincrement())
+  name        String
+  description String              @default("")
+  scenarioId  Int                 @map("scenario_id")
+  isActive    Boolean             @map("is_active")
+  type        ScenarioTriggerType
+  payload     Json
+  createdAt   DateTime            @default(now()) @map("created_at")
+  scenario    Scenario            @relation("scenario", fields: [scenarioId], references: [id], onDelete: Cascade)
 
   @@unique([scenarioId, name])
   @@map("scenario_trigger")
 }
 
 model ScenarioCondition {
-  id         Int                   @id @default(autoincrement())
-  name       String
-  scenarioId Int                   @map("scenario_id")
-  isActive   Boolean               @map("is_active")
-  payload    Json
-  type       ScenarioConditionType
-  createdAt  DateTime              @default(now()) @map("created_at")
-  scenario   Scenario              @relation("scenario", fields: [scenarioId], references: [id], onDelete: Cascade)
+  id          Int                   @id @default(autoincrement())
+  name        String
+  description String                @default("")
+  scenarioId  Int                   @map("scenario_id")
+  isActive    Boolean               @map("is_active")
+  payload     Json
+  type        ScenarioConditionType
+  createdAt   DateTime              @default(now()) @map("created_at")
+  scenario    Scenario              @relation("scenario", fields: [scenarioId], references: [id], onDelete: Cascade)
 
   @@unique([scenarioId, name])
   @@map("scenario_condition")
@@ -259,6 +268,7 @@ model ScenarioCondition {
 model Scenario {
   id                 Int                 @id @default(autoincrement())
   name               String              @unique
+  description        String              @default("")
   isActive           Boolean             @map("is_active")
   conditionsOperator LogicalOperator     @default(And)
   createdAt          DateTime            @default(now()) @map("created_at")
