@@ -12,6 +12,7 @@ export default new KeeneticCommand(
         mac: z.string(),
         active: z.boolean(),
         uptime: z.number(),
+        link: z.optional(z.string()),
       }),
     ),
   }),

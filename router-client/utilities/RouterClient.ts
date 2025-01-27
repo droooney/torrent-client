@@ -18,6 +18,7 @@ export type RouterClientEvents = {
 export default class RouterClient extends EventEmitter<RouterClientEvents> {
   private readonly provider: RouterProvider;
   private pollAbortController = new AbortController();
+  private initialized = false;
 
   devices: RouterDevice[] = [];
 
@@ -45,14 +46,20 @@ export default class RouterClient extends EventEmitter<RouterClientEvents> {
 
           this.devices = await this.getDevices();
 
+          if (!this.initialized) {
+            this.initialized = true;
+
+            continue;
+          }
+
           oldDevices.forEach((device) => {
-            if (this.devices.every(({ ip }) => device.ip !== ip)) {
+            if (device.online && this.devices.every(({ ip, online }) => device.ip !== ip || !online)) {
               this.emit('deviceOffline', device);
             }
           });
 
           this.devices.forEach((device) => {
-            if (oldDevices.every(({ ip }) => device.ip !== ip)) {
+            if (device.online && oldDevices.every(({ ip, online }) => device.ip !== ip || !online)) {
               this.emit('deviceOnline', device);
             }
           });

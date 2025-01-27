@@ -525,7 +525,7 @@ export default class ScenariosManager {
       };
     } else if (triggerParams.type === ScenarioTriggerType.DeviceOnline) {
       registeredTrigger = {
-        unregister: devicesClient.listen('deviceOnline', (device: Device) => {
+        unregister: devicesClient.listen('deviceOnline', (device) => {
           if (device.id !== triggerParams.deviceId) {
             return;
           }
@@ -535,7 +535,7 @@ export default class ScenariosManager {
       };
     } else if (triggerParams.type === ScenarioTriggerType.DeviceOffline) {
       registeredTrigger = {
-        unregister: devicesClient.listen('deviceOffline', (device: Device) => {
+        unregister: devicesClient.listen('deviceOffline', (device) => {
           if (device.id !== triggerParams.deviceId) {
             return;
           }

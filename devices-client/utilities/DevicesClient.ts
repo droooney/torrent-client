@@ -90,7 +90,7 @@ export default class DevicesClient extends EventEmitter<DevicesClientEvents> {
           const onlineDevicesInfo = await this.getOnlineDevicesInfo();
 
           if (
-            onlineDevicesInfo.every(({ id, usedForAtHomeDetection }) => !usedForAtHomeDetection && id !== device.id)
+            onlineDevicesInfo.every(({ id, usedForAtHomeDetection }) => !usedForAtHomeDetection || id === device.id)
           ) {
             this.emit('nonEmptyHome');
           }
